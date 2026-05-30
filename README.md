@@ -41,8 +41,8 @@ Sub-projects are cloned into `repos/` as independent Git repositories:
 
 ```bash
 # Clone this workspace
-git clone https://github.com/maydaygjw/fhl-workspace.git
-cd fhl-workspace
+git clone https://github.com/maydaygjw/ice-polar-team-workspace.git
+cd ice-polar-team-workspace
 
 # Clone all sub-projects
 ./scripts/clone-all.sh
@@ -54,7 +54,7 @@ cd fhl-workspace
 ## Directory Layout
 
 ```
-fhl-workspace/
+ice-polar-team-workspace/
 ├── CLAUDE.md              ← Team constitution
 ├── README.md              ← This file
 ├── ARCHITECTURE.md
