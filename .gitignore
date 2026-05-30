@@ -1,0 +1,14 @@
+/repos/backend/
+/repos/miniapp/
+/repos/admin/
+/repos/governance/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
