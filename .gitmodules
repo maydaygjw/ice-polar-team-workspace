@@ -1,0 +1,12 @@
+[submodule "backend"]
+	path = backend
+	url = https://gitee.com/icepolar/yshop-drink.git
+	branch = master
+[submodule "admin"]
+	path = admin
+	url = https://gitee.com/icepolar/yshop-drink-vue.git
+	branch = master
+[submodule "miniapp"]
+	path = miniapp
+	url = https://gitee.com/icepolar/icepolarminiapp.git
+	branch = main
