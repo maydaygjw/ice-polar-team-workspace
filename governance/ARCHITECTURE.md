@@ -12,8 +12,10 @@ yshop-team/
 ├── yshop-drink-vue/     ← Vue3 + Uniapp frontend
 │   ├── src/views/       ← Admin pages
 │   └── src/pages/       ← Uniapp mini-program pages
-└── icepolarminiapp/     ← Native WeChat Mini Program (ice machine)
-    └── pages/           ← Mini-program pages (WXML/WXSS/JS)
+├── icepolarminiapp/     ← Native WeChat Mini Program (ice machine)
+│   └── pages/           ← Mini-program pages (WXML/WXSS/JS)
+└── icepolar-dms/        ← Device Management System (Go)
+    └── (hardware-level device command service)
 ```
 
 ## Module Dependency Graph
@@ -30,10 +32,16 @@ yshop-server (aggregator)
     ├── coupon   ← coupon lifecycle
     ├── score    ← points mall
     ├── desk     ← table management, QR code
-    ├── device   ← hardware device binding
+    ├── device   ← hardware device binding (calls icepolar-dms)
     ├── mp       ← WeChat official account
     └── message  ← SMS, email, template message
 ```
+
+## External Systems
+
+| System | Repository | Responsibility | Access Pattern |
+|--------|-----------|----------------|----------------|
+| `icepolar-dms` | `git@github.com:holun-yshop/icepolar-dms.git` | Hardware device management — connect, dispense ice, deice, self-clean, status query | Called by `yshop-drink` backend (`yshop-module-device-biz`), never by frontend directly |
 
 ## Order State Machine
 

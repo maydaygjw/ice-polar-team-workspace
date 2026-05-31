@@ -26,11 +26,13 @@ This file is the **team constitution** for the yshop AI engineering team. It is 
     [yshop-drink-vue]      [yshop-drink-vue]     [icepolarminiapp]
          ↓                       ↓                      ↓
     [yshop-drink Backend] ←——→ [Redis / MQ] ←——→ [yshop-drink Backend]
-         ↓                                              ↓
-    [MySQL 8.0]                                    [MySQL 8.0]
+         ↓                       ↓                      ↓
+    [MySQL 8.0]           [icepolar-dms]            [MySQL 8.0]
 ```
 
 > `icepolarminiapp` is a native WeChat Mini Program for the ice-machine business (tenant-id: 153). It shares the same `yshop-drink` backend but is a separate frontend codebase.
+>
+> `icepolar-dms` is the Device Management System (`git@github.com:holun-yshop/icepolar-dms.git`). It handles hardware-level device commands (connect, dispense ice, deice, self-clean, etc.) and is called by the `yshop-drink` backend, not directly by the mini-program.
 
 ## Governance Directory
 
