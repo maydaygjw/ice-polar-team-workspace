@@ -10,3 +10,6 @@
 	path = miniapp
 	url = https://gitee.com/icepolar/icepolarminiapp.git
 	branch = main
+[submodule "icepolar-dms"]
+	path = icepolar-dms
+	url = git@github.com:holun-yshop/icepolar-dms.git
