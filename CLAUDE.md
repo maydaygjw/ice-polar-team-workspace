@@ -23,7 +23,7 @@ ice-polar-team-workspace/
 | `miniapp/` | `https://gitee.com/icepolar/icepolarminiapp.git` | Native WeChat Mini Program (WXML/WXSS/JS) | `main` |
 | `icepolar-dms/` | `git@github.com:holun-yshop/icepolar-dms.git` | Python 3.12+, FastAPI, SQLAlchemy 2.x, pytest | `main` |
 
-**Working directory**: All Bash commands run from `/Users/gejunwen/code/holun-team/ice-polar-team-workspace`. Do not `cd` into subdirectories. Use relative paths (e.g., `miniapp/pages/...`) or `cd subdir && cmd` when git operations require it.
+**Working directory**: All Bash commands run from the workspace root. Do not `cd` into subdirectories. Use relative paths (e.g., `miniapp/pages/...`) or `cd subdir && cmd` when git operations require it.
 
 ## Governance — Read First
 

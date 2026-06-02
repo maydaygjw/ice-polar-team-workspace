@@ -37,9 +37,9 @@
 - **问题描述**: `pages/device-detail/device-detail.js` 直接使用 `app.globalData.dmsUrl` 向 DMS 服务器发起请求，绕过 backend API。
 - **严重程度**: P0 - 架构红线违规
 - **具体位置**: 
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/device-detail/device-detail.js:4`
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/device-detail/device-detail.js:67-68`
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/device-detail/device-detail.js:164-165`
+  - `miniapp/pages/device-detail/device-detail.js:4`
+  - `miniapp/pages/device-detail/device-detail.js:67-68`
+  - `miniapp/pages/device-detail/device-detail.js:164-165`
 - **代码片段**:
 ```javascript
 const app = getApp();
@@ -83,10 +83,10 @@ wx.request({
 - **问题描述**: `tenant-id: '153'` 在多处硬编码，虽然当前业务固定为 153，但缺乏统一的动态配置机制。
 - **严重程度**: P1
 - **具体位置**:
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/config/config.js:14`
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/config/config.js:20`
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/profile/profile.js:394`
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/refund/refund.js:138`
+  - `miniapp/config/config.js:14`
+  - `miniapp/config/config.js:20`
+  - `miniapp/pages/profile/profile.js:394`
+  - `miniapp/pages/refund/refund.js:138`
 - **代码片段**:
 ```javascript
 // config/config.js
@@ -109,9 +109,9 @@ headers: {
 - **问题描述**: 登录接口 `/app-api/member/auth/auth-miniapp-login` 的请求中，tenant-id 仅通过 header 传递，未在请求体中显式携带。
 - **严重程度**: P1
 - **具体位置**: 
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/scan/scan.js:432-439`
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/map/map.js:542-548`
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/profile/profile.js:175-182`
+  - `miniapp/pages/scan/scan.js:432-439`
+  - `miniapp/pages/map/map.js:542-548`
+  - `miniapp/pages/profile/profile.js:175-182`
 - **影响分析**:
   - 若后端 header 解析失败，可能导致租户隔离失效
   - 建议请求体中也包含 tenantId 作为冗余校验
@@ -132,16 +132,16 @@ headers: {
 - **问题描述**: 37 处请求中，**27 处缺少 `fail` 回调**，网络异常时用户无感知，页面可能进入卡死状态。
 - **严重程度**: P1
 - **具体位置** (部分列举):
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/payment/payment.js:74` (fetchUserBalance)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/payment/payment.js:132` (创建订单)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/payment/payment.js:170` (余额支付)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/scan/scan.js:52` (查询设备详情)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/scan/scan.js:149` (连接设备)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/processing/processing.js:87` (启动设备)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/processing/processing.js:147` (查询设备订单)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/orders/orders.js:156` (获取订单列表)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/wallet/wallet.js:203` (创建充值订单)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/wallet/wallet.js:270` (刷新用户信息)
+  - `miniapp/pages/payment/payment.js:74` (fetchUserBalance)
+  - `miniapp/pages/payment/payment.js:132` (创建订单)
+  - `miniapp/pages/payment/payment.js:170` (余额支付)
+  - `miniapp/pages/scan/scan.js:52` (查询设备详情)
+  - `miniapp/pages/scan/scan.js:149` (连接设备)
+  - `miniapp/pages/processing/processing.js:87` (启动设备)
+  - `miniapp/pages/processing/processing.js:147` (查询设备订单)
+  - `miniapp/pages/orders/orders.js:156` (获取订单列表)
+  - `miniapp/pages/wallet/wallet.js:203` (创建充值订单)
+  - `miniapp/pages/wallet/wallet.js:270` (刷新用户信息)
 - **代码片段**:
 ```javascript
 // payment.js:74 - 无 fail 处理
@@ -181,8 +181,8 @@ wx.request({
 - **问题描述**: 代码中存储了 `refreshToken`，但**没有任何地方使用它**。
 - **严重程度**: P1
 - **具体位置**:
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/app.js:121-122` (存储 refreshToken)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/app.js:179-183` (401 时直接 logout)
+  - `miniapp/app.js:121-122` (存储 refreshToken)
+  - `miniapp/app.js:179-183` (401 时直接 logout)
 - **代码片段**:
 ```javascript
 // app.js:179-183 - 401 时直接登出，未尝试刷新
@@ -204,7 +204,7 @@ reject(new Error('需要重新登录'));
 
 - **问题描述**: `config.js` 使用 HTTPS，但 `profile.js` 中头像上传硬编码为 HTTP。
 - **严重程度**: P2
-- **具体位置**: `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/profile/profile.js:390`
+- **具体位置**: `miniapp/pages/profile/profile.js:390`
 - **代码片段**:
 ```javascript
 url: 'http://yshop-api.holuntech.com/app-api/infra/file/upload',
@@ -250,7 +250,7 @@ url: 'http://yshop-api.holuntech.com/app-api/infra/file/upload',
 
 - **问题描述**: `payment.js` 从 `app.globalData.selectedCup` 读取商品信息，页面刷新后数据丢失。
 - **严重程度**: P2
-- **具体位置**: `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/payment/payment.js:21`
+- **具体位置**: `miniapp/pages/payment/payment.js:21`
 - **代码片段**:
 ```javascript
 onLoad() {
@@ -317,9 +317,9 @@ onLoad() {
 - **问题描述**: 部分 API 请求未显示 loading，用户点击后无反馈。
 - **严重程度**: P2
 - **具体位置**:
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/payment/payment.js:74` (fetchUserBalance - 无 loading)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/orders/orders.js:156` (获取订单列表 - 无全局 loading)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/wallet/wallet.js:270` (刷新用户信息 - 无 loading)
+  - `miniapp/pages/payment/payment.js:74` (fetchUserBalance - 无 loading)
+  - `miniapp/pages/orders/orders.js:156` (获取订单列表 - 无全局 loading)
+  - `miniapp/pages/wallet/wallet.js:270` (刷新用户信息 - 无 loading)
 - **修复建议**: 所有异步操作开始前显示 loading，结束后隐藏
 
 #### P2 - 内联样式使用 (虽少但需关注)
@@ -327,9 +327,9 @@ onLoad() {
 - **问题描述**: WXML 中存在 3 处 `style="..."` 内联样式。
 - **严重程度**: P2
 - **具体位置**:
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/processing/processing.wxml:11` (animation-delay)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/processing/processing.wxml:17` (conic-gradient 动态进度)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/select-cup/select-cup.wxml:12` (background)
+  - `miniapp/pages/processing/processing.wxml:11` (animation-delay)
+  - `miniapp/pages/processing/processing.wxml:17` (conic-gradient 动态进度)
+  - `miniapp/pages/select-cup/select-cup.wxml:12` (background)
 - **影响分析**: 动态值（如 `progress`）必须使用内联样式，但静态样式应移至 WXSS
 - **修复建议**: `select-cup.wxml:12` 的 `background: var(--brand-success)` 应改为 CSS 类
 
@@ -347,7 +347,7 @@ onLoad() {
 
 - **问题描述**: 微信小程序 AppID 硬编码在 `project.config.json` 中，虽为必要配置，但需确认是否为生产环境 AppID。
 - **严重程度**: P0
-- **具体位置**: `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/project.config.json:2`
+- **具体位置**: `miniapp/project.config.json:2`
 - **代码片段**:
 ```json
 {
@@ -365,7 +365,7 @@ onLoad() {
 
 - **问题描述**: `select-cup.js` 中包含完整的 Mock 登录实现，生成随机手机号和假 openid。
 - **严重程度**: P0
-- **具体位置**: `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/select-cup/select-cup.js:410-455`
+- **具体位置**: `miniapp/pages/select-cup/select-cup.js:410-455`
 - **代码片段**:
 ```javascript
 handleGetPhoneNumber(e) {
@@ -397,8 +397,8 @@ handleGetPhoneNumber(e) {
 - **问题描述**: `accessToken`、`refreshToken`、`userInfo` 等敏感数据通过 `wx.setStorageSync` 明文存储。
 - **严重程度**: P1
 - **具体位置**:
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/app.js:115-126` (login 方法)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/profile/profile.js:449` (更新用户信息)
+  - `miniapp/app.js:115-126` (login 方法)
+  - `miniapp/pages/profile/profile.js:449` (更新用户信息)
 - **影响分析**:
   - 小程序存储虽隔离于其他小程序，但用户可导出或篡改
   - Token 泄露可导致账号被盗用
@@ -412,8 +412,8 @@ handleGetPhoneNumber(e) {
 - **问题描述**: `encryptedData` 和 `iv` 在页面间传递，虽然最终发送到后端，但处理过程中存在日志打印。
 - **严重程度**: P1
 - **具体位置**:
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/scan/scan.js:380` (console.log 打印 getPhoneNumber 回调)
-  - `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/scan/scan.js:391-392` (提取 encryptedData/iv)
+  - `miniapp/pages/scan/scan.js:380` (console.log 打印 getPhoneNumber 回调)
+  - `miniapp/pages/scan/scan.js:391-392` (提取 encryptedData/iv)
 - **代码片段**:
 ```javascript
 console.log('获取手机号回调', e);  // 可能包含敏感信息
@@ -429,7 +429,7 @@ const iv = e.detail.iv;
 
 - **问题描述**: `scan.js` 提供 "模拟连接设备" 功能，使用测试 IMEI `000000000000000`。
 - **严重程度**: P2
-- **具体位置**: `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/scan/scan.js:129-138`
+- **具体位置**: `miniapp/pages/scan/scan.js:129-138`
 - **影响分析**:
   - 测试功能若未在构建生产包时移除，可能被用户误触
   - 虽然需要后端配合，但存在潜在风险
@@ -451,7 +451,7 @@ const iv = e.detail.iv;
 
 - **问题描述**: 同第2章，设备指令（查询状态、出冰、化冰、自清洗等）直接调用 DMS API。
 - **严重程度**: P0
-- **具体位置**: `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/device-detail/device-detail.js`
+- **具体位置**: `miniapp/pages/device-detail/device-detail.js`
 - **指令列表**:
   | 指令 | DMS 路径 | 类型 |
   |------|---------|------|
@@ -473,7 +473,7 @@ const iv = e.detail.iv;
 
 - **问题描述**: `device-detail.js` 中仅处理了 `error_code` 为 0/1/2 的情况，其他错误码显示为原始数字。
 - **严重程度**: P1
-- **具体位置**: `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/device-detail/device-detail.js:121`
+- **具体位置**: `miniapp/pages/device-detail/device-detail.js:121`
 - **代码片段**:
 ```javascript
 value: data.error_code === 0 ? '正常' : data.error_code === 1 ? '设备故障' : data.error_code === 2 ? '杯少' : `故障码${data.error_code}`,
@@ -490,7 +490,7 @@ value: data.error_code === 0 ? '正常' : data.error_code === 1 ? '设备故障'
 
 - **问题描述**: `device-detail.js` 页面未校验用户是否有权管理该设备。
 - **严重程度**: P2
-- **具体位置**: `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/miniapp/pages/device-detail/device-detail.js`
+- **具体位置**: `miniapp/pages/device-detail/device-detail.js`
 - **影响分析**:
   - 任何登录用户（甚至未登录，因为无校验）可尝试下发指令
   - 虽然 DMS 可能有校验，但前端也应做第一层防护

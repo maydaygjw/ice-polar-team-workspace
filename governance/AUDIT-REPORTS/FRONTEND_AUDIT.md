@@ -3,7 +3,7 @@
 
 **Audit Date:** 2026-06-02
 **Auditor:** Claude Code
-**Scope:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src`
+**Scope:** `admin/src`
 **Tech Stack:** Vue 3 + Vite 5 + TypeScript + Element Plus + Pinia
 
 ---
@@ -19,7 +19,7 @@ This audit identifies **critical security vulnerabilities**, **type safety defic
 ### 1.1 Inconsistent Tenant Header Injection
 
 **Severity:** P1
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/config/axios/service.ts` (Lines 58-61)
+**File:** `admin/src/config/axios/service.ts` (Lines 58-61)
 **Code:**
 ```typescript
 if (tenantId) {
@@ -36,7 +36,7 @@ Ensure ALL API requests go through the central axios instance. Audit all `fetch`
 ### 1.2 Tenant ID Concatenation in Business Logic
 
 **Severity:** P1
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/views/pay/merchantDetails/MerchantDetailsForm.vue` (Lines 24-28, 113)
+**File:** `admin/src/views/pay/merchantDetails/MerchantDetailsForm.vue` (Lines 24-28, 113)
 **Code:**
 ```typescript
 <el-option label="微信支付小程序" :value="'wx_miniapp'+tenantId" />
@@ -61,7 +61,7 @@ Use a computed property or utility function to generate payment channel IDs with
 ### 2.1 Widespread Use of `any` Types in HTTP Client
 
 **Severity:** P1
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/config/axios/index.ts` (Lines 7, 22-49)
+**File:** `admin/src/config/axios/index.ts` (Lines 7, 22-49)
 **Code:**
 ```typescript
 const request = (option: any) => { ... }
@@ -87,7 +87,7 @@ interface RequestOption<T = unknown> {
 ### 2.2 Missing Parameter Types in API Functions
 
 **Severity:** P1
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/api/login/index.ts` (Lines 74-80)
+**File:** `admin/src/api/login/index.ts` (Lines 74-80)
 **Code:**
 ```typescript
 export const getCode = (data) => {
@@ -117,7 +117,7 @@ export const reqCheck = (data: CaptchaData) => { ... }
 
 **Severity:** P0
 **Files:** 17 files identified with unsafe validation patterns
-**Example File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/views/pay/merchantDetails/MerchantDetailsForm.vue` (Lines 169-173)
+**Example File:** `admin/src/views/pay/merchantDetails/MerchantDetailsForm.vue` (Lines 169-173)
 **Code:**
 ```typescript
 const submitForm = async () => {
@@ -141,7 +141,7 @@ if (!valid) return
 ### 3.2 Duplicate Form Reset Logic
 
 **Severity:** P2
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/views/pay/merchantDetails/MerchantDetailsForm.vue` (Lines 121-139, 194-213)
+**File:** `admin/src/views/pay/merchantDetails/MerchantDetailsForm.vue` (Lines 121-139, 194-213)
 **Code:**
 ```typescript
 const formData = ref({
@@ -177,7 +177,7 @@ const resetForm = () => { formData.value = { ...initialFormState } }
 ### 4.1 `any[]` in Request Queue
 
 **Severity:** P1
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/config/axios/service.ts` (Line 30)
+**File:** `admin/src/config/axios/service.ts` (Line 30)
 **Code:**
 ```typescript
 let requestList: any[] = []
@@ -200,7 +200,7 @@ let requestList: QueuedRequest[] = []
 ### 4.2 Generic Defaults to `any`
 
 **Severity:** P1
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/hooks/web/useTable.ts` (Lines 10-35)
+**File:** `admin/src/hooks/web/useTable.ts` (Lines 10-35)
 **Code:**
 ```typescript
 export interface UseTableConfig<T = any> {
@@ -227,7 +227,7 @@ export interface UseTableConfig<T> {
 ### 5.1 HARDCODED RSA ENCRYPTION KEYS (CRITICAL)
 
 **Severity:** P0
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/utils/jsencrypt.ts` (Lines 5-17)
+**File:** `admin/src/utils/jsencrypt.ts` (Lines 5-17)
 **Code:**
 ```typescript
 const publicKey =
@@ -257,7 +257,7 @@ const privateKey =
 ### 5.2 `dangerouslyUseHTMLString` in Error Messages
 
 **Severity:** P0
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/config/axios/service.ts` (Line 162)
+**File:** `admin/src/config/axios/service.ts` (Line 162)
 **Code:**
 ```typescript
 ElMessage.error({
@@ -296,7 +296,7 @@ Audit all `v-html` usages and ensure DOMPurify is applied. Consider adding autom
 
 **Severity:** P2
 **Count:** 189 `console.log` statements across the codebase
-**Example File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/views/pay/merchantDetails/MerchantDetailsForm.vue` (Line 115)
+**Example File:** `admin/src/views/pay/merchantDetails/MerchantDetailsForm.vue` (Line 115)
 **Code:**
 ```typescript
 console.log('tenantId:',tenantId.value)
@@ -324,7 +324,7 @@ Use `Object.assign()` for partial updates or leverage `resetFields()` from Eleme
 ### 7.1 Silent Catch in Permission Store
 
 **Severity:** P1
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/store/modules/permission.ts` (Lines 34-57)
+**File:** `admin/src/store/modules/permission.ts` (Lines 34-57)
 **Code:**
 ```typescript
 async generateRoutes(): Promise<unknown> {
@@ -366,7 +366,7 @@ async generateRoutes(): Promise<void> {
 ### 8.1 Direct Cache Mutation in User Store
 
 **Severity:** P1
-**File:** `/Users/gejunwen/code/holun-team/ice-polar-team-workspace/admin/src/store/modules/user.ts` (Lines 67-79)
+**File:** `admin/src/store/modules/user.ts` (Lines 67-79)
 **Code:**
 ```typescript
 async setUserAvatarAction(avatar: string) {
