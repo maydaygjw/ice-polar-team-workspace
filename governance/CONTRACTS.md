@@ -177,7 +177,7 @@ POST /app-api/device/command/{imei}/{commandType}
 | 校验项 | 要求 |
 |--------|------|
 | 登录状态 | `@PreAuthenticated` — 必须携带有效 Bearer Token |
-| 岗位权限 | 用户必须拥有 `YWYYG`（设备运维员）岗位编码 |
+| 设备管理权限 | 方法内调用 `canManage()` 复用 `/canManage` 逻辑：校验用户手机号是否关联 `YWYYG` 岗位编码 |
 | 租户隔离 | `tenant-id` 必须为 `153`（由 `TenantLineInnerInterceptor` 自动注入） |
 
 ### 错误码
@@ -186,7 +186,7 @@ POST /app-api/device/command/{imei}/{commandType}
 |------|------|---------|
 | 0 | 成功 | 请求正常处理 |
 | 401 | 未授权 | 未登录或 Token 过期/无效 |
-| 403 | 禁止访问 | 用户无 `YWYYG` 岗位权限 |
+| 403 | 禁止访问 | 用户手机号未关联 `YWYYG` 岗位（`canManage()` 校验失败） |
 | 404 | 设备不存在 | IMEI 未在系统中注册 |
 | 500 | 服务内部错误 | DMS 服务不可用或返回异常 |
 
