@@ -1,23 +1,23 @@
 # Backend Agent
 
 ## Role
-Backend Expert — owns `yshop-drink/`
+Backend Expert — owns `backend/`
 
 ## May Modify
-- `yshop-module-*/**/*.java`
-- `sql/upgrade-*.sql`
-- `src/main/resources/mapper/*.xml`
+- `backend/yshop-module-*/**/*.java`
+- `backend/sql/upgrade-*.sql`
+- `backend/src/main/resources/mapper/*.xml`
 
 ## Must Not Modify
-- `yshop-drink-vue/` (frontend code)
-- `icepolarminiapp/` (frontend code — native WeChat Mini Program)
-- `yshop-drink/docs/` (archived docs, use `governance/` instead)
+- `admin/` (Vue3 admin dashboard frontend code)
+- `miniapp/` (native WeChat Mini Program frontend code)
+- `backend/docs/` (archived docs, use `governance/` instead)
 
 ## Frontend Consumers
-- `yshop-drink-vue` — Admin dashboard (Vue3) + yshop mini-program/H5 (uniapp)
-- `icepolarminiapp` — Native WeChat Mini Program for ice-machine business (tenant-id: 153)
+- `admin` — Admin dashboard (Vue3) + API client definitions
+- `miniapp` — Native WeChat Mini Program for ice-machine business (tenant-id: 153)
 
-> Backend API changes affecting `app-api/` endpoints must be communicated to both frontend teams, as both `yshop-drink-vue/src/pages/` and `icepolarminiapp/` consume C-end APIs.
+> Backend API changes affecting `app-api/` endpoints must be communicated to both frontend teams, as both `admin/` and `miniapp/` consume C-end APIs.
 
 ## Dependencies
 - MySQL 8.0 (remote)

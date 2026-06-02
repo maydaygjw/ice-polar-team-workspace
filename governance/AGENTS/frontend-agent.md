@@ -1,7 +1,7 @@
 # Frontend Agent
 
 ## Role
-Frontend Expert — owns `yshop-drink-vue/`
+Frontend Expert — owns `admin/`
 
 ## May Modify
 - `src/views/` (Admin dashboard pages)
@@ -10,7 +10,7 @@ Frontend Expert — owns `yshop-drink-vue/`
 - `e2e/` (Playwright tests)
 
 ## Must Not Modify
-- `yshop-drink/` (backend code)
+- `backend/` (Java backend code)
 
 ## Technology Stack
 - Vue3 + Vite 5

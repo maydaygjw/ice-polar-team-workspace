@@ -3,18 +3,18 @@
 ## Repository Layout
 
 ```
-yshop-team/
+ice-polar-team-workspace/
 ├── governance/          ← AI team knowledge center (this repo)
-├── yshop-drink/         ← Java Spring Boot backend
+├── backend/             ← Java Spring Boot backend (yshop-drink)
 │   ├── yshop-server/    ← Application entrypoint
 │   ├── yshop-module-*/  ← Business modules
 │   └── sql/             ← Database schemas
-├── yshop-drink-vue/     ← Vue3 + Uniapp frontend
+├── admin/               ← Vue3 + Vite admin dashboard (yshop-drink-vue)
 │   ├── src/views/       ← Admin pages
-│   └── src/pages/       ← Uniapp mini-program pages
-├── icepolarminiapp/     ← Native WeChat Mini Program (ice machine)
+│   └── src/api/         ← API client definitions
+├── miniapp/             ← Native WeChat Mini Program (ice machine)
 │   └── pages/           ← Mini-program pages (WXML/WXSS/JS)
-└── icepolar-dms/        ← Device Management System (Go)
+└── icepolar-dms/        ← Device Management System (Python/FastAPI)
     └── (hardware-level device command service)
 ```
 

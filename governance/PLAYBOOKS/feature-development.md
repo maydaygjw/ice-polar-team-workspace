@@ -4,9 +4,9 @@
 
 1. Read `governance/CLAUDE.md` and `governance/ARCHITECTURE.md`
 2. Analyze requirements scope — determine which repos are affected:
-   - `yshop-drink/` (backend)
-   - `yshop-drink-vue/` (admin dashboard)
-   - `icepolarminiapp/` (native mini-program)
+   - `backend/` (yshop-drink backend)
+   - `admin/` (yshop-drink-vue admin dashboard)
+   - `miniapp/` (native WeChat mini-program)
 3. Assemble the team using `governance/PROMPTS/create-team.md`:
    - **requirements-agent** (always)
    - **architecture-agent** (always)
