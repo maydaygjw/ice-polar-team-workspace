@@ -118,5 +118,3 @@ done
 
 - Commit messages: `feat(scope): description`
 - Feature branches: `feat/<feature-name>`
-- **Do not push to `icepolar-dms`** (push permission revoked for this repository)
-- `icepolar-dms` changes: commit locally, user pushes manually
