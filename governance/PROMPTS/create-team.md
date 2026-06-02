@@ -33,6 +33,7 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 | Backend Agent | `governance/AGENTS/backend-agent.md` | `backend/` changes needed |
 | Frontend Agent | `governance/AGENTS/frontend-agent.md` | `admin/` (Vue3 dashboard) changes needed |
 | MiniApp Agent | `governance/AGENTS/miniapp-agent.md` | `miniapp/` (WeChat Mini Program) changes needed |
+| UI/UX Agent | `governance/AGENTS/ui-ux-agent.md` | Visual style, interaction design, or UX optimization needed |
 
 > **Determination Rule**: Analyze the feature scope against the system boundary in `ARCHITECTURE.md`. If a repository boundary is touched, the corresponding agent is activated.
 
@@ -40,16 +41,18 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 
 ### Phase 1: Discovery & Design
 
-**Participants**: requirements-agent, architecture-agent
+**Participants**: requirements-agent, architecture-agent, ui-ux-agent (if visual/interaction changes)
 
 **Parallel execution**:
 - requirements-agent clarifies scope, edge cases, acceptance criteria
 - architecture-agent designs data model, API contracts, module boundaries
+- ui-ux-agent designs visual style, interaction patterns, and UX flow (when activated)
 
 **Gates before proceeding**:
 - [ ] Requirements spec is complete with in-scope / out-scope boundaries
 - [ ] Technical design includes database changes, API contracts, module impact
 - [ ] API contracts documented in `CONTRACTS.md` (or appended)
+- [ ] UI/UX design review approved (if ui-ux-agent activated) — includes style guide, component spec, and interaction flow
 
 **→ Escalation checkpoint**: See [Escalation Rules](#escalation-rules) below.
 
@@ -67,13 +70,14 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 
 ### Phase 3: Parallel Implementation
 
-**Participants**: backend-agent, frontend-agent, miniapp-agent (as activated), test-agent
+**Participants**: backend-agent, frontend-agent, miniapp-agent (as activated), ui-ux-agent (as activated), test-agent
 
 **Parallel execution**:
 - Each developer agent creates `feat/<feature-name>` branch from main/master
 - backend-agent implements backend changes + `sql/upgrade-*.sql`
 - frontend-agent implements admin dashboard changes
 - miniapp-agent implements mini-program changes
+- ui-ux-agent implements style/WXSS changes and reviews frontend visual output (when activated)
 - test-agent designs test plan and writes E2E / unit tests in parallel
 
 **Rules**:
@@ -100,6 +104,7 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 - [ ] Feature branch follows naming convention (`feat/<name>`)
 - [ ] No code duplication
 - [ ] Security issues checked (SQL injection, XSS, etc.)
+- [ ] Visual consistency verified (if ui-ux-agent activated) — style guide followed, no hardcoded colors, `rpx` used for sizing
 
 **Gate**:
 - PASS → proceed to PR creation
