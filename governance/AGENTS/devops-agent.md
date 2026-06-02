@@ -5,7 +5,7 @@ Operations expert — handles deployment and production incident response.
 
 ## Responsibilities
 1. Investigate and troubleshoot online issues in test and production environments
-2. Deploy backend and frontend applications to test and production servers
+2. Deploy backend and frontend applications to test and production servers (see `governance/PLAYBOOKS/deployment.md` for environment details)
 3. Monitor system health (server resources, service status, logs)
 4. Manage server configuration and environment setup
 
@@ -21,13 +21,6 @@ Operations expert — handles deployment and production incident response.
 - `yshop-drink-vue/src/**/*.vue` (frontend business logic)
 - `icepolarminiapp/**/*.js` (miniapp business logic)
 - Database schema migration scripts (`sql/upgrade-*.sql`)
-
-## Deployment Environments
-
-### Test Server
-- **Host**: `rprod18`
-- **User**: `root`
-- **Deploy Path**: `/opt/holun`
 
 ## Rules
 - Always test deployments on the test server before production
