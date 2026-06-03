@@ -77,6 +77,11 @@ Frontend: `commissionRate` input — number, 0-100, precision 2. Optional for ca
 
 ## Device API Contract
 
+> **接口结构以 OpenAPI JSON 快照为准**：
+> - Backend Proxy API: [`CONTRACT/backend-api.json`](CONTRACT/backend-api.json)
+> - DMS 内部 API: [`CONTRACT/icepolar-dms-api.json`](CONTRACT/icepolar-dms-api.json)
+>（由 `extract-openapi` skill 从各子项目自动收集，详见 [`CONTRACT/README.md`](CONTRACT/README.md)）
+
 ### 架构原则
 
 **MiniApp 禁止直接调用 DMS。** 所有设备操作必须通过 backend Proxy API 转发：
@@ -89,74 +94,15 @@ MiniApp ──→ yshop-drink backend ──→ icepolar-dms
 - Backend 通过 `HttpClientUtils` 调用 DMS（`yshop.device.dms.host`）
 - DMS 地址对 MiniApp 不可见
 
-### API 定义
+### API 结构
 
-#### 1. 查询设备状态
+> 路径、参数、响应结构详见 [`CONTRACT/backend-api.json`](CONTRACT/backend-api.json)（由 `extract-openapi` skill 自动生成，与代码同步）。
 
-```
-GET /app-api/device/status/{imei}
-```
+关键端点：
+- `GET /app-api/device/status/{imei}` — 查询设备状态
+- `POST /app-api/device/command/{imei}/{commandType}` — 下发设备指令（commandType 1-11，见下方）
 
-**请求参数**
-
-| 参数 | 位置 | 类型 | 必填 | 说明 |
-|------|------|------|------|------|
-| imei | Path | String | 是 | 设备 IMEI 号 |
-| tenant-id | Header | String | 是 | 租户 ID，固定 `153` |
-| Authorization | Header | String | 是 | Bearer Token |
-
-**响应 DTO：`CommonResult<DeviceStatusRespVO>`**
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `imei` | String | 设备 IMEI 号 |
-| `online` | Boolean | 在线状态（`conn_status = 1` → `true`） |
-| `iceProgress` | Integer | 制冰进度 0-100 |
-| `lastHeartbeat` | String | 最后心跳时间，格式 `YYYY-MM-DD HH:mm:ss` |
-| `states` | Array | 设备状态列表 |
-| `states[].key` | String | 状态键：`making` / `lackIce` / `lackWater` / `meltIce` / `error` |
-| `states[].label` | String | 状态标签：制冰状态 / 缺冰状态 / 缺水状态 / 化冰状态 / 故障状态 |
-| `states[].value` | String | 状态显示值 |
-| `states[].active` | Boolean | 是否激活（`1` → `true`） |
-
-**DMS → Backend 字段映射**
-
-| DMS 字段 | Backend 字段 | 说明 |
-|----------|-------------|------|
-| `conn_status` | `online` | `1` → `true`, `0` → `false` |
-| `make_ice_status` | `states[0].active` | `1` → 制冰中 |
-| `lack_ice_status` | `states[1].active` | `1` → 缺冰 |
-| `lack_water_status` | `states[2].active` | `1` → 缺水 |
-| `melt_ice_status` | `states[3].active` | `1` → 化冰中 |
-| `error_code` | `states[4].value` | `0`→正常, `1`→故障, `2`→杯少 |
-| `ice_progress` | `iceProgress` | 0-100 |
-| `last_heartbeat` | `lastHeartbeat` | 格式化为 `YYYY-MM-DD HH:mm:ss` |
-
-**DMS 内部路径**：`GET /api/v1/devices/{imei}/status`
-
-#### 2. 下发设备指令
-
-```
-POST /app-api/device/command/{imei}/{commandType}
-```
-
-**请求参数**
-
-| 参数 | 位置 | 类型 | 必填 | 说明 |
-|------|------|------|------|------|
-| imei | Path | String | 是 | 设备 IMEI 号 |
-| commandType | Path | Integer | 是 | 指令类型（1-11） |
-| tenant-id | Header | String | 是 | 租户 ID，固定 `153` |
-| Authorization | Header | String | 是 | Bearer Token |
-
-**响应 DTO：`CommonResult<DeviceCommandRespVO>`**
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `success` | Boolean | 指令是否成功下发 |
-| `message` | String | 下发结果描述 |
-
-**指令类型映射表（yinerda DTU 规范）**
+**指令类型映射（yinerda DTU 规范）**
 
 | commandType | 指令名称 | DMS 内部路径 |
 |-------------|---------|-------------|
@@ -198,3 +144,5 @@ Backend 通过 `HttpClientUtils` 将请求转发至 DMS：
 - **指令下发**：`HttpClientUtils.executeHttpRequest("/api/v1/commands/{imei}/{commandType}", emptyMap)`
 - DMS 基础地址配置项：`yshop.device.dms.host`
 - Backend 负责 DMS 响应字段映射、异常包装、操作日志记录
+
+> **接口结构**：详见 [`CONTRACT/backend-api.json`](CONTRACT/backend-api.json)（Backend Proxy API）和 [`CONTRACT/icepolar-dms-api.json`](CONTRACT/icepolar-dms-api.json)（DMS 内部 API），由 `extract-openapi` skill 自动从子项目收集生成。
