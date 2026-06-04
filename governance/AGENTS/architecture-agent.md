@@ -1,4 +1,4 @@
-# Architecture Agent (Team Leader)
+# Architecture Agent
 
 ## Role
 Technical decision maker and interface designer.

@@ -21,6 +21,7 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 
 | Agent | File | When to Invoke |
 |-------|------|----------------|
+| Coordinator Agent | `governance/AGENTS/coordinator-agent.md` | All phases — always |
 | Requirements Agent | `governance/AGENTS/requirements-agent.md` | Phase 1 — always |
 | Architecture Agent | `governance/AGENTS/architecture-agent.md` | Phase 1 — always |
 | Test Agent | `governance/AGENTS/test-agent.md` | Phase 3 — always |
@@ -41,24 +42,25 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 
 ### Phase 1: Discovery & Design
 
-**Participants**: requirements-agent, architecture-agent, ui-ux-agent (if visual/interaction changes)
+**Participants**: coordinator-agent, requirements-agent, architecture-agent, ui-ux-agent (if visual/interaction changes)
 
 **Parallel execution**:
 - requirements-agent clarifies scope, edge cases, acceptance criteria
 - architecture-agent designs data model, API contracts, module boundaries
 - ui-ux-agent designs visual style, interaction patterns, and UX flow (when activated)
+- **coordinator-agent** initializes the status tracker, confirms all required agents are activated, and monitors for early escalation signals (conflicting requirements, scope creep)
 
-**Gates before proceeding**:
+**Gates before proceeding** (verified by coordinator-agent):
 - [ ] Requirements spec is complete with in-scope / out-scope boundaries
 - [ ] Technical design includes database changes, API contracts, module impact
 - [ ] API contracts documented in `CONTRACTS.md` (or appended)
 - [ ] UI/UX design review approved (if ui-ux-agent activated) — includes style guide, component spec, and interaction flow
 
-**→ Escalation checkpoint**: See [Escalation Rules](#escalation-rules) below.
+**→ Escalation checkpoint**: coordinator-agent reviews; if any gate is blocked, produces `REPORT.md` and pauses. See [Escalation Rules](#escalation-rules) below.
 
 ### Phase 2: Contract Freeze
 
-**Participants**: architecture-agent (lead), requirements-agent (review)
+**Participants**: architecture-agent (lead), requirements-agent (review), coordinator-agent (gatekeeper)
 
 **Actions**:
 1. Freeze API contracts in `CONTRACTS.md`
@@ -66,11 +68,15 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 3. Produce implementation-ready technical design doc
 4. Define branch names: `feat/<feature-name>` for each affected repo
 
-**Gate**: No agent proceeds to implementation until contracts are frozen and escalation checkpoint is cleared.
+**Gate** (enforced by coordinator-agent):
+- `CONTRACTS.md` is updated and matches the technical design doc
+- ADR is written if required
+- Branch names are defined for every affected repo
+- No agent proceeds to implementation until coordinator-agent confirms the gate is clear
 
 ### Phase 3: Parallel Implementation
 
-**Participants**: backend-agent, frontend-agent, miniapp-agent (as activated), ui-ux-agent (as activated), test-agent
+**Participants**: backend-agent, frontend-agent, miniapp-agent (as activated), ui-ux-agent (as activated), test-agent, **coordinator-agent (sync lead)**
 
 **Parallel execution**:
 - Each developer agent creates `feat/<feature-name>` branch from main/master
@@ -79,6 +85,7 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 - miniapp-agent implements mini-program changes
 - ui-ux-agent implements style/WXSS changes and reviews frontend visual output (when activated)
 - test-agent designs test plan and writes E2E / unit tests in parallel
+- **coordinator-agent** tracks branch creation, monitors agent progress, and collects blockers
 
 **Rules**:
 - One branch per repository
@@ -87,13 +94,13 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 - Include migration script in the same PR as backend changes
 - Cross-repo API changes must be communicated to all frontend consumers
 
-**→ Escalation checkpoint**: If implementation reveals design flaws, stop and escalate.
+**→ Escalation checkpoint**: If implementation reveals design flaws, any agent reports to coordinator-agent, which assesses against Escalation Rules and produces `REPORT.md` if triggered.
 
 ### Phase 4: Review & Gate
 
-**Participants**: review-agent
+**Participants**: review-agent (technical review), coordinator-agent (process verification)
 
-**Review checklist**:
+**Review checklist** (review-agent):
 - [ ] Implementation matches requirements spec
 - [ ] API contracts match `CONTRACTS.md`
 - [ ] No hardcoded secrets
@@ -106,11 +113,18 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 - [ ] Security issues checked (SQL injection, XSS, etc.)
 - [ ] Visual consistency verified (if ui-ux-agent activated) — style guide followed, no hardcoded colors, `rpx` used for sizing
 
+**Process verification** (coordinator-agent):
+- [ ] All activated agents have reported completion
+- [ ] All required artifacts (tests, migration script, ADR) are present
+- [ ] No unresolved escalation reports exist
+
 **Gate**:
 - PASS → proceed to PR creation
 - FAIL → return to Phase 3 with review feedback
 
 ### Phase 5: Pull Request Creation
+
+**Participants**: each developer agent, coordinator-agent (tracking)
 
 **Actions**:
 1. Push each feature branch to remote
@@ -120,12 +134,13 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
    - Technical design doc
    - `CONTRACTS.md` changes
    - ADR (if any)
+4. **coordinator-agent** updates the status tracker with PR URLs and confirms all repos have a PR open
 
 ### Phase 6: Merge & Return to Main
 
-**Participants**: devops-agent (or user), all developer agents
+**Participants**: devops-agent (or user), all developer agents, coordinator-agent (orchestrator)
 
-**Prerequisite**: All PRs have been reviewed and approved (by review-agent or human reviewers).
+**Prerequisite**: All PRs have been reviewed and approved (by review-agent or human reviewers). Coordinator-agent confirms this before merge begins.
 
 **Actions per affected repository**:
 1. Merge the PR into `main`/`master` (merge strategy: prefer squash merge for clean history)
@@ -134,13 +149,16 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 4. Delete the local `feat/<feature-name>` branch
 5. Delete the remote `feat/<feature-name>` branch (if applicable)
 
-**Verification**:
+**Verification** (coordinator-agent final check):
 - [ ] `git status` shows clean working tree on `main`/`master`
 - [ ] `git log --oneline -5` confirms the merge commit is present
 - [ ] No dangling feature branches remain locally
+- [ ] No unresolved escalation reports exist
+- [ ] `CONTRACTS.md` is updated (if API changes occurred)
+- [ ] ADR is written (if new architectural patterns introduced)
 
 **Cross-repo synchronization**:
-If multiple repositories are affected, ensure all PRs are merged **before** any deployment to avoid cross-repo version skew.
+If multiple repositories are affected, coordinator-agent ensures all PRs are merged **before** any deployment to avoid cross-repo version skew.
 
 ## Escalation Rules
 
@@ -253,10 +271,11 @@ A feature is considered complete when **all** of the following are true:
 
 1. All activated agents have completed their implementation
 2. review-agent has passed all checklist items
-3. PRs are created for all affected repositories
-4. PRs are merged into `main`/`master`
-5. All feature branches are deleted (local and remote)
-6. Workspaces are back on `main`/`master` with clean state
-7. No unresolved escalation reports exist
-8. `CONTRACTS.md` is updated (if API changes occurred)
-9. ADR is written (if new architectural patterns introduced)
+3. coordinator-agent has verified all process gates and cross-repo synchronization
+4. PRs are created for all affected repositories
+5. PRs are merged into `main`/`master`
+6. All feature branches are deleted (local and remote)
+7. Workspaces are back on `main`/`master` with clean state
+8. No unresolved escalation reports exist
+9. `CONTRACTS.md` is updated (if API changes occurred)
+10. ADR is written (if new architectural patterns introduced)
