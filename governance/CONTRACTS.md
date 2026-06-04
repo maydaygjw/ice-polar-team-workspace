@@ -4,6 +4,29 @@ This file defines the contracts between backend (`yshop-drink`) and frontend (`y
 
 > `icepolarminiapp` is a native WeChat Mini Program for the ice-machine business (tenant-id: 153). It shares the same `yshop-drink` backend and reuses the `app-api/` C-end contract.
 
+## Module Dependency Rules
+
+### 跨模块调用必须通过 `-api` 模块
+
+**红线**：任何模块禁止直接依赖其他模块的 `-biz` 包。跨模块调用必须遵循以下规则：
+
+```
+module-a-biz ──→ module-b-api (接口 + DTO)
+                      ↑
+              module-b-biz (实现)
+```
+
+- **`-api` 模块** 定义 Service 接口和 DTO，供外部模块依赖
+- **`-biz` 模块** 提供接口实现，不暴露给外部模块
+- 示例：`yshop-module-device-biz` 依赖 `yshop-module-coupon-api`，通过 `CouponApi` 接口调用优惠券服务，而非直接依赖 `yshop-module-coupon-biz` 或 `AppCouponUserService`
+
+### 违规场景
+
+| 错误做法 | 正确做法 |
+|---------|---------|
+| `device-biz` pom 依赖 `coupon-biz` | `device-biz` pom 依赖 `coupon-api`，注入 `CouponApi` 接口 |
+| `device-biz` 直接 import `CouponUserDO` | `device-biz` 使用 `coupon-api` 提供的 `CouponUserDTO` |
+
 ## Admin API Prefix
 
 - Backend: `/admin-api/...`
@@ -101,6 +124,17 @@ MiniApp ──→ yshop-drink backend ──→ icepolar-dms
 关键端点：
 - `GET /app-api/device/status/{imei}` — 查询设备状态
 - `POST /app-api/device/command/{imei}/{commandType}` — 下发设备指令（commandType 1-11，见下方）
+- `POST /app-api/device/_order` — 创建设备订单（支持优惠券）
+
+**设备订单创建参数**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `imei` | String | 是 | 设备 IMEI |
+| `productId` | Long | 是 | 商品 ID |
+| `shopId` | Long | 否 | 店铺 ID（不传则自动从商品获取） |
+| `boxFeeSelected` | Integer | 否 | 是否选择餐盒费；0=不选 1=选 |
+| `couponId` | Long | 否 | 用户优惠券 ID（`yshop_coupon_user.id`） |
 
 **指令类型映射（yinerda DTU 规范）**
 
