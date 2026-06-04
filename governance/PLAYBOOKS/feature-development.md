@@ -35,9 +35,12 @@
 ## Phase 3: Parallel Development
 
 ### Branch Rules
-- Create feature branch from main/master: `feat/<feature-name>`
-- One branch per repo (backend, frontend, miniapp are separate repos)
-- Never commit directly to main/master
+- Workspace root (`.`): commit directly to `main`, no feature branch
+- Submodules: create `feat/<feature-name>` from base branch
+  - `backend/`: from `master`
+  - `admin/`: from `master`
+  - `miniapp/`: from `main`
+- Never commit directly to submodule base branches
 - Commit messages follow: `feat(scope): description`
 
 ### Development Assignments
@@ -70,13 +73,14 @@
 
 ## Phase 6: Merge & Document
 
-1. **Create Pull Request** for each affected repo:
+1. **Workspace root**: changes are already on `main` — commit and push directly
+2. **Submodules: Create Pull Request** for each affected submodule:
    - Push branch: `git push -u origin feat/<feature-name>`
    - Create PR with description referencing requirements and design docs
    - Link cross-repo PRs in descriptions
-2. Merge after review approval
-3. Update `governance/KNOWLEDGE/` if domain knowledge gained
-4. Archive requirements and design docs to `/team-docs/`
+3. Merge submodule PRs after review approval
+4. Update `governance/KNOWLEDGE/` if domain knowledge gained
+5. Archive requirements and design docs to `/team-docs/`
 
 ## Interrupt & Report Protocol
 

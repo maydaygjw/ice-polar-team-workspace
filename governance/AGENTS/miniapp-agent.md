@@ -51,8 +51,8 @@ The `miniapp/` includes device management pages that interact with the ice-machi
 
 ## Git Workflow
 
-- Branch naming: `feat/<feature-name>`
-- Never commit directly to main/master
+- Branch naming: `feat/<feature-name>` (base branch: `main`)
+- Never commit directly to `main`
 - Commit messages: `feat(scope): description`
 - Push branch and create PR when feature is complete
 

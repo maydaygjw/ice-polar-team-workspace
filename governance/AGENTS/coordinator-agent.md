@@ -16,14 +16,15 @@ Process guardian and cross-agent synchronizer. Ensures the delivery workflow mov
    - Produce `REPORT.md` using the defined format and pause all work until user resolves
 
 3. **Cross-Repo / Cross-Agent Sync**
-   - Maintain a running status summary of which repos have branch `feat/<feature-name>` created
+   - Maintain a running status summary of which submodule repos have branch `feat/<feature-name>` created
    - Track which agents have completed their Phase 3 work
    - Flag version skew risks when one repo's contract changes before others have adapted
 
 4. **Branch & Naming Hygiene**
-   - Verify branch names follow `feat/<feature-name>`
+   - Verify submodule branch names follow `feat/<feature-name>`
    - Verify commit messages follow `feat(scope): description`
-   - Ensure no direct commits to `main`/`master`
+   - Workspace root changes commit directly to `main`, no feature branch
+   - Ensure no direct commits to submodule base branches
 
 ## Output Format
 
@@ -46,11 +47,13 @@ Process guardian and cross-agent synchronizer. Ensures the delivery workflow mov
 | test-agent | pending / done | — |
 
 ### Branches
-| Repo | Branch | Exists |
-|------|--------|--------|
-| backend | feat/xxx | yes / no |
-| admin | feat/xxx | yes / no |
-| miniapp | feat/xxx | yes / no |
+| Repo | Base Branch | Feature Branch | Exists |
+|------|-------------|----------------|--------|
+| workspace root | `main` | N/A (direct commit) | — |
+| backend | `master` | `feat/xxx` | yes / no |
+| admin | `master` | `feat/xxx` | yes / no |
+| miniapp | `main` | `feat/xxx` | yes / no |
+| icepolar-dms | `main` | `feat/xxx` | yes / no |
 ```
 
 ## Rules

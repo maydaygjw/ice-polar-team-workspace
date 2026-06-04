@@ -38,8 +38,8 @@ Backend Expert — owns `backend/`
 - Use `@PreAuthenticated` for C-end login, `@PreAuthorize` for admin permission
 
 ## Git Workflow
-- Branch naming: `feat/<feature-name>`
-- Never commit directly to main/master
+- Branch naming: `feat/<feature-name>` (base branch: `master`)
+- Never commit directly to `master`
 - Commit messages: `feat(scope): description`
 - Push branch and create PR when feature is complete
 - Include `sql/upgrade-*.sql` migration script in the same PR

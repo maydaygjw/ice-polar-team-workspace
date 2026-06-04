@@ -72,7 +72,9 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 1. Freeze API contracts in `CONTRACTS.md`
 2. Write ADR if introducing new patterns or changing existing ones
 3. Produce implementation-ready technical design doc
-4. Define branch names: `feat/<feature-name>` for each affected repo
+4. Define branch names per repo:
+   - Workspace root (`.`): no feature branch — commit directly to `main`
+   - Submodules: `feat/<feature-name>` from their respective base branch
 
 **Gate** (enforced by coordinator-agent):
 - `CONTRACTS.md` is updated and matches the technical design doc
@@ -88,7 +90,12 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 - **frontend-agent / miniapp-agent 依赖 ui-ux-agent**: 前端开发开始前，ui-ux-agent 必须已完成设计交付（包括组件规范、样式指南、交互流程）。若 ui-ux-agent 未激活，前端开发不能开始涉及组件级别改动的工作。
 
 **Parallel execution**:
-- Each developer agent creates `feat/<feature-name>` branch from main/master
+- Workspace root changes: commit directly to `main`, no feature branch
+- Each submodule developer agent creates `feat/<feature-name>` branch from its base branch:
+  - `backend/`: from `master`
+  - `admin/`: from `master`
+  - `miniapp/`: from `main`
+  - `icepolar-dms/`: from `main`
 - backend-agent implements backend changes + `sql/upgrade-*.sql`
 - frontend-agent implements admin dashboard changes（须遵循 ui-ux-agent 输出的设计规范）
 - miniapp-agent implements mini-program changes（须遵循 ui-ux-agent 输出的设计规范）
@@ -108,9 +115,10 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 | ADR | architecture-agent | `adr-{nnn}.md`（如需要） |
 
 **Rules**:
-- One branch per repository
+- Workspace root: commit directly to `main`, no feature branch
+- Submodules: one `feat/` branch per submodule
 - Commit messages: `feat(scope): description`
-- Never commit directly to main/master
+- Never commit directly to submodule base branches
 - Include migration script in the same PR as backend changes
 - Cross-repo API changes must be communicated to all frontend consumers
 - 前端 Agent 在实现组件级别改动前，必须确认 ui-ux-agent 的设计交付物已就位；若 ui-ux-agent 未激活，前端 Agent 须自行产出简化的组件规范并存入 `governance/team-docs/{feature-name}/ui-ux-design.md`
@@ -129,7 +137,7 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 - [ ] Database migration script present and correct
 - [ ] Tests cover the change
 - [ ] ADR updated if needed
-- [ ] Feature branch follows naming convention (`feat/<name>`)
+- [ ] Submodule feature branches follow naming convention (`feat/<name>`)
 - [ ] No code duplication
 - [ ] Security issues checked (SQL injection, XSS, etc.)
 - [ ] Visual consistency verified (if ui-ux-agent activated) — style guide followed, no hardcoded colors, `rpx` used for sizing
@@ -170,51 +178,63 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 
 ### Phase 5: Pull Request Creation
 
-**Participants**: each developer agent, coordinator-agent (tracking)
+**Participants**: each submodule developer agent, coordinator-agent (tracking)
 
 **Prerequisite**: Phase 4.5 已获得用户确认。
 
 **Actions**:
-1. **Push feature branches to remote**（仅在 Phase 4.5 用户确认后执行）
-2. **尝试通过 CLI 自动创建 PR**:
+1. **Workspace root**: changes are already on `main`, no PR needed — proceed directly to commit/push
+2. **Push submodule feature branches to remote**（仅在 Phase 4.5 用户确认后执行）
+3. **尝试通过 CLI 自动创建 PR**:
    - 使用 `gh pr create`（GitHub）或对应的 CLI 工具
-   - 每个仓库创建一个 PR
-3. **PR 自动创建失败时的降级策略**:
+   - 为每个改动的 submodule 创建一个 PR
+4. **PR 自动创建失败时的降级策略**:
    - coordinator-agent 输出提示信息："PR 无法通过 CLI 自动创建，请手动在以下仓库创建 PR："
-   - 列出每个仓库的分支名和远程地址
+   - 列出每个 submodule 的分支名和远程地址
    - 等待用户手动创建 PR 并提供 PR URL
    - 用户确认后，coordinator-agent 继续后续流程
-4. PR description must reference:
+5. PR description must reference:
    - Requirements spec (`governance/team-docs/{feature-name}/requirements-spec.md`)
    - Technical design doc (`governance/team-docs/{feature-name}/technical-design.md`)
    - `CONTRACTS.md` changes
    - ADR (if any)
    - CHANGE-REPORT.md
-5. **coordinator-agent** updates the status tracker with PR URLs and confirms all repos have a PR open
+6. **coordinator-agent** updates the status tracker with PR URLs and confirms all submodule repos have a PR open
 
 ### Phase 6: Merge & Return to Main
 
 **Participants**: devops-agent (or user), all developer agents, coordinator-agent (orchestrator)
 
-**Prerequisite**: All PRs have been reviewed and approved (by review-agent or human reviewers). Coordinator-agent confirms this before merge begins.
+**Prerequisite**: All submodule PRs have been reviewed and approved (by review-agent or human reviewers). Workspace root changes are already on `main`. Coordinator-agent confirms this before merge begins.
 
 **Actions per affected repository**:
-1. Merge the PR into `main`/`master` (merge strategy: prefer squash merge for clean history)
-2. Switch local workspace back to `main`/`master`
+
+**Workspace root (`.`)**:
+1. Changes already committed to `main` — pull to synchronize: `git pull origin main`
+2. `git status` should show clean working tree on `main`
+
+**Submodules**:
+1. Merge the PR into the base branch (merge strategy: prefer squash merge for clean history)
+   - `backend/` → `master`
+   - `admin/` → `master`
+   - `miniapp/` → `main`
+   - `icepolar-dms/` → `main`
+2. Switch local submodule back to its base branch
 3. Pull the latest changes to synchronize local state
 4. Delete the local `feat/<feature-name>` branch
 5. Delete the remote `feat/<feature-name>` branch (if applicable)
 
 **Verification** (coordinator-agent final check):
-- [ ] `git status` shows clean working tree on `main`/`master`
-- [ ] `git log --oneline -5` confirms the merge commit is present
-- [ ] No dangling feature branches remain locally
+- [ ] Workspace root `git status` shows clean working tree on `main`
+- [ ] Each submodule `git status` shows clean working tree on its base branch
+- [ ] `git log --oneline -5` confirms the merge commit is present (submodules)
+- [ ] No dangling feature branches remain locally (submodules)
 - [ ] No unresolved escalation reports exist
 - [ ] `CONTRACTS.md` is updated (if API changes occurred)
 - [ ] ADR is written (if new architectural patterns introduced)
 
 **Cross-repo synchronization**:
-If multiple repositories are affected, coordinator-agent ensures all PRs are merged **before** any deployment to avoid cross-repo version skew.
+If multiple submodules are affected, coordinator-agent ensures all PRs are merged **before** any deployment to avoid cross-repo version skew.
 
 ## Escalation Rules
 
@@ -267,10 +287,11 @@ If multiple repositories are affected, coordinator-agent ensures all PRs are mer
 
 | Rule | Value |
 |------|-------|
-| Branch naming | `feat/<feature-name>` |
-| Base branch | `main` or `master` per repo |
+| Workspace root branch | `main` (direct commits, no feat branch) |
+| Submodule branch naming | `feat/<feature-name>` |
+| Submodule base branches | `backend/` → `master`, `admin/` → `master`, `miniapp/` → `main`, `icepolar-dms/` → `main` |
 | Commit format | `feat(scope): description` |
-| Direct commit to main/master | Forbidden |
+| Direct commit to submodule base branches | Forbidden |
 | One branch per repository | Yes |
 | Migration script inclusion | Same PR as backend changes |
 
@@ -282,10 +303,10 @@ A feature is considered complete when **all** of the following are true:
 2. review-agent has passed all checklist items
 3. coordinator-agent has verified all process gates and cross-repo synchronization
 4. **Phase 4.5 CHANGE-REPORT.md 已获得用户确认**
-5. PRs are created for all affected repositories
-6. PRs are merged into `main`/`master`
-7. All feature branches are deleted (local and remote)
-8. Workspaces are back on `main`/`master` with clean state
+5. Submodule PRs are created for all affected submodules
+6. Submodule PRs are merged into their respective base branches
+7. All submodule feature branches are deleted (local and remote)
+8. Workspace root is on `main` with clean state; submodules are on their base branches with clean state
 9. No unresolved escalation reports exist
 10. `CONTRACTS.md` is updated (if API changes occurred)
 11. ADR is written (if new architectural patterns introduced)

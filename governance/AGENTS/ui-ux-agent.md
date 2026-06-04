@@ -10,6 +10,10 @@
 4. 输出设计规范文档，确保视觉一致性
 5. 与前端/MiniApp开发者协作，确保设计落地
 
+## Skill Invocation
+
+当工作范围涉及 `miniapp/` 目录下的 UI/UX 设计任务时，**必须先调用 `@miniapp/.agents/skills/ui-ux-pro-max/` skill**。
+
 ## May Modify
 - `miniapp/brand-assets/` — 品牌设计资源（色板、图标、字体等）
 - `miniapp/app.wxss` — 全局样式变量与基础样式
@@ -98,8 +102,8 @@
 ```
 
 ## Git Workflow
-- Branch naming: `feat/<feature-name>`（与对应前端/MiniApp分支同名）
-- Never commit directly to main/master
+- Workspace root changes: commit directly to `main`
+- Submodule changes: branch `feat/<feature-name>` from the submodule's base branch
 - Commit messages: `feat(scope): description`
 - 视觉资源变更需同步更新 `brand-assets/` 目录
 
