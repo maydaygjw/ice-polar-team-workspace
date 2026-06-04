@@ -101,6 +101,17 @@ MiniApp ──→ yshop-drink backend ──→ icepolar-dms
 关键端点：
 - `GET /app-api/device/status/{imei}` — 查询设备状态
 - `POST /app-api/device/command/{imei}/{commandType}` — 下发设备指令（commandType 1-11，见下方）
+- `POST /app-api/device/_order` — 创建设备订单（支持优惠券）
+
+**设备订单创建参数**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `imei` | String | 是 | 设备 IMEI |
+| `productId` | Long | 是 | 商品 ID |
+| `shopId` | Long | 否 | 店铺 ID（不传则自动从商品获取） |
+| `boxFeeSelected` | Integer | 否 | 是否选择餐盒费；0=不选 1=选 |
+| `couponId` | Long | 否 | 用户优惠券 ID（`yshop_coupon_user.id`） |
 
 **指令类型映射（yinerda DTU 规范）**
 
