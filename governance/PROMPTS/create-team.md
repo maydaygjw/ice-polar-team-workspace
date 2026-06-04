@@ -34,15 +34,21 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 | Backend Agent | `governance/AGENTS/backend-agent.md` | `backend/` changes needed |
 | Frontend Agent | `governance/AGENTS/frontend-agent.md` | `admin/` (Vue3 dashboard) changes needed |
 | MiniApp Agent | `governance/AGENTS/miniapp-agent.md` | `miniapp/` (WeChat Mini Program) changes needed |
-| UI/UX Agent | `governance/AGENTS/ui-ux-agent.md` | Visual style, interaction design, or UX optimization needed |
+| UI/UX Agent | `governance/AGENTS/ui-ux-agent.md` | Visual style, interaction design, UX optimization, or **component-level UI changes** (新增/修改界面组件) needed |
 
 > **Determination Rule**: Analyze the feature scope against the system boundary in `ARCHITECTURE.md`. If a repository boundary is touched, the corresponding agent is activated.
+>
+> **UI/UX Agent Activation Rule (Phase 1)**: UI/UX Agent 必须在以下任何条件满足时激活：
+> - 新增界面页面或组件
+> - 修改现有界面组件的样式、布局或交互
+> - 涉及设计稿、视觉规范、交互流程的变更
+> - 前端 Agent 被激活且工作范围涉及组件级别改动
 
 ## Phase Workflow
 
 ### Phase 1: Discovery & Design
 
-**Participants**: coordinator-agent, requirements-agent, architecture-agent, ui-ux-agent (if visual/interaction changes)
+**Participants**: coordinator-agent, requirements-agent, architecture-agent, ui-ux-agent (if component-level UI changes)
 
 **Parallel execution**:
 - requirements-agent clarifies scope, edge cases, acceptance criteria
@@ -76,16 +82,30 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 
 ### Phase 3: Parallel Implementation
 
-**Participants**: backend-agent, frontend-agent, miniapp-agent (as activated), ui-ux-agent (as activated), test-agent, **coordinator-agent (sync lead)**
+**Participants**: backend-agent, frontend-agent, miniapp-agent (as activated), ui-ux-agent (as activated, required if frontend-agent or miniapp-agent activated), test-agent, **coordinator-agent (sync lead)**
+
+**依赖关系**:
+- **frontend-agent / miniapp-agent 依赖 ui-ux-agent**: 前端开发开始前，ui-ux-agent 必须已完成设计交付（包括组件规范、样式指南、交互流程）。若 ui-ux-agent 未激活，前端开发不能开始涉及组件级别改动的工作。
 
 **Parallel execution**:
 - Each developer agent creates `feat/<feature-name>` branch from main/master
 - backend-agent implements backend changes + `sql/upgrade-*.sql`
-- frontend-agent implements admin dashboard changes
-- miniapp-agent implements mini-program changes
-- ui-ux-agent implements style/WXSS changes and reviews frontend visual output (when activated)
+- frontend-agent implements admin dashboard changes（须遵循 ui-ux-agent 输出的设计规范）
+- miniapp-agent implements mini-program changes（须遵循 ui-ux-agent 输出的设计规范）
+- ui-ux-agent implements style/WXSS changes and reviews frontend visual output (when activated)；未激活时，前端 Agent 自行保证视觉一致性
 - test-agent designs test plan and writes E2E / unit tests in parallel
-- **coordinator-agent** tracks branch creation, monitors agent progress, and collects blockers
+- **coordinator-agent** tracks branch creation, monitors agent progress, collects blockers, and **consolidates all artifacts into `governance/team-docs/{feature-name}/`**
+
+**文档收集（coordinator-agent 职责）**:
+在 Phase 3 进行中，coordinator-agent 负责收集并归档以下文档到 `governance/team-docs/{feature-name}/`：
+| 文档 | 来源 | 文件名 |
+|------|------|--------|
+| 需求规格说明书 | requirements-agent | `requirements-spec.md` |
+| 技术设计文档 | architecture-agent | `technical-design.md` |
+| API 合同变更 | architecture-agent | `contract-changes.md` |
+| UI/UX 设计稿 | ui-ux-agent | `ui-ux-design.md`（如激活） |
+| 测试计划 | test-agent | `test-plan.md` |
+| ADR | architecture-agent | `adr-{nnn}.md`（如需要） |
 
 **Rules**:
 - One branch per repository
@@ -93,6 +113,7 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 - Never commit directly to main/master
 - Include migration script in the same PR as backend changes
 - Cross-repo API changes must be communicated to all frontend consumers
+- 前端 Agent 在实现组件级别改动前，必须确认 ui-ux-agent 的设计交付物已就位；若 ui-ux-agent 未激活，前端 Agent 须自行产出简化的组件规范并存入 `governance/team-docs/{feature-name}/ui-ux-design.md`
 
 **→ Escalation checkpoint**: If implementation reveals design flaws, any agent reports to coordinator-agent, which assesses against Escalation Rules and produces `REPORT.md` if triggered.
 
@@ -122,19 +143,54 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 - PASS → proceed to PR creation
 - FAIL → return to Phase 3 with review feedback
 
+### Phase 4.5: Change Report & User Confirmation
+
+**Participants**: coordinator-agent (lead), review-agent (review), all developer agents (提供变更摘要)
+
+**目的**: 在代码推送到远程、正式创建 PR **之前**，向用户输出一份完整的改动报告，由用户确认后再继续。此时 feature branch 上的代码仍在本地，尚未 `git push`。
+
+**Actions**:
+1. coordinator-agent 收集所有激活 agent 的变更摘要
+2. review-agent 基于 Phase 4 的检查清单输出审查结论
+3. coordinator-agent 汇总生成 `governance/team-docs/{feature-name}/CHANGE-REPORT.md`，内容包含：
+   - 变更概述（一句话总结）
+   - 受影响仓库及文件清单
+   - API 变更摘要（含 `CONTRACTS.md` 变更点）
+   - 数据库变更（含 migration 脚本概述）
+   - UI/UX 变更（含新增/修改的组件列表）
+   - 测试覆盖情况
+   - 审查结论（PASS / FAIL with 遗留问题）
+   - 风险评估（可选）
+4. coordinator-agent **将 CHANGE-REPORT.md 内容呈现给用户，等待用户明确确认**
+
+**Gate**:
+- 用户确认 ✅ → 进入 Phase 5
+- 用户提出修改/补充 → 返回 Phase 3 或 Phase 4，修改后重新生成 CHANGE-REPORT.md
+- 用户拒绝 → 流程终止，coordinator-agent 产出终止报告
+
 ### Phase 5: Pull Request Creation
 
 **Participants**: each developer agent, coordinator-agent (tracking)
 
+**Prerequisite**: Phase 4.5 已获得用户确认。
+
 **Actions**:
-1. Push each feature branch to remote
-2. Create one PR per affected repository
-3. PR description must reference:
-   - Requirements spec
-   - Technical design doc
+1. **Push feature branches to remote**（仅在 Phase 4.5 用户确认后执行）
+2. **尝试通过 CLI 自动创建 PR**:
+   - 使用 `gh pr create`（GitHub）或对应的 CLI 工具
+   - 每个仓库创建一个 PR
+3. **PR 自动创建失败时的降级策略**:
+   - coordinator-agent 输出提示信息："PR 无法通过 CLI 自动创建，请手动在以下仓库创建 PR："
+   - 列出每个仓库的分支名和远程地址
+   - 等待用户手动创建 PR 并提供 PR URL
+   - 用户确认后，coordinator-agent 继续后续流程
+4. PR description must reference:
+   - Requirements spec (`governance/team-docs/{feature-name}/requirements-spec.md`)
+   - Technical design doc (`governance/team-docs/{feature-name}/technical-design.md`)
    - `CONTRACTS.md` changes
    - ADR (if any)
-4. **coordinator-agent** updates the status tracker with PR URLs and confirms all repos have a PR open
+   - CHANGE-REPORT.md
+5. **coordinator-agent** updates the status tracker with PR URLs and confirms all repos have a PR open
 
 ### Phase 6: Merge & Return to Main
 
@@ -162,96 +218,49 @@ If multiple repositories are affected, coordinator-agent ensures all PRs are mer
 
 ## Escalation Rules
 
-The following conditions **require producing a `REPORT.md` and pausing all work** until the user confirms or resolves:
+### 阶段性汇报机制
 
-### 1. Requirements Ambiguity
+每当一个 Phase 持续执行超过 **10 分钟**，coordinator-agent 必须暂停当前工作，向用户输出一份简要的**阶段进展报告**，并等待用户确认后再继续。
 
-| Trigger | Examples |
-|---------|----------|
-| Conflicting stakeholder requirements | Two different commission rules for the same scenario |
-| Missing acceptance criteria | "Support balance payment" without defining fallback behavior |
-| Undefined edge cases | What happens when inventory goes negative during payment? |
-| Scope creep risk | Feature touches modules not originally identified |
+**报告输出路径**: `governance/team-docs/{feature-name}/progress-report-{phase}-{timestamp}.md`
 
-**Action**: Produce `REPORT.md` documenting the ambiguity, list options with trade-offs, and pause.
+**报告内容**：
+- 当前 Phase 名称及已执行时长
+- 各 agent 进展状态（已完成 / 进行中 / 阻塞）
+- 当前遇到的主要问题或风险（如有）
+- 预计剩余时间
 
-### 2. Architecture Conflict
+**用户确认选项**：
+- **继续** → 恢复当前 Phase 的执行
+- **查看详情** → coordinator-agent 输出更详细的进展信息
+- **暂停** → 流程挂起，等待用户后续指令
+- **终止** → 流程终止，coordinator-agent 产出终止报告并存入 `governance/team-docs/{feature-name}/termination-report-{timestamp}.md`
 
-| Trigger | Examples |
-|---------|----------|
-| Contradicts past ADR | New design violates an existing ADR in `governance/ADR/` |
-| Introduces circular dependency | Module A depends on B, B now needs to depend on A |
-| Breaks existing contract | Changes DTO fields that `CONTRACTS.md` has frozen |
-| Bypasses tenant isolation | Design requires cross-tenant query without `@TenantIgnore` justification |
-
-**Action**: Produce `REPORT.md` with the conflict, reference the ADR/contract in question, propose resolution options, and pause.
-
-### 3. Security Concerns
-
-| Trigger | Examples |
-|---------|----------|
-| Secret exposure risk | New feature requires API key in code or config |
-| Authentication bypass | Endpoint lacks proper `@PreAuthenticated` or `@PreAuthorize` |
-| Injection vulnerability | Dynamic SQL without parameterization |
-| Privilege escalation | New endpoint accessible to lower-privilege roles |
-
-**Action**: Produce `REPORT.md` with security analysis, severity assessment, and remediation options, and pause.
-
-### 4. Effort Underestimation
-
-| Trigger | Action |
-|---------|--------|
-| Actual effort exceeds 2x initial assessment | Produce `REPORT.md` with revised estimate, risk analysis, and scope-trim options. Pause for re-prioritization. |
-
-### 5. Cross-Repo Contract Breakage
-
-| Trigger | Examples |
-|---------|----------|
-| Backend API change breaks frontend contract | DTO field removed or type changed without versioning |
-| DMS interface change | `icepolar-dms` API contract changes affect backend proxy |
-| Order status semantic change | Enum value meaning changed without updating all consumers |
-
-**Action**: Produce `REPORT.md` listing all affected repos and the breakage, propose migration plan, and pause.
-
-### 6. External Dependency Blocker
-
-| Trigger | Examples |
-|---------|----------|
-| Third-party API unavailable | WeChat Pay sandbox down, blocking payment flow testing |
-| DMS service unreachable | `icepolar-dms` environment down, blocking device feature dev |
-| Database migration conflict | Existing migration script conflicts with new schema change |
-
-**Action**: Produce `REPORT.md` with blocker details, estimated resolution time, and workaround options, and pause.
-
-## REPORT.md Format
-
-When escalation is triggered, produce a report with this structure:
+## 报告模板
 
 ```markdown
-# Escalation Report: [Feature Name]
+# Progress Report: [Feature Name]
 
-## Trigger
-[Which escalation rule was hit and why]
+## Phase
+[当前 Phase 名称]
 
-## Impact
-- Affected repos: [list]
-- Affected agents: [list]
-- Blocked phase: [which phase cannot proceed]
+## Elapsed Time
+[已执行时长]
 
-## Context
-[Relevant excerpts from requirements, design, code, or ADR]
+## Agent Status
+| Agent | Status | Note |
+|-------|--------|------|
+| backend-agent | completed / in-progress / blocked | ... |
+| ... | ... | ... |
 
-## Options
-| Option | Description | Pros | Cons |
-|--------|-------------|------|------|
-| A | ... | ... | ... |
-| B | ... | ... | ... |
+## Issues & Risks
+- [ ] ...
 
-## Recommendation
-[Agent's recommended option with rationale]
+## ETA
+[预计剩余时间]
 
-## Next Step
-Awaiting user decision on [specific question].
+## Awaiting
+用户确认以继续。
 ```
 
 ## Branch & Commit Rules
@@ -272,10 +281,12 @@ A feature is considered complete when **all** of the following are true:
 1. All activated agents have completed their implementation
 2. review-agent has passed all checklist items
 3. coordinator-agent has verified all process gates and cross-repo synchronization
-4. PRs are created for all affected repositories
-5. PRs are merged into `main`/`master`
-6. All feature branches are deleted (local and remote)
-7. Workspaces are back on `main`/`master` with clean state
-8. No unresolved escalation reports exist
-9. `CONTRACTS.md` is updated (if API changes occurred)
-10. ADR is written (if new architectural patterns introduced)
+4. **Phase 4.5 CHANGE-REPORT.md 已获得用户确认**
+5. PRs are created for all affected repositories
+6. PRs are merged into `main`/`master`
+7. All feature branches are deleted (local and remote)
+8. Workspaces are back on `main`/`master` with clean state
+9. No unresolved escalation reports exist
+10. `CONTRACTS.md` is updated (if API changes occurred)
+11. ADR is written (if new architectural patterns introduced)
+12. **所有交付文档已归档至 `governance/team-docs/{feature-name}/`**（包括 requirements-spec.md, technical-design.md, contract-changes.md, test-plan.md, CHANGE-REPORT.md，以及 ui-ux-design.md / adr 如适用）
