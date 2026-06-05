@@ -62,7 +62,42 @@ ssh root@139.196.173.216 "ss -tlnp | grep 8080"
 
 ## yshop-drink-vue（管理后台）
 
-> TODO: 待补充
+**基本信息**
+
+| 属性 | 值 |
+|------|------|
+| 应用名称 | yshop-drink-vue |
+| 技术栈 | Vue3 + Vite + pnpm |
+| 关联服务器 | rprod18 (139.196.173.216) |
+| 部署用户 | root |
+| 代码路径 | /opt/holun/yshop-drink-vue |
+| 构建输出目录 | `dist/` |
+| Nginx 静态资源目录 | `/opt/holun/yshop-drink-vue/dist` |
+
+**部署步骤**
+
+```bash
+# 1. 本地构建（在 admin/ 目录下执行）
+cd admin && pnpm build:dev
+
+# 2. 上传构建产物到服务器
+scp -r admin/dist/* root@139.196.173.216:/opt/holun/yshop-drink-vue/dist/
+
+# 3. 验证文件已上传
+ssh root@139.196.173.216 "ls -la /opt/holun/yshop-drink-vue/dist/"
+```
+
+> **说明**：`pnpm build:dev` 构建开发环境版本。如需构建生产环境版本，使用 `pnpm build:prod`。
+
+**健康检查**
+
+```bash
+# 检查静态资源目录
+ssh root@139.196.173.216 "ls -la /opt/holun/yshop-drink-vue/dist/ | head -20"
+
+# 检查 Nginx 服务状态（如已配置）
+ssh root@139.196.173.216 "systemctl status nginx"
+```
 
 ---
 
