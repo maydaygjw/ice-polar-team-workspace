@@ -194,7 +194,10 @@ Team members are defined in `governance/AGENTS/`. Read each active agent's defin
 1. **Workspace root**: changes are already on `main`, no PR needed — proceed directly to commit/push
 2. **Push submodule feature branches to remote**（仅在 Phase 4.5 用户确认后执行）
 3. **尝试通过 CLI 自动创建 PR**:
-   - 使用 `gh pr create`（GitHub）或对应的 CLI 工具
+   - **GitHub 仓库**: 使用 `gh pr create`
+   - **Gitee 仓库**: 调用 `@gitee-pr-submit` skill（运行 `.agents/skills/gitee-pr-submit/scripts/create_pr.py`）
+     - 该 skill 会自动解析仓库 owner/repo、当前分支和目标分支，并基于 commit 历史生成 PR 标题和描述
+     - 确保 `GITEE_ACCESS_TOKEN` 环境变量已设置，或通过 `--token` 传入
    - 为每个改动的 submodule 创建一个 PR
 4. **PR 自动创建失败时的降级策略**:
    - coordinator-agent 输出提示信息："PR 无法通过 CLI 自动创建，请手动在以下仓库创建 PR："
