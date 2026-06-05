@@ -1,0 +1,23 @@
+{
+  "skill_name": "gitee-pr-submit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "在当前目录（一个 git 仓库）中，使用 gitee-pr-submit skill 的 create_pr.py 脚本以 --dry-run 模式运行，验证它能否正确推断 owner、repo、当前分支、base 分支、PR 标题和内容。将测试仓库设置为 remote origin = https://gitee.com/testuser/testrepo.git，当前分支为 feat/login，创建几条 commit，然后运行脚本并验证输出中包含正确的 owner=testuser, repo=testrepo, head=feat/login, base=master/main 以及合理的 title 和 body。",
+      "expected_output": "脚本成功运行，输出中包含 owner=testuser, repo=testrepo, head=feat/login, base=master 或 main，title 取自最近 commit，body 包含 commit 列表。无错误退出。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "在测试 git 仓库中运行 create_pr.py，传入自定义参数 --title 'feat: 新增订单模块' --labels 'feat,backend' --draft --dry-run。验证输出中的标题、标签和草稿标志与传入参数一致。",
+      "expected_output": "脚本输出中包含 title='feat: 新增订单模块'，labels='feat,backend'，draft=是。自定义参数覆盖了自动生成的值。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "在一个非 git 目录中运行 create_pr.py（设置一个假的 GITEE_ACCESS_TOKEN 环境变量）。验证脚本是否能给出清晰的错误提示，指出当前目录不是 git 仓库。",
+      "expected_output": "脚本以非零状态码退出，错误输出中包含'当前目录不是 git 仓库'或类似提示。",
+      "files": []
+    }
+  ]
+}
