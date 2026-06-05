@@ -6,14 +6,18 @@
 
 ## 1. Environment Information
 
-### 1.1 Servers
+> 服务器连接、部署路径、进程/端口健康检查等运维信息见 `deployment.md`。
+> 本节只保留问题排查所需的线索信息。
 
-| Service | Host | IP | Deploy User | Code Path | Log Path |
-|---------|------|-----|-------------|-----------|----------|
-| yshop-drink (backend) | rprod18 | 139.196.173.216 | root | /opt/holun/yshop-drink | /opt/holun/yshop-drink/yshop-server/app.log |
-| icepolar-dms | — | — | — | — | — |
-| yshop-drink-vue (admin) | — | — | — | — | — |
-| icepolarminiapp | — | — | — | — | — |
+### 1.1 Log Locations
+
+| Service | Log File |
+|---------|----------|
+| yshop-drink | `/opt/holun/yshop-drink/yshop-server/app.log` |
+| icepolar-dms | `/opt/holun/icepolar/icepolar-dms/scripts/main.log` |
+| icepolar-dms simulator | `/opt/holun/icepolar/icepolar-dms/scripts/simulator.log` |
+
+> 无自动轮转，使用 `tail -n` 按需读取。
 
 ### 1.2 Database
 
@@ -22,12 +26,6 @@
 | Engine | MySQL 8.0 |
 | Connection info | Read from server config: `cat /opt/holun/yshop-drink/yshop-server/src/main/resources/application-local.yaml` (or active profile) |
 | Key tables | `yshop_store_order`, `yshop_coupon_user`, `yshop_coupon`, `yshop_user`, `yshop_store_product` |
-
-### 1.3 Log Locations
-
-| Service | Log File | Rotation |
-|---------|----------|----------|
-| yshop-drink | `/opt/holun/yshop-drink/yshop-server/app.log` | No auto-rotation configured; use `tail -n` |
 
 ---
 
@@ -79,6 +77,31 @@ ssh root@139.196.173.216 "grep -n '2025-06-04 14:3' /opt/holun/yshop-drink/yshop
 ssh root@139.196.173.216 "tail -f /opt/holun/yshop-drink/yshop-server/app.log"
 ```
 
+### 3.2.1 Query DMS logs
+
+```bash
+# Last N lines of DMS main service log
+ssh root@139.196.173.216 "tail -n 200 /opt/holun/icepolar/icepolar-dms/scripts/main.log"
+
+# Last N lines of DMS simulator log
+ssh root@139.196.173.216 "tail -n 200 /opt/holun/icepolar/icepolar-dms/scripts/simulator.log"
+
+# Grep by IMEI
+ssh root@139.196.173.216 "grep -n 'IMEI' /opt/holun/icepolar/icepolar-dms/scripts/main.log | tail -n 50"
+
+# Grep by order ID
+ssh root@139.196.173.216 "grep -n 'ORDER_ID' /opt/holun/icepolar/icepolar-dms/scripts/main.log | tail -n 50"
+
+# Check DMS port (production uses 8001)
+ssh root@139.196.173.216 "ss -tlnp | grep 8001"
+
+# Check DMS process
+ssh root@139.196.173.216 "ps -ef | grep 'start_main.sh' | grep -v grep"
+
+# Check simulator process
+ssh root@139.196.173.216 "ps -ef | grep 'start_simulator.sh' | grep -v grep"
+```
+
 ### 3.3 Query database
 
 ```bash
@@ -87,76 +110,6 @@ ssh root@139.196.173.216 "grep -A5 'datasource' /opt/holun/yshop-drink/yshop-ser
 
 # Connect to MySQL (example — use actual credentials from config)
 ssh root@139.196.173.216 "mysql -h HOST -P PORT -u USER -p'PASSWORD' -e 'USE DB; SELECT ...'"
-```
-
----
-
-## 4. Scenario Checklists
-
-### 4.1 Order/Payment Issue
-
-Given: order ID + symptom (e.g. "unpaid after coupon applied")
-
-```
-□ Check order record:
-  SELECT order_id, uid, paid, status, pay_price, coupon_id, coupon_price, total_price,
-         create_time, pay_time, pay_type
-  FROM yshop_store_order
-  WHERE order_id = 'ORDER_ID';
-
-□ Check coupon record (if coupon was used):
-  SELECT id, user_id, status, title, value, least, start_time, end_time
-  FROM yshop_coupon_user
-  WHERE id = COUPON_ID_FROM_ORDER;
-
-□ Check user record:
-  SELECT id, now_money, openid, routine_openid
-  FROM yshop_user
-  WHERE id = UID_FROM_ORDER;
-
-□ Check application logs for exceptions around order creation / payment time
-```
-
-**Expected coupon lifecycle:**
-1. User receives coupon → `yshop_coupon_user.status = 0` (unused)
-2. Order created with coupon → `yshop_coupon_user.status = 1` (used) — done in `AppStoreOrderServiceImpl.createOrder`
-3. Order paid → `yshop_store_order.paid = 1`
-4. Order cancelled (if unpaid timeout) → `regressionCoupon()` restores `status = 0`
-
-**Common failure modes:**
-- `coupon_id` set on order but `coupon_user.status` still 0 → `getById()` returned null in `createOrder`
-- `pay_price` on order ≠ frontend `finalAmount` → coupon not applied on backend
-- `paid = 0` after user claims "payment success" → frontend skipped payment when `finalAmount = 0` but backend `payPrice > 0`
-
-### 4.2 Device / Ice-Making Issue
-
-Given: IMEI + order ID + symptom (e.g. "device not dispensing ice")
-
-```
-□ Check device order mapping:
-  SELECT * FROM yshop_device_order WHERE order_no = 'ORDER_ID' AND imei = 'IMEI';
-
-□ Check DMS order status via backend API or DMS logs
-
-□ Check application logs for DMS command execution errors
-```
-
-### 4.3 Coupon Issue
-
-Given: coupon ID or user ID + symptom (e.g. "coupon not shown" / "cannot claim")
-
-```
-□ Check coupon definition:
-  SELECT id, title, is_switch, receive, distribute, start_time, end_time
-  FROM yshop_coupon
-  WHERE id = COUPON_ID;
-
-□ Check user's coupon list:
-  SELECT id, coupon_id, status, start_time, end_time
-  FROM yshop_coupon_user
-  WHERE user_id = UID AND coupon_id = COUPON_ID;
-
-□ Verify tenant_id consistency across coupon_user and order tables
 ```
 
 ---
