@@ -2,7 +2,7 @@
 
 ## Objective
 
-Analyze a feature request, assemble the right engineering team from `governance/AGENTS/`, and execute the full delivery workflow through to merge and branch cleanup.
+Analyze a feature request, start collaboration using Agent Team, assemble the right engineering team from `governance/AGENTS/`, and execute the full delivery workflow through to merge and branch cleanup.
 
 ## Pre-flight
 
