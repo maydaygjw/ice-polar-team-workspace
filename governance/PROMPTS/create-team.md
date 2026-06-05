@@ -50,8 +50,13 @@ Agents are defined in `governance/AGENTS/`. Read each active agent before assign
 - [ ] Technical design with DB changes, API contracts, module impact
 - [ ] API contracts documented: platform-level → `CONTRACTS.md`; feature-level → `governance/feature-docs/{feature}/contract-changes.md`
 - [ ] UI/UX design review approved (if activated) — style guide, component spec, interaction flow
+- [ ] **Coordinator-agent has explicitly confirmed all above gates are green, or produced `REPORT.md` and paused for user input**
 
-**→ Escalation**: If any gate blocked, produce `REPORT.md` and pause.
+**→ Escalation**: If any gate is blocked, coordinator-agent **must**:
+1. Immediately stop all active agent work.
+2. Produce `REPORT.md` in `governance/feature-docs/{feature}/` listing: which gate failed, why, what is missing, and what the user must provide or decide.
+3. **Pause and wait for explicit user confirmation** — coordinator-agent is forbidden from self-approving, skipping, or "trying one more thing."
+4. No agent may proceed to Phase 2 until the user explicitly clears the gate.
 
 ### Phase 2: Contract Freeze
 
