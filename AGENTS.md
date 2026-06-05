@@ -41,6 +41,16 @@ Key architecture points:
 - **API first** — any cross-repo change starts with contract definition in `CONTRACTS.md`
 - **icepolar-dms** is called by the backend `yshop-drink` device module, never directly by the mini-program
 
+## Backlog
+
+`governance/BACKLOG/` is where raw, unrefined feature requests live before they enter the delivery pipeline.
+
+- **Purpose**: Capture feature ideas and needs as they arise, in business language, without committing to implementation.
+- **Rule**: Write the problem or need only. Do not include technical design, database schemas, API contracts, or UI mockups. That work happens during the `create-team` workflow.
+- **Template**: Copy `governance/BACKLOG/TEMPLATE.md` for each new item.
+- **Naming**: `BACKLOG-{nnn}-{short-name}.md` (e.g. `BACKLOG-001-product-template.md`)
+- **Lifecycle**: `draft` → `ready` (after requirements-agent evaluation) → `scheduled` (moved to a feature branch) → removed after delivery
+
 ## Build, Test, and Development Commands
 
 Run submodule commands from that submodule root.
