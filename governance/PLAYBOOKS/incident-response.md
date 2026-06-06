@@ -109,7 +109,7 @@ ssh root@139.196.173.216 "ps -ef | grep 'start_simulator.sh' | grep -v grep"
 ssh root@139.196.173.216 "grep -A5 'datasource' /opt/holun/yshop-drink/yshop-server/src/main/resources/application-local.yaml"
 
 # Connect to MySQL (example — use actual credentials from config)
-ssh root@139.196.173.216 "mysql -h HOST -P PORT -u USER -p'PASSWORD' -e 'USE DB; SELECT ...'"
+ssh root@47.101.64.142 "mysql -h localhost -P 13306 -u root -p'admin123456' -e 'USE DB; SELECT ...'"
 ```
 
 ---
