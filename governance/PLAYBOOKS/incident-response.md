@@ -161,7 +161,7 @@ When escalating to a developer agent, produce a report with:
 | Fix requires Vue/Admin UI change | Reach **frontend-agent** with diagnosis report |
 | Fix requires Mini Program change | Reach **miniapp-agent** with diagnosis report |
 | Fix is config/env only (nginx, DB, JVM params) | Fix directly, document change |
-| External dependency failure (DMS down, WeChat Pay API error) | Document workaround, reach **coordinator-agent** |
+| External dependency failure (DMS down, WeChat Pay API error) | Document workaround, notify user and log the incident |
 | Data inconsistency requiring manual DB fix | Document step-by-step SQL, get approval before executing |
 
 ---

@@ -32,5 +32,5 @@
 - Tests must cover the full cross-system flow (frontend → backend → database)
 - Document test environment requirements (ports, credentials, CLI paths)
 - **Must run existing E2E tests after feature implementation to ensure no regressions**
-- If existing tests fail due to feature changes, either fix the tests or flag to the coordinator
+- If existing tests fail due to feature changes, either fix the tests or flag it for follow-up
 - Prioritize test stability over coverage — flaky tests must be fixed or removed
