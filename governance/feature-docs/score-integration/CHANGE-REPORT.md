@@ -1,7 +1,7 @@
 ## Change Report: 小程序端积分获取功能
 
 ### Overview
-为小程序端对接积分获取功能，包含消费返积分、每日签到积分、连续签到奖励、积分明细查询。Admin 后台增加积分规则配置页面。
+为小程序端对接积分获取功能，包含每日签到积分、连续签到奖励、积分明细查询（商品级 `giveIntegral` 保持不变）。Admin 后台增加积分规则配置页面。
 
 ### Affected Repositories & Branches
 
@@ -42,7 +42,7 @@
 | `yshop-module-member/.../MemberUserMapper.java` | 新增 `incScore()` 方法 |
 | `yshop-module-member/.../MemberUserService.java` | 新增 `incScore()` 接口 |
 | `yshop-module-member/.../MemberUserServiceImpl.java` | 实现 `incScore()` |
-| `yshop-module-order/.../AppStoreOrderServiceImpl.java` | `paySuccess()` 增加按规则返积分逻辑 |
+| `yshop-module-order/.../AppStoreOrderServiceImpl.java` | 无变更（保留现有商品级 giveIntegral） |
 
 ### Admin Changes
 
