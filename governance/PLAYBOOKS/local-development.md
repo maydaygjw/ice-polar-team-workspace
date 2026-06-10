@@ -7,6 +7,23 @@
 - Node.js 16+ / pnpm 8.6+
 - 微信开发者工具（小程序开发）
 
+### Java SDK 切换（macOS）
+
+如果本地默认 Java 版本不是 17，使用 SDKMAN 切换：
+
+```bash
+# 列出已安装的 Java 版本
+sdk list java | grep installed
+
+# 切换到 Java 17（示例，根据实际安装的版本调整）
+sdk use java 17.0.12-zulu
+
+# 验证
+java -version
+```
+
+> 常用版本标识：`17.0.12-zulu`、`17.0.9-tem`、`17.0.8-graalce`
+
 ## 项目结构
 
 ```

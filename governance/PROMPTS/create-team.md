@@ -152,7 +152,8 @@ Agents are defined in `governance/AGENTS/`. Read each active agent before assign
 2. Push submodule feature branches to remote
 3. Auto-create PR via CLI: GitHub → `gh pr create`; Gitee → `@gitee-pr-submit` skill
 4. If auto-create fails, list branches/remote URLs and wait for manual PR
-5. PR description must reference: requirements spec, technical design, `CONTRACTS.md`, ADR, CHANGE-REPORT.md
+5. PR description must **embed** the actual content of: requirements spec, technical design, `CONTRACTS.md`, ADR, CHANGE-REPORT.md. Do **not** use file path references (e.g. `governance/feature-docs/...`) — these documents live in the workspace repo, not in the submodule repo, and cannot be viewed on GitHub/Gitee.
+   - For GitHub/Gitee PRs: inline the key sections (scope, DB changes, API list, review conclusion) directly into the PR body
 6. coordinator-agent updates status tracker with PR URLs
 
 ### Phase 6: Merge & Return to Main
