@@ -12,6 +12,24 @@
 
 ---
 
+## 测试环境数据库
+
+测试环境使用 `application-dev.yaml`（`backend/yshop-server/src/main/resources/application-dev.yaml`）中配置的 MySQL 实例。
+
+| 属性 | 值 |
+|------|------|
+| 数据库引擎 | MySQL 8.0 |
+| 宿主机 | `47.101.64.142` |
+| 端口 | `13306` |
+| 数据库名 | `yshop_pro` |
+| 用户名 | `root` |
+| 密码 | 见 `application-dev.yaml` 中 `spring.datasource.dynamic.datasource.master.password` |
+| JDBC URL | 见 `application-dev.yaml` 中 `spring.datasource.dynamic.datasource.master.url` |
+
+> 连接方式：通过 SSH 登录宿主机后，使用 `mysql -h 47.101.64.142 -P 13306 -u root -p yshop_pro` 连接，或从本地通过 `ssh -L` 隧道连接。
+
+---
+
 ## yshop（后端）
 
 **基本信息**

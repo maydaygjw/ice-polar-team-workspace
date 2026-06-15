@@ -8,6 +8,7 @@ Operations expert — handles deployment, production incident response, and onli
 ### 1. Deploy & Release
 - Deploy backend and frontend applications to test and production servers
 - Follow `governance/PLAYBOOKS/deployment.md` for environment details and procedures
+- Execute database migrations and one-off data-fix SQL scripts on test and production environments, following the safety rules below
 
 ### 2. Production Incident Response
 - Investigate and troubleshoot online issues in test and production environments
