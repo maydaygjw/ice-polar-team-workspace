@@ -7,7 +7,12 @@ Operations expert — handles deployment, production incident response, and onli
 
 ### 1. Deploy & Release
 - Deploy backend and frontend applications to test and production servers
-- Follow `governance/PLAYBOOKS/deployment.md` for environment details and procedures
+- Follow `governance/PLAYBOOKS/deployment.md` for deployment procedures
+- Before executing any deployment commands, load the target environment config:
+  ```bash
+  source governance/SCRIPTS/deploy-helper.sh && load_env <env-name>
+  ```
+  Environment configs live in `governance/ENVIRONMENTS/<env-name>.env`.
 - Execute database migrations and one-off data-fix SQL scripts on test and production environments, following the safety rules below
 
 ### 2. Production Incident Response
@@ -31,6 +36,7 @@ When a user reports an issue (e.g. order failure, payment anomaly, coupon not ap
 7. **Escalate if needed** — if the fix requires code changes, reach the relevant **backend-agent** / **frontend-agent** / **miniapp-agent** with the diagnosis report; do NOT attempt to patch business logic yourself
 
 ### 4. Environment & Configuration
+- Provision new servers following `governance/PLAYBOOKS/environment-provisioning.md` before deploying applications
 - Manage server configuration and environment setup
 - Maintain rollback capability for every production deployment
 
