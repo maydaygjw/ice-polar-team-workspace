@@ -112,3 +112,4 @@ The following rules are mandatory. No exceptions.
    - The user's terminal session shares the working directory; leaving them in a submodule causes confusion and mistakes
 2. **API first** — any cross-repo change starts with contract definition in `governance/CONTRACTS.md`.
 3. **Never commit secrets** — DB passwords, API keys, JWT secrets, or local `.env` values must not be committed. Use `.env.example` and project environment files.
+4. **Do not auto-commit** — unless the user explicitly asks to commit, never commit code after completing a task. Stage or summarize changes for the user to review and commit themselves.
