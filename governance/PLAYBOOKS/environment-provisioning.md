@@ -52,9 +52,54 @@
 
 - [ ] 安装 Node.js 18+ 和 pnpm 8+
 - [ ] 创建远程静态资源目录 `${ADMIN_REMOTE_PATH}`
-- [ ] 安装并配置 Nginx
+- [ ] 安装并启动 Nginx
 - [ ] 配置 Nginx server 块，将请求指向 `${ADMIN_REMOTE_PATH}`
+- [ ] （可选）配置 Nginx 反向代理到 `${YSHOP_PORT}` 端口，统一管理后台 API 调用
 - [ ] 确认 Nginx 服务已启用并运行
+
+**Nginx 配置示例**
+
+管理后台静态资源 + 反向代理后端 API 的参考配置：
+
+```nginx
+server {
+    listen 80;
+    server_name _; # 或填写实际域名
+
+    # 管理后台静态资源
+    location / {
+        root ${ADMIN_REMOTE_PATH};
+        index index.html index.htm;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # 反向代理到 yshop 后端 API（可选）
+    location /admin-api/ {
+        proxy_pass http://127.0.0.1:${YSHOP_PORT}/admin-api/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /app-api/ {
+        proxy_pass http://127.0.0.1:${YSHOP_PORT}/app-api/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+```
+
+放置到 Nginx 配置目录后重载：
+
+```bash
+# Rocky / CentOS
+sudo systemctl enable nginx
+sudo systemctl start nginx
+sudo nginx -t && sudo systemctl reload nginx
+```
 
 ---
 
