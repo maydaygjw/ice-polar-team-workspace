@@ -2,7 +2,7 @@
 
 This directory holds per-environment configuration files for deployment and operational playbooks.
 
-Each `.env` file contains **non-secret** environment metadata such as server hosts, code paths, ports, and build commands. Secrets (passwords, API keys, JWT secrets) must remain in their respective secure locations, e.g. `application-*.yaml`, a secret manager, or CI/CD variables.
+Each `.env` file contains environment metadata such as server hosts, code paths, ports, and build commands. Some files may also contain credentials for convenience in non-production environments; production secrets should ideally be stored in a secret manager or injected via CI/CD variables.
 
 ## Usage
 
@@ -26,3 +26,4 @@ Then execute the commands in the playbook; the `${VAR}` placeholders will resolv
 | File | Environment | Description |
 |------|-------------|-------------|
 | `test.env` | Test | 功能验证、集成测试 |
+| `prod.env` | Production | 线上生产环境 |

@@ -2,6 +2,7 @@
 
 > 新服务器 / 新环境首次启用前的基础软件、运行时和目录初始化手册。
 > 本文件只列通用要求与检查清单，具体包管理命令请根据实际操作系统发行版调整。
+> MySQL 与 Redis 均使用外部托管服务（如阿里云 RDS / Redis），应用服务器上只需安装客户端，不需要本地启动 Server。
 > 完成本 playbook 后，再按 `governance/PLAYBOOKS/deployment.md` 执行应用部署。
 
 ---
@@ -40,10 +41,10 @@
 - [ ] 安装 Maven 3.8+
 - [ ] 创建代码目录 `${YSHOP_CODE_PATH}`
 - [ ] 初始化 Git 仓库并配置 SSH key，确保可拉取 `${YSHOP_GIT_REMOTE}` 远程仓库
-- [ ] 安装 MySQL 8.0 Client（`mysql` 命令行工具），用于连接外部 MySQL 实例、导入 SQL 和排查数据
+- [ ] 安装 MySQL 8.0 Client（`mysql` 命令行工具），用于连接外部 MySQL/RDS 实例、导入 SQL 和排查数据
 - [ ] 安装 Redis CLI，用于连接外部 Redis 实例和排查缓存
-- [ ] 将 `application-dev.yaml` 或对应环境配置放置到正确位置
-- [ ] 确认 `${YSHOP_PORT}` 端口可被访问
+- [ ] 确认应用服务器可访问外部 MySQL 与 Redis 的网络和端口（如安全组、白名单）
+- [ ] 将 `application-*.yaml` 或对应环境配置放置到正确位置，确保数据库与 Redis 连接信息指向外部实例
 
 ---
 
@@ -106,6 +107,12 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "redis-cli --version || redis-cli -v"
 
 # 检查 Nginx 服务
 ssh ${DEPLOY_USER}@${SERVER_HOST} "systemctl status nginx"
+
+# 检查外网连通性（示例：阿里云 RDS MySQL 端口）
+ssh ${DEPLOY_USER}@${SERVER_HOST} "nc -zv ${DB_HOST} ${DB_PORT}"
+
+# 检查外网连通性（示例：阿里云 Redis 端口）
+ssh ${DEPLOY_USER}@${SERVER_HOST} "nc -zv ${REDIS_HOST} ${REDIS_PORT}"
 ```
 
 检查全部通过后，再继续执行 `governance/PLAYBOOKS/deployment.md` 中的应用部署步骤。
