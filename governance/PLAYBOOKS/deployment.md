@@ -63,7 +63,9 @@
 
 ```bash
 # 1. 拉取最新代码
-ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && git pull ${YSHOP_GIT_REMOTE} ${YSHOP_GIT_BRANCH}"
+# 仓库地址从 workspace 根目录 .gitmodules 读取，统一使用 SSH 协议。
+# 例如后端地址：git@gitee.com:icepolar/yshop-drink.git
+ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && git pull origin master"
 
 # 2. 停止旧进程
 ssh ${DEPLOY_USER}@${SERVER_HOST} "kill \$(ps -ef | grep yshop-server | grep -v grep | awk '{print \$2}')" 2>/dev/null || true

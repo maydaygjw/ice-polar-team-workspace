@@ -40,7 +40,9 @@
 - [ ] 安装 OpenJDK 17
 - [ ] 安装 Maven 3.8+
 - [ ] 创建代码目录 `${YSHOP_CODE_PATH}`
-- [ ] 初始化 Git 仓库并配置 SSH key，确保可拉取 `${YSHOP_GIT_REMOTE}` 远程仓库
+- [ ] 配置 SSH key 登录 Gitee，确保可拉取仓库
+  - 仓库地址统一从 workspace 根目录 `.gitmodules` 读取
+  - 后端示例：`git@gitee.com:icepolar/yshop-drink.git`（SSH 协议）
 - [ ] 安装 MySQL 8.0 Client（`mysql` 命令行工具），用于连接外部 MySQL/RDS 实例、导入 SQL 和排查数据
 - [ ] 安装 Redis CLI，用于连接外部 Redis 实例和排查缓存
 - [ ] 确认应用服务器可访问外部 MySQL 与 Redis 的网络和端口（如安全组、白名单）
@@ -107,7 +109,9 @@ sudo nginx -t && sudo systemctl reload nginx
 
 - [ ] 安装 Python 3.10+
 - [ ] 创建代码目录 `${DMS_CODE_PATH}`
-- [ ] 初始化 Git 仓库并配置拉取权限
+- [ ] 配置 SSH key 登录 Gitee，确保可拉取仓库
+  - 仓库地址统一从 workspace 根目录 `.gitmodules` 读取
+  - DMS 示例：`git@gitee.com:icepolar/dms.git`（SSH 协议）
 - [ ] 创建 Python 虚拟环境 `venv/`
 - [ ] 安装 `requirements.txt` 依赖
 - [ ] 确认 `${DMS_PORT}` 端口可被访问
