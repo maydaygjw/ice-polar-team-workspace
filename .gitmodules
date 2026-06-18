@@ -12,4 +12,4 @@
 	branch = main
 [submodule "icepolar-dms"]
 	path = icepolar-dms
-	url = git@gitee.com:icepolar/dms.git
+	url = https://gitee.com/icepolar/dms.git
