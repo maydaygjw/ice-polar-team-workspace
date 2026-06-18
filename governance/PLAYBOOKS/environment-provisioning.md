@@ -111,6 +111,10 @@ sudo nginx -t && sudo systemctl reload nginx
 - [ ] 创建 Python 虚拟环境 `venv/`
 - [ ] 安装 `requirements.txt` 依赖
 - [ ] 确认 `${DMS_PORT}` 端口可被访问
+- [ ] 配置 MySQL 数据库连接：
+  - 在 `${DMS_CODE_PATH}/.env` 中配置 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASSWORD`
+  - 数据库连接信息以 `${DMS_CODE_PATH}/.env` 为准
+  - 执行 `python scripts/init_db.py` 初始化表结构
 
 ---
 
