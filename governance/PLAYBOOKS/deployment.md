@@ -63,22 +63,43 @@
 
 ```bash
 # 1. 拉取最新代码
-# 仓库地址从 workspace 根目录 .gitmodules 读取，统一使用 SSH 协议。
-# 例如后端地址：git@gitee.com:icepolar/yshop-drink.git
 ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && git pull origin master"
 
-# 2. 停止旧进程
-ssh ${DEPLOY_USER}@${SERVER_HOST} "kill \$(ps -ef | grep yshop-server | grep -v grep | awk '{print \$2}')" 2>/dev/null || true
+# 2. 备份当前 JAR
+ssh ${DEPLOY_USER}@${SERVER_HOST} "
+  if [ -f ${YSHOP_START_PATH}/target/${YSHOP_JAR} ]; then
+    cp ${YSHOP_START_PATH}/target/${YSHOP_JAR} ${YSHOP_START_PATH}/target/${YSHOP_JAR}.bak.$(date +%Y%m%d%H%M%S)
+  fi
+"
 
-# 3. 打包
+# 3. 停止旧进程；如服务器使用 systemd 管理，优先用 systemctl
+ssh ${DEPLOY_USER}@${SERVER_HOST} "
+  if systemctl list-units --type=service | grep -q yshop.service; then
+    systemctl stop yshop.service || true
+  fi
+  pkill -9 -f yshop-server || true
+  sleep 3
+"
+
+# 4. 打包
 ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && mvn clean package -DskipTests"
 
-# 4. 启动服务
-ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_START_PATH} && nohup java -jar target/${YSHOP_JAR} > ${YSHOP_START_PATH}/app.log 2>&1 &"
+# 5. 启动服务；如存在 systemd 服务则使用 systemctl，否则用 nohup
+ssh ${DEPLOY_USER}@${SERVER_HOST} "
+  if systemctl list-unit-files | grep -q yshop.service; then
+    systemctl start yshop.service
+  else
+    cd ${YSHOP_START_PATH} && nohup java -jar target/${YSHOP_JAR} > ${YSHOP_START_PATH}/app.log 2>&1 &
+  fi
+"
 
-# 5. 验证服务是否启动
+# 6. 验证服务是否启动
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep java | grep yshop-server | grep -v grep"
 ```
+
+> **注意**：
+> - 若启动失败并提示端口被占用，说明旧进程未停干净，执行 `pkill -9 -f yshop-server` 后重试。
+> - 生产环境由 `systemd` 管理，必须通过 `systemctl start yshop.service` 启停，否则旧进程会被自动拉起导致端口冲突。
 
 **健康检查**
 
