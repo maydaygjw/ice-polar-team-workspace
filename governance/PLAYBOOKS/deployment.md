@@ -68,17 +68,27 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && git pull origin mast
 # 2. 备份当前 JAR
 ssh ${DEPLOY_USER}@${SERVER_HOST} "
   if [ -f ${YSHOP_START_PATH}/target/${YSHOP_JAR} ]; then
-    cp ${YSHOP_START_PATH}/target/${YSHOP_JAR} ${YSHOP_START_PATH}/target/${YSHOP_JAR}.bak.$(date +%Y%m%d%H%M%S)
+    cp ${YSHOP_START_PATH}/target/${YSHOP_JAR} ${YSHOP_START_PATH}/target/${YSHOP_JAR}.bak.\$(date +%Y%m%d%H%M%S)
   fi
 "
 
 # 3. 停止旧进程；如服务器使用 systemd 管理，优先用 systemctl
+#    注意：不要同时用 systemctl stop + pkill，否则 systemd 的 Restart=on-failure
+#    会立刻拉起新进程，导致后续启动时的端口冲突。
 ssh ${DEPLOY_USER}@${SERVER_HOST} "
   if systemctl list-units --type=service | grep -q yshop.service; then
     systemctl stop yshop.service || true
+    # 轮询等待进程完全退出（最多 30s）
+    for i in \$(seq 1 30); do
+      if ! pgrep -f yshop-server > /dev/null 2>&1; then
+        break
+      fi
+      sleep 1
+    done
+  else
+    pkill -9 -f yshop-server || true
+    sleep 3
   fi
-  pkill -9 -f yshop-server || true
-  sleep 3
 "
 
 # 4. 打包
@@ -95,11 +105,26 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "
 
 # 6. 验证服务是否启动
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep java | grep yshop-server | grep -v grep"
+
+# 7. 等待 Spring Boot 启动完成并验证端口（最多等 120s）
+ssh ${DEPLOY_USER}@${SERVER_HOST} "
+  for i in \$(seq 1 120); do
+    if ss -tlnp | grep -q ${YSHOP_PORT}; then
+      echo 'Port ${YSHOP_PORT} is listening'
+      break
+    fi
+    sleep 1
+  done
+"
+# 检查启动结果
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
 ```
 
 > **注意**：
-> - 若启动失败并提示端口被占用，说明旧进程未停干净，执行 `pkill -9 -f yshop-server` 后重试。
-> - 生产环境由 `systemd` 管理，必须通过 `systemctl start yshop.service` 启停，否则旧进程会被自动拉起导致端口冲突。
+> - 若启动失败并提示端口被占用，说明旧进程未停干净，执行 `fuser -k ${YSHOP_PORT}/tcp` 后重试。
+> - 生产环境由 `systemd` 管理，必须通过 `systemctl start/stop yshop.service` 启停。
+> - **禁止**同时使用 `systemctl stop` 和 `pkill`。`Restart=on-failure` 的 systemd 服务在收到进程退出信号后会立刻重新拉起，此时再 `pkill` 反而会触发重启，导致短暂端口 8080 被占用，Spring Boot 启动失败。
+> - 停止旧进程后，应**轮询等待进程完全退出**（推荐方式见步骤 3），而非固定 `sleep 3`。
 
 **健康检查**
 
@@ -107,8 +132,11 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep java | grep yshop-server | grep
 # 检查进程存活
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep java | grep yshop-server | grep -v grep"
 
-# 检查日志（最近 50 行）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "tail -n 50 ${YSHOP_START_PATH}/app.log"
+# 检查 systemd 服务状态（生产环境）
+ssh ${DEPLOY_USER}@${SERVER_HOST} "systemctl status yshop.service --no-pager | head -15"
+
+# 检查日志（最近 50 行）— 优先查 systemd journal（生产环境日志可能不走文件回写）
+ssh ${DEPLOY_USER}@${SERVER_HOST} "journalctl -u yshop.service --no-pager -n 30"
 
 # 检查端口监听
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
