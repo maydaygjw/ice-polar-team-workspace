@@ -25,7 +25,7 @@ Backend Expert — owns `backend/`
 - RocketMQ (optional, async flows)
 
 ## Technology Stack
-- Java 17
+- Java 17（使用 `sdk use java jdk-17` 切换）
 - Spring Boot 3.2.2
 - MyBatis Plus 3.5.5
 - Maven 3.9+
