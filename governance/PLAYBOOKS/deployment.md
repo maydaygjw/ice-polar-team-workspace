@@ -23,7 +23,7 @@
 | 环境 | 用途 | 配置文件 |
 |------|------|----------|
 | 测试环境 | 功能验证、集成测试 | `governance/ENVIRONMENTS/test.env` |
-| 生产环境 | 线上服务 | （待补充） |
+| 生产环境 | 线上服务 | `governance/ENVIRONMENTS/prod.env` |
 
 ---
 
@@ -80,13 +80,13 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "
     systemctl stop yshop.service || true
     # 轮询等待进程完全退出（最多 30s）
     for i in \$(seq 1 30); do
-      if ! pgrep -f yshop-server > /dev/null 2>&1; then
+      if ! pgrep -f 'java -jar target/${YSHOP_JAR}' > /dev/null 2>&1; then
         break
       fi
       sleep 1
     done
   else
-    pkill -9 -f yshop-server || true
+    pkill -9 -f 'java -jar target/${YSHOP_JAR}' || true
     sleep 3
   fi
 "
@@ -103,8 +103,8 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "
   fi
 "
 
-# 6. 验证服务是否启动
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep java | grep yshop-server | grep -v grep"
+# 6. 验证服务是否启动（用 [j]ava 前缀排除 grep/SSH shell 自身的误匹配）
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[j]ava -jar target/${YSHOP_JAR}'"
 
 # 7. 等待 Spring Boot 启动完成并验证端口（最多等 120s）
 ssh ${DEPLOY_USER}@${SERVER_HOST} "
@@ -129,8 +129,8 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
 **健康检查**
 
 ```bash
-# 检查进程存活
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep java | grep yshop-server | grep -v grep"
+# 检查进程存活（用 [j]ava 前缀排除 grep/SSH shell 自身的误匹配）
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[j]ava -jar target/${YSHOP_JAR}'"
 
 # 检查 systemd 服务状态（生产环境）
 ssh ${DEPLOY_USER}@${SERVER_HOST} "systemctl status yshop.service --no-pager | head -15"
