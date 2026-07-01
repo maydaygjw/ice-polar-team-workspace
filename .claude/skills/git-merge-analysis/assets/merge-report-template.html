@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{REPORT_TITLE}}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #f0f6fc; font-size: 28px; margin-bottom: 8px; }
+        h2 { color: #58a6ff; font-size: 20px; margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 1px solid #30363d; }
+        h3 { color: #79c0ff; font-size: 16px; margin: 20px 0 10px; }
+        .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-danger { background: #da3633; color: #fff; }
+        .badge-warning { background: #d29922; color: #000; }
+        .badge-success { background: #238636; color: #fff; }
+        .badge-info { background: #1f6feb; color: #fff; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #f0f6fc;
+        }
+        .summary-value.danger { color: #f85149; }
+        .summary-value.warning { color: #d29922; }
+        .summary-value.success { color: #3fb950; }
+        .summary-label { font-size: 13px; color: #8b949e; margin-top: 4px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #30363d;
+        }
+        th {
+            background: #21262d;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+        tr:hover { background: #1c2128; }
+        td code { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; }
+
+        pre {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .conflict-marker { color: #f0883e; font-weight: bold; }
+        .ours { color: #3fb950; }
+        .theirs { color: #58a6ff; }
+        .removed { color: #f85149; }
+        .added { color: #3fb950; }
+
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid #30363d;
+            background: #21262d;
+            color: #c9d1d9;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { background: #30363d; }
+        .filter-btn.active { background: #1f6feb; border-color: #1f6feb; }
+
+        .conflict-file {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .conflict-file.high { border-left: 4px solid #da3633; }
+        .conflict-file.medium { border-left: 4px solid #d29922; }
+        .conflict-file.low { border-left: 4px solid #58a6ff; }
+        .conflict-header {
+            padding: 14px 18px;
+            background: #1c2128;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .conflict-path { font-family: 'SF Mono', monospace; font-size: 13px; color: #f0f6fc; }
+        .conflict-body { padding: 18px; }
+        .analysis-box {
+            background: #0d1117;
+            border-radius: 6px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+        .analysis-box h4 {
+            color: #79c0ff;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .analysis-box p, .analysis-box ul {
+            font-size: 13px;
+            color: #c9d1d9;
+            margin-bottom: 6px;
+        }
+        .analysis-box ul { padding-left: 20px; }
+        .analysis-box li { margin-bottom: 4px; }
+
+        .steps { counter-reset: step; }
+        .step {
+            position: relative;
+            padding-left: 36px;
+            margin-bottom: 12px;
+        }
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: #1f6feb;
+            color: #fff;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        code.inline {
+            background: #343942;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+        }
+
+        .risk-high { color: #f85149; font-weight: 600; }
+        .risk-medium { color: #d29922; font-weight: 600; }
+        .risk-low { color: #58a6ff; font-weight: 600; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Git Merge Analysis Report</h1>
+    <p class="subtitle">{{BRANCH_PAIR}} | Generated: {{GENERATED_DATE}}</p>
+
+    <!-- Core Conclusion -->
+    <div class="card">
+        <div class="card-header">
+            <span class="badge badge-danger">{{CONFLICT_COUNT}} CONFLICTS</span>
+            <span class="badge badge-warning">{{MERGE_RECOMMENDATION}}</span>
+        </div>
+        <p><strong>结论：</strong>{{CONCLUSION_TEXT}}</p>
+    </div>
+
+    <!-- Summary Grid -->
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-value danger">{{CONFLICT_COUNT}}</div>
+            <div class="summary-label">冲突文件数</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value warning">{{SOURCE_COMMIT_COUNT}}</div>
+            <div class="summary-label">Source 独有提交 ({{SOURCE_BRANCH}})</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value">{{TARGET_COMMIT_COUNT}}</div>
+            <div class="summary-label">Target 独有提交 ({{TARGET_BRANCH}})</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value">{{CHANGED_FILE_COUNT}}</div>
+            <div class="summary-label">变更文件总数</div>
+        </div>
+    </div>
+
+    <!-- Branch Overview -->
+    <h2>Branch Overview</h2>
+    <table>
+        <tr><th>属性</th><th>Target (当前分支)</th><th>Source (上游分支)</th></tr>
+        <tr><td>分支名</td><td><code>{{TARGET_BRANCH}}</code></td><td><code>{{SOURCE_BRANCH}}</code></td></tr>
+        <tr><td>最新提交</td><td><code>{{TARGET_LATEST_COMMIT_HASH}}</code> {{TARGET_LATEST_COMMIT_MSG}}</td><td><code>{{SOURCE_LATEST_COMMIT_HASH}}</code> {{SOURCE_LATEST_COMMIT_MSG}}</td></tr>
+        <tr><td>提交时间</td><td>{{TARGET_LATEST_DATE}}</td><td>{{SOURCE_LATEST_DATE}}</td></tr>
+        <tr><td>独有提交数</td><td>{{TARGET_COMMIT_COUNT}} commits</td><td>{{SOURCE_COMMIT_COUNT}} commits</td></tr>
+        <tr><td>主要改动</td><td>{{TARGET_KEY_THEMES}}</td><td>{{SOURCE_KEY_THEMES}}</td></tr>
+    </table>
+
+    <!-- Common Ancestor -->
+    <h2>Common Ancestor (Divergence Point)</h2>
+    <div class="card">
+        <p><strong>Commit:</strong> <code>{{MERGE_BASE_HASH}}</code></p>
+        <p><strong>Message:</strong> {{MERGE_BASE_MSG}}</p>
+        <p style="color:#8b949e; font-size:13px; margin-top:8px;">从此提交点之后，两个分支开始各自独立开发。</p>
+    </div>
+
+    <!-- Source Commits -->
+    <h2>Source Branch Commits ({{SOURCE_BRANCH}}) — 最近 10 个</h2>
+    <table>
+        <tr><th>Commit</th><th>Message</th></tr>
+        {{SOURCE_COMMIT_ROWS}}
+    </table>
+    <p style="color:#8b949e; font-size:12px; margin-top:6px;">共 {{SOURCE_COMMIT_COUNT}} 个独有提交，此处显示前 10 个。</p>
+
+    <!-- Target Commits -->
+    <h2>Target Branch Commits ({{TARGET_BRANCH}}) — 最近 10 个</h2>
+    <table>
+        <tr><th>Commit</th><th>Message</th></tr>
+        {{TARGET_COMMIT_ROWS}}
+    </table>
+    <p style="color:#8b949e; font-size:12px; margin-top:6px;">共 {{TARGET_COMMIT_COUNT}} 个独有提交，此处显示前 10 个。</p>
+
+    <!-- Conflict Details -->
+    <h2>Conflict Details</h2>
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all" onclick="filterConflicts('all', this)">全部 ({{CONFLICT_COUNT}})</button>
+        <button class="filter-btn" data-filter="high" onclick="filterConflicts('high', this)">High ({{HIGH_CONFLICT_COUNT}})</button>
+        <button class="filter-btn" data-filter="medium" onclick="filterConflicts('medium', this)">Medium ({{MEDIUM_CONFLICT_COUNT}})</button>
+        <button class="filter-btn" data-filter="low" onclick="filterConflicts('low', this)">Low ({{LOW_CONFLICT_COUNT}})</button>
+    </div>
+
+    {{CONFLICT_SECTIONS}}
+
+    <!-- Risk Assessment -->
+    <h2>Risk Assessment</h2>
+    <table>
+        <tr><th>Risk Item</th><th>Severity</th><th>Description</th></tr>
+        {{RISK_ROWS}}
+    </table>
+
+    <!-- Merge Steps -->
+    <h2>Recommended Merge Steps</h2>
+    <div class="card">
+        <div class="steps">
+            {{MERGE_STEPS}}
+        </div>
+    </div>
+
+</div>
+
+<script>
+function filterConflicts(severity, btn) {
+    var files = document.querySelectorAll('.conflict-file');
+    var buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    files.forEach(function(file) {
+        if (severity === 'all' || file.getAttribute('data-severity') === severity) {
+            file.classList.remove('hidden');
+        } else {
+            file.classList.add('hidden');
+        }
+    });
+}
+</script>
+
+</body>
+</html>
