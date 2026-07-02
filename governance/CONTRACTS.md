@@ -20,6 +20,7 @@ This file defines the **platform-level contracts** between backend (`yshop-drink
 |--------|-------------|-------------|
 | Order Detail | [`feature-docs/order-detail-page/contract-changes.md`](feature-docs/order-detail-page/contract-changes.md) | C-end order detail query API |
 | Device Management | [`feature-docs/device-api/contract-changes.md`](feature-docs/device-api/contract-changes.md) | Device status, commands, and order creation |
+| Business Region Permission | [`feature-docs/business-region-permission/contract-changes.md`](feature-docs/business-region-permission/contract-changes.md) | 租户 → 部门 → business-region → 门店层级、默认商圈、多门店管理员 |
 
 ---
 
@@ -58,10 +59,51 @@ module-a-biz ──→ module-b-api (接口 + DTO)
 | User (admin) | Long | `system_users.id` |
 | User (C-end) | Long | `yshop_user.id` |
 | Tenant | Long | `system_tenant.id` |
+| Department / 部门 | Long | `system_dept.id` |
+| Business Region / 商圈 | Long | `business_region.id` |
 | Shop/Store | Long | `yshop_store_shop.id` |
 | Product | Long | `yshop_store_product.id` |
 | Order | String (32) | `yshop_store_order.order_id` (business ID) |
 | Category | Long | `yshop_store_product_category.id` |
+
+## Business Region 与门店权限合同
+
+门店经营业务使用以下归属层级：
+
+```
+tenant
+  └── department
+        └── business-region
+              └── shop/store
+                    └── order / device / product / revenue / withdrawal
+```
+
+### 归属规则
+
+| 实体 | 规则 |
+|--------|------|
+| Business Region / 商圈 | 在同一租户内只能归属一个部门；每个租户必须有且只有一个默认商圈 |
+| Department / 部门 | 可以管理多个 business-region |
+| Shop/Store / 门店 | 只能归属一个 business-region，并保存继承的 `dept_id` |
+| Admin User / 后台用户 | 通过 `system_users.dept_id` 归属一个部门 |
+| Shop Admin / 门店管理员 | 通过 `yshop_store_shop_admin` 管理一个或多个门店 |
+
+### 边界规则
+
+- `tenant_id` 仍是最外层隔离边界，新增业务表必须包含该字段。
+- `dept_id` 是后台数据权限边界；需要部门过滤的 business-region、门店和核心门店业务记录必须包含该字段。
+- `business_region_id` 是经营区域归属；本期用于后台和门店权限，后续小程序接入时不得暴露部门语义。
+- 本期暂不实现小程序端 business-region 切换；后续小程序用户选择或切换 business-region 时，后端必须校验所选 `shop_id` 属于所选 `business_region_id`。
+- 新订单、设备、收入、提现等记录在写入时必须从门店派生 `business_region_id` 和 `dept_id`。
+- 历史订单的财务和状态字段不可变。回填 `business_region_id` 或 `dept_id` 不得改变订单状态、支付、退款或佣金值。
+
+### 多门店管理员规则
+
+- `yshop_store_shop.admin_id` 废弃为门店管理员分配的事实来源。
+- 迁移后 `yshop_store_shop_admin` 是用户-门店关系的事实来源。
+- 管理后台登录态和用户上下文必须支持多个可管理门店 ID（`shopIds`）。
+- 旧字段 `shopId` 可在迁移期临时保留以兼容旧代码，但新代码必须使用 `shopIds` 或部门/租户权限做授权。
+- 对分配了门店的用户，门店范围查询必须使用 `shop_id IN (shopIds)`，不能继续使用单个 `shop_id = shopId`。
 
 ## Commission Contract
 
