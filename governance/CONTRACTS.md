@@ -19,6 +19,7 @@ This file defines the **platform-level contracts** between backend (`yshop-drink
 | Domain | Feature Doc | Description |
 |--------|-------------|-------------|
 | Order Detail | [`feature-docs/order-detail-page/contract-changes.md`](feature-docs/order-detail-page/contract-changes.md) | C-end order detail query API |
+| Order Refund Reject | [`feature-docs/order-refund-reject/contract-changes.md`](feature-docs/order-refund-reject/contract-changes.md) | Admin reject refund + re-apply control |
 | Device Management | [`feature-docs/device-api/contract-changes.md`](feature-docs/device-api/contract-changes.md) | Device status, commands, and order creation |
 | Business Region Permission | [`feature-docs/business-region-permission/contract-changes.md`](feature-docs/business-region-permission/contract-changes.md) | 租户 → 部门 → business-region → 门店层级、默认商圈、多门店管理员 |
 
@@ -143,6 +144,26 @@ Frontend: `commissionRate` input — number, 0-100, precision 2. Optional for ca
 | 1 | Income (收入) |
 | 2 | Expense (支出) |
 | 3 | Commission deduction (抽成扣减) |
+
+## Refund Status Enum
+
+`OrderInfoEnum` refund status, stored in `yshop_store_order.refund_status`:
+
+| Value | Meaning | UI Copy |
+|-------|---------|---------|
+| 0 | 正常 | — |
+| 1 | 退款中 | 退款中 |
+| 2 | 已退款 | 已退款 |
+| 3 | 已拒绝 | 退款已拒绝 |
+
+## Order Reject/Reapply Response Fields
+
+Order detail / list responses now expose:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `refundReason` | String | Admin reject reason. Meaningful when `refundStatus == 3`. |
+| `refundReapply` | Integer | `0` = user cannot re-apply, `1` = user can re-apply. |
 
 ## Common Result Structure
 
