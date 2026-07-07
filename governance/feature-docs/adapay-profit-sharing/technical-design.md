@@ -86,110 +86,7 @@
 
 ## API 设计
 
-### Admin API（管理后台）
-
-#### 分账收款人管理
-
-| 方法 | 路径 | 权限 | 说明 |
-|------|------|------|------|
-| POST | `/admin-api/pay/profit-recipient/create` | `pay:profit-recipient:create` | 创建分账收款人 |
-| PUT | `/admin-api/pay/profit-recipient/update` | `pay:profit-recipient:update` | 更新分账收款人 |
-| DELETE | `/admin-api/pay/profit-recipient/delete` | `pay:profit-recipient:delete` | 删除分账收款人 |
-| GET | `/admin-api/pay/profit-recipient/get` | `pay:profit-recipient:query` | 获取单个收款人 |
-| GET | `/admin-api/pay/profit-recipient/page` | `pay:profit-recipient:query` | 分页查询收款人 |
-| GET | `/admin-api/pay/profit-recipient/list-by-shop` | `pay:profit-recipient:query` | 查询店铺可用收款人列表 |
-
-**Create/Update Request Body**:
-```json
-{
-  "recipientType": 1,
-  "role": 1,
-  "shopId": null,
-  "recipientName": "平台账户",
-  "memberType": 1,
-  "memberInfo": {
-    "phone": "13800138000",
-    "realName": "张三",
-    "idCard": "310101199001011234",
-    "idCardType": "IDCARD"
-  },
-  "settleAccount": {
-    "cardNo": "622202************",
-    "cardName": "张三",
-    "bankCode": "ICBC",
-    "bankName": "中国工商银行",
-    "branch": "上海分行",
-    "accountType": 1
-  },
-  "status": 1
-}
-```
-
-**字段说明**:
-- `recipientType`: 1=平台级, 2=店铺级
-- `role`: 1=平台, 2=配送方, 3=销售方
-- `shopId`: 店铺级时必填；平台级必须为 null
-- `memberType`: 1=个人, 2=企业
-- `memberInfo`: 个人/企业实名信息；企业时包含 `corpName`/`businessLicenseNo`/`legalName`/`legalIdCard`/`attachFileUrl` 等
-- `settleAccount`: 结算银行卡信息，创建时必填
-- `status`: 0=禁用, 1=启用
-
-**企业 Member 请求示例**:
-```json
-{
-  "recipientType": 1,
-  "role": 1,
-  "recipientName": "平台公司",
-  "memberType": 2,
-  "memberInfo": {
-    "corpName": "上海某某科技有限公司",
-    "businessLicenseNo": "91310000********",
-    "legalName": "李四",
-    "legalIdCard": "310101198001011234",
-    "attachFileUrl": "https://.../license.zip"
-  },
-  "settleAccount": { ... },
-  "status": 1
-}
-```
-
-**Response**: `CommonResult<Long>` (创建返回ID)
-
-**创建流程**:
-1. 校验 `recipientType`/`role`/`shopId` 一致性。
-2. 同角色平台级收款人唯一性校验（启用时）。
-3. 根据当前租户的 Adapay 商户配置，构造 `AdapayPayService`。
-4. 调用 `AdapayPayService.createDivMember(params)` 或 `createCorpDivMember(params, file)` 创建 Member，获取 `member_id`。
-5. 使用返回的 `member_id`，调用 `AdapayPayService.createDivSettleAccount(params)` 绑定结算银行卡，获取 `settle_account_id`。
-6. 将 `member_id`、`settle_account_id`、`settle_account_bound=1` 写入 `yshop_adapay_profit_recipient`。
-7. 若第 4 或第 5 步失败，直接抛出错误，不入库。
-
-#### 店铺分账配置
-
-| 方法 | 路径 | 权限 | 说明 |
-|------|------|------|------|
-| PUT | `/admin-api/store/shop/bind-profit-recipient` | `store:shop:update` | 店铺绑定分账收款人 |
-
-**Request Body**:
-```json
-{
-  "shopId": 1,
-  "recipientId": 2,
-  "enabled": true
-}
-```
-
-#### 分账订单查询
-
-| 方法 | 路径 | 权限 | 说明 |
-|------|------|------|------|
-| GET | `/admin-api/pay/profit-sharing-order/page` | `pay:profit-sharing:query` | 分页查询分账订单 |
-| GET | `/admin-api/pay/profit-sharing-order/get` | `pay:profit-sharing:query` | 获取分账订单详情 |
-| POST | `/admin-api/pay/profit-sharing-order/retry` | `pay:profit-sharing:update` | 手动重试失败分账 |
-
-### App/Internal API
-
-无新增 C-end 接口。分账流程对小程序用户完全透明。
+> API 接口的完整定义（路径、请求/响应结构、字段校验、错误码、权限矩阵、内部调用接口）详见 [contract-changes.md](contract-changes.md)。本节只列出实现所需的 DTO，以及收款人创建的后端技术流程。
 
 ### DTOs
 
@@ -200,6 +97,25 @@
 - `ProfitSharingOrderRespVO` / `ProfitSharingOrderPageReqVO`
 - `ProfitSharingRetryReqVO`
 - `CreateSharingOrderDTO` (Internal API)
+
+### 分账收款人创建流程
+
+1. 校验收款人类型、角色、店铺 ID 的一致性。
+2. 同角色平台级收款人唯一性校验（启用时）。
+3. 加载当前租户的 Adapay 商户配置，构造支付服务。
+4. 调用 Adapay Member 创建接口（个人/企业），获取 `member_id`。
+5. 使用返回的 `member_id`，调用 Adapay 结算账户绑定接口，获取 `settle_account_id`。
+6. 将 `member_id`、`settle_account_id`、结算账户已绑定状态写入分账收款人表。
+7. 若第 4 或第 5 步失败，直接抛出错误，不入库。
+
+### 前端页面
+
+| 页面 | 路径 | 功能 |
+|------|------|------|
+| 分账收款人管理 | `views/mall/store/profitSharingReceiver/index.vue` | CRUD + 分页列表 + 搜索。 |
+| 分账收款人表单 | `views/mall/store/profitSharingReceiver/ProfitSharingReceiverForm.vue` | 新增/编辑弹窗；支持个人/企业两种 Member 类型及结算账户信息。 |
+| 分账结算记录 | `views/mall/store/profitSharingRecord/index.vue` | 只读列表 + 搜索 + 失败重试。 |
+| 店铺分账配置 | 嵌入 `views/mall/store/shop/ShopForm.vue` | 选择分账收款人 + 启用开关（无分账比例覆盖）。 |
 
 ## 模块影响
 
