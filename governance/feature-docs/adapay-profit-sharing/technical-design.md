@@ -18,9 +18,11 @@
 | `role` | tinyint | NOT NULL, default 1 | 1=平台, 2=配送方, 3=销售方 |
 | `shop_id` | bigint | NULL, index | 店铺级时关联 `yshop_store_shop.id`；平台级为 NULL |
 | `recipient_name` | varchar(64) | NOT NULL | 收款人名称 |
-| `member_id` | varchar(64) | NOT NULL | Adapay 商户 member_id（app_id 下唯一） |
+| `member_type` | tinyint | NOT NULL, default 1 | 1=个人, 2=企业 |
+| `member_id` | varchar(64) | NOT NULL | Adapay 返回的 member_id（app_id 下唯一） |
 | `status` | tinyint | NOT NULL, default 1 | 0=禁用, 1=启用 |
 | `settle_account_bound` | tinyint | NOT NULL, default 0 | 0=未绑定结算账户, 1=已绑定 |
+| `settle_account_id` | varchar(64) | NULL | Adapay 返回的结算账户 ID |
 | `create_time` | datetime | NOT NULL | 创建时间 |
 | `update_time` | datetime | NOT NULL | 更新时间 |
 | `deleted` | tinyint | NOT NULL, default 0 | 逻辑删除 |
@@ -104,7 +106,21 @@
   "role": 1,
   "shopId": null,
   "recipientName": "平台账户",
-  "memberId": "m_xxx",
+  "memberType": 1,
+  "memberInfo": {
+    "phone": "13800138000",
+    "realName": "张三",
+    "idCard": "310101199001011234",
+    "idCardType": "IDCARD"
+  },
+  "settleAccount": {
+    "cardNo": "622202************",
+    "cardName": "张三",
+    "bankCode": "ICBC",
+    "bankName": "中国工商银行",
+    "branch": "上海分行",
+    "accountType": 1
+  },
   "status": 1
 }
 ```
@@ -113,9 +129,40 @@
 - `recipientType`: 1=平台级, 2=店铺级
 - `role`: 1=平台, 2=配送方, 3=销售方
 - `shopId`: 店铺级时必填；平台级必须为 null
-- `memberId`: Adapay 侧 member_id
+- `memberType`: 1=个人, 2=企业
+- `memberInfo`: 个人/企业实名信息；企业时包含 `corpName`/`businessLicenseNo`/`legalName`/`legalIdCard`/`attachFileUrl` 等
+- `settleAccount`: 结算银行卡信息，创建时必填
+- `status`: 0=禁用, 1=启用
+
+**企业 Member 请求示例**:
+```json
+{
+  "recipientType": 1,
+  "role": 1,
+  "recipientName": "平台公司",
+  "memberType": 2,
+  "memberInfo": {
+    "corpName": "上海某某科技有限公司",
+    "businessLicenseNo": "91310000********",
+    "legalName": "李四",
+    "legalIdCard": "310101198001011234",
+    "attachFileUrl": "https://.../license.zip"
+  },
+  "settleAccount": { ... },
+  "status": 1
+}
+```
 
 **Response**: `CommonResult<Long>` (创建返回ID)
+
+**创建流程**:
+1. 校验 `recipientType`/`role`/`shopId` 一致性。
+2. 同角色平台级收款人唯一性校验（启用时）。
+3. 根据当前租户的 Adapay 商户配置，构造 `AdapayPayService`。
+4. 调用 `AdapayPayService.createDivMember(params)` 或 `createCorpDivMember(params, file)` 创建 Member，获取 `member_id`。
+5. 使用返回的 `member_id`，调用 `AdapayPayService.createDivSettleAccount(params)` 绑定结算银行卡，获取 `settle_account_id`。
+6. 将 `member_id`、`settle_account_id`、`settle_account_bound=1` 写入 `yshop_adapay_profit_recipient`。
+7. 若第 4 或第 5 步失败，直接抛出错误，不入库。
 
 #### 店铺分账配置
 
@@ -147,6 +194,7 @@
 ### DTOs
 
 - `ProfitRecipientCreateReqVO` / `ProfitRecipientUpdateReqVO` / `ProfitRecipientRespVO`
+- `ProfitRecipientMemberInfo` / `ProfitRecipientSettleAccount`
 - `ProfitRecipientPageReqVO`
 - `ShopBindProfitRecipientReqVO`
 - `ProfitSharingOrderRespVO` / `ProfitSharingOrderPageReqVO`
@@ -159,7 +207,7 @@
 
 | 模块 | 变更内容 |
 |------|----------|
-| `yshop-module-pay-biz` | 新增分账收款人 Controller/Service/Mapper；新增分账订单 Service；新增 Adapay 分账 SDK 调用封装（`Payment.create` delay, `PaymentConfirm.create`）；新增日终结算 Job；新增分账失败回退到 RevenueJob 逻辑 |
+| `yshop-module-pay-biz` | 新增分账收款人 Controller/Service/Mapper；新增分账订单 Service；新增 Adapay 分账 SDK 调用封装（`Payment.create` delay, `PaymentConfirm.create`）；新增 Adapay Member 与结算账户创建封装；新增日终结算 Job；新增分账失败回退到 RevenueJob 逻辑 |
 | `yshop-module-pay-api` | 新增分账相关 DTO、Service 接口、ErrorCode |
 | `yshop-module-store-biz` | 店铺绑定分账收款人接口；店铺查询时返回分账启用状态 |
 | `yshop-module-store-api` | 店铺绑定分账收款人 DTO |
@@ -187,17 +235,26 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 
 ```
 Admin ──→ [POST] /admin-api/pay/profit-recipient/create
-            │  平台级收款人 (recipient_type=1, role=1)
+            │  选择 Member 类型（个人/企业），填写实名/企业信息
+            │  填写结算银行卡信息
             ▼
         yshop-module-pay-biz
-            │  写入 yshop_adapay_profit_recipient
-            │  调用 Adapay API 创建 member
+            │  校验字段与唯一性
+            │  加载当前租户 Adapay 商户配置
+            │  调用 AdapayPayService.createDivMember / createCorpDivMember
             ▼
         Adapay 平台
             │  返回 member_id
             ▼
         yshop-module-pay-biz
-            │  保存 member_id
+            │  使用 member_id 调用 createDivSettleAccount
+            ▼
+        Adapay 平台
+            │  返回 settle_account_id
+            ▼
+        yshop-module-pay-biz
+            │  写入 yshop_adapay_profit_recipient
+            │  保存 member_id + settle_account_id
             │  同角色其他 status=1 记录置为 status=0
             ▼
 Admin ←── CommonResult<Long>
@@ -219,6 +276,7 @@ MiniApp ──→ [POST] /app-api/order/pay
               │  payType = ADAPAY
               ▼
           yshop-module-order-biz
+              │  校验店铺分账收款人配置
               │  创建 Adapay 支付订单
               │  pay_mode = delay
               ▼
@@ -234,7 +292,6 @@ MiniApp ──→ [POST] /app-api/order/pay
           yshop-module-order-biz (paySuccess)
               │  更新订单状态
               │  计算 commission_amount
-              │  校验店铺分账配置
               │  调用 ProfitSharingOrderApi.createSharingOrder()
               ▼
           yshop-module-pay-biz
@@ -314,14 +371,19 @@ Quartz Scheduler ──→ 每日 00:05 触发
 4. **分账失败兜底**：Adapay 分账失败后，自动回退到现有 `RevenueJob` 虚拟余额结算，保证店铺收入不丢失。
 5. **支付前校验**：若店铺启用分账但缺少有效平台/店铺收款人，拒绝支付。
 6. **Job 幂等**：`ProfitSharingSettlementJob` 通过 `sharing_status` 状态机保证幂等，同一订单不会重复分账。
+7. **Member 与结算账户同步创建**：创建收款人时同步调用 Adapay 创建 Member 并绑定结算账户，避免后续分账因缺少结算账户失败。
+8. **Member 类型区分**：支持个人/企业两种 Member，企业需上传附件。
 
 ## 风险与缓解
 
 | 风险 | 影响 | 缓解措施 |
 |------|------|----------|
+| Adapay Member 创建失败 | 收款人无法入库 | 接口直接失败并返回错误；不入库 |
+| 结算账户绑定失败 | 资金无法结算到银行卡 | 接口直接失败；不入库 |
 | Adapay 分账 API 调用失败 | 资金无法划转 | 失败记录 `sharing_status=3`；自动回退 `RevenueJob`；支持管理后台手动重试 |
 | 分账金额计算错误 | 平台或店铺资金损失 | 分账金额在创建时固化；增加校验：platform_amount + shop_amount == pay_price |
 | 店铺未绑定收款人 | 支付被拒绝 | 支付时校验，明确错误提示 |
 | 退款订单已分账 | 资金追回困难 | 本期 deferred；后续通过 Adapay `PaymentConfirmReverse` 实现 |
 | 日终 Job 执行超时 | 大量订单堆积 | 分页处理，每批 100 条；Job 支持幂等执行 |
 | 多租户数据隔离 | 跨租户资金操作 | 所有查询强制带 `tenant_id`；MyBatis Plus TenantLineInnerInterceptor 自动注入 |
+| 企业 Member 附件存储 | 需要文件上传能力 | 复用现有文件存储接口，附件 URL 作为参数传入 |

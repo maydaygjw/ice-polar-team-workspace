@@ -5,23 +5,26 @@
 **In Scope**
 
 1. 分账收款人管理（平台级 + 店铺级），支持分账角色（平台/配送方/销售方）
-2. 店铺绑定一个分账收款人并启用/禁用分账
-3. Adapay 支付时设置延迟分账（`pay_mode=delay`）
-4. 日终自动结算 Job，按店铺 `commission_rate` 执行分账
-5. 分账订单查询与失败重试；分账失败自动回退到现有 `RevenueJob` 虚拟余额结算
-6. 支付时校验分账收款人配置，缺失时拒绝支付
+2. 分账收款人创建时，同步调用 Adapay 接口创建个人/企业 Member，并保存返回的 `member_id`
+3. 分账收款人创建时，同步调用 Adapay 接口绑定结算账户（银行卡），使资金可划转
+4. 店铺绑定一个分账收款人并启用/禁用分账
+5. Adapay 支付时设置延迟分账（`pay_mode=delay`）
+6. 日终自动结算 Job，按店铺 `commission_rate` 执行分账
+7. 分账订单查询与失败重试；分账失败自动回退到现有 `RevenueJob` 虚拟余额结算
+8. 支付时校验分账收款人配置，缺失时拒绝支付
 
 **Out of Scope**
 
 - 非 Adapay 支付渠道的分账（微信、支付宝）
 - 分账比例覆盖字段：本期仅使用 `yshop_store_shop.commission_rate`
 - 分账回退接口的完整实现：退款触发分账回退不在本期主流程
+- Adapay Member 修改/查询/注销的独立管理功能
 
 **Deferred**
 
 - 分账比例覆盖（per-shop override ratio）
 - 分账结算记录导出
-- 个人/企业 member 详细字段：本期先实现 Adapay `member_id` 和结算账户绑定核心字段
+- 结算账户修改与解绑
 
 ---
 
@@ -31,7 +34,7 @@
 
 | 表 | 说明 |
 |----|------|
-| `yshop_adapay_profit_recipient` | 分账收款人（平台级/店铺级），含分账角色 |
+| `yshop_adapay_profit_recipient` | 分账收款人（平台级/店铺级），含分账角色、Adapay member_id、结算账户绑定状态 |
 | `yshop_adapay_profit_sharing_order` | 分账订单记录 |
 | `yshop_adapay_profit_sharing_log` | 分账操作日志 |
 
@@ -53,7 +56,7 @@
 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|
 | POST | `/admin-api/pay/profit-recipient/create` | `pay:profit-recipient:create` | 创建收款人；同租户同角色只能有一个 `status=1` 的收款人 |
-| PUT | `/admin-api/pay/profit-recipient/update` | `pay:profit-recipient:update` | 更新；`recipientType`/`shopId`/`role` 不可变更 |
+| PUT | `/admin-api/pay/profit-recipient/update` | `pay:profit-recipient:update` | 更新；`recipientType`/`shopId`/`role`/`memberId` 不可变更 |
 | DELETE | `/admin-api/pay/profit-recipient/delete` | `pay:profit-recipient:delete` | 已绑定店铺的收款人拒绝删除 |
 | GET | `/admin-api/pay/profit-recipient/get` | `pay:profit-recipient:query` | 按 ID 查询 |
 | GET | `/admin-api/pay/profit-recipient/page` | `pay:profit-recipient:query` | 分页查询，支持按级别/角色/店铺/状态/名称筛选 |
@@ -91,7 +94,7 @@
 | 页面 | 路径 | 功能 |
 |------|------|------|
 | 分账收款人管理 | `views/mall/store/profitSharingReceiver/index.vue` | CRUD + 分页列表 + 搜索 |
-| 分账收款人表单 | `views/mall/store/profitSharingReceiver/ProfitSharingReceiverForm.vue` | 新增/编辑弹窗 |
+| 分账收款人表单 | `views/mall/store/profitSharingReceiver/ProfitSharingReceiverForm.vue` | 新增/编辑弹窗；支持个人/企业两种 Member 类型及结算账户信息 |
 | 分账结算记录 | `views/mall/store/profitSharingRecord/index.vue` | 只读列表 + 搜索 + 失败重试 |
 | 店铺分账配置 | 嵌入 `views/mall/store/shop/ShopForm.vue` | 选择分账收款人 + 启用开关（无分账比例覆盖） |
 
@@ -103,6 +106,14 @@
 **小程序端**
 
 无变更。分账流程对 C 端用户完全透明。
+
+---
+
+### Configuration Requirements
+
+- 管理后台创建收款人时，需选择 Member 类型（个人/企业）并填写对应实名/企业信息；后端使用该信息调用 Adapay Member 创建接口。
+- 创建收款人时必须绑定结算银行卡；结算账户信息随 Member 一起提交给 Adapay。
+- Adapay 回调地址、app_id、api_key 等沿用现有 `merchant_details` 中的 Adapay 商户配置。
 
 ---
 
@@ -119,6 +130,9 @@
 | 日终 Job 执行超时/失败 | 分页处理（每批 100 条）；`sharing_status` 状态机保证幂等；失败记录可手动重试 |
 | 多租户数据隔离 | 所有查询强制带 `tenant_id`；MyBatis Plus `TenantLineInnerInterceptor` 自动注入 |
 | 店铺 `commission_rate` 后续变更 | 不影响已创建的分账记录（金额已固化） |
+| Adapay Member 创建失败 | 收款人创建接口直接失败，返回明确错误；不入库 |
+| Adapay 结算账户绑定失败 | 收款人创建接口直接失败，返回明确错误；不入库 |
+| 同一 member_id 重复创建 | 后端校验唯一性；若 Adapay 已存在而本地无记录，以后续对账/同步机制处理 |
 
 ---
 
@@ -127,6 +141,8 @@
 **AC-1: 分账收款人管理**
 
 - [ ] 管理员可创建平台级/店铺级收款人，每个收款人需指定角色（平台/配送方/销售方）
+- [ ] 创建收款人时同步调用 Adapay 接口创建个人/企业 Member，保存返回的 `member_id`
+- [ ] 创建收款人时同步绑定结算银行卡，成功后才入库
 - [ ] 同一租户同一角色最多只有一个 `status=1` 的有效收款人
 - [ ] 已绑定的收款人无法删除
 - [ ] 收款人列表支持按级别、角色、店铺、状态、名称筛选

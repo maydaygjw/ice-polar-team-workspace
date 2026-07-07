@@ -39,8 +39,8 @@
 | 角色 | `role` | `平台` / `配送方` / `销售方` |
 | 店铺名称 | `shopName` | 平台级显示 `--` |
 | 收款人名称 | `recipientName` | 居中 |
-| Member ID | `memberId` | 居中 |
-| 结算账户 | `settleAccountBound` | `已绑定` / `未绑定` |
+| Member 类型 | `memberType` | `个人` / `企业` |
+| 结算账户绑定 | `settleAccountBound` | `已绑定` / `未绑定` |
 | 状态 | `status` | `启用` / `禁用` |
 | 创建时间 | `createTime` | `dateFormatter` |
 | 操作 | — | 编辑 / 删除 |
@@ -59,10 +59,13 @@
 | 角色 | `el-select` | `required` |
 | 关联店铺 | `el-select` | 级别=店铺级时 `required`；级别=平台级时隐藏 |
 | 收款人名称 | `el-input` | `required`, max 64 |
-| Member ID | `el-input` | `required`，英文/数字/下划线 |
+| Member 类型 | `el-radio-group` | `required`：`1`=个人，`2`=企业 |
+| 个人实名信息 | 动态表单 | `memberType=1` 时显示：手机号、真实姓名、身份证号 |
+| 企业信息 | 动态表单 | `memberType=2` 时显示：企业名称、营业执照号、法人姓名、法人身份证号、营业执照附件 |
+| 结算银行卡 | 动态表单 | `required`：银行卡号、开户名、银行代码、开户行、账户类型 |
 | 状态 | `el-switch` | 默认启用 |
 
-> 本期不实现个人/企业 member 详细字段和结算账户绑定 UI；由后端按 Adapay `member_id` 创建 member，结算账户绑定可后续扩展。
+> 创建收款人提交后，后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后才入库。表单不再由管理员填写 `member_id`。
 
 #### Empty / Error States
 
@@ -240,6 +243,7 @@ export interface ProfitSharingReceiverVO {
   id: number
   recipientType: number  // 1=平台级, 2=店铺级
   role: number           // 1=平台, 2=配送方, 3=销售方
+  memberType: number     // 1=个人, 2=企业
   shopId?: number
   shopName?: string
   recipientName: string

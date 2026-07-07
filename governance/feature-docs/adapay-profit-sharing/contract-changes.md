@@ -38,6 +38,13 @@
 | 2 | 配送方 |
 | 3 | 销售方 |
 
+#### Member Type / Member 类型
+
+| Value | Meaning |
+|-------|---------|
+| 1 | 个人 |
+| 2 | 企业 |
+
 #### Sharing Status / 分账状态
 
 | Value | Meaning |
@@ -52,7 +59,7 @@
 
 #### POST /admin-api/pay/profit-recipient/create
 
-创建分账收款人。创建 `status=1` 的收款人时，同租户同角色下其他 `status=1` 的收款人将被自动禁用。
+创建分账收款人。后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后入库。创建 `status=1` 的收款人时，同租户同角色下其他 `status=1` 的收款人将被自动禁用。
 
 **权限**: `pay:profit-recipient:create`
 
@@ -63,7 +70,21 @@
   "role": 1,
   "shopId": null,
   "recipientName": "平台分账账户",
-  "memberId": "m_xxx",
+  "memberType": 1,
+  "memberInfo": {
+    "phone": "13800138000",
+    "realName": "张三",
+    "idCard": "310101199001011234",
+    "idCardType": "IDCARD"
+  },
+  "settleAccount": {
+    "cardNo": "6222021234567890123",
+    "cardName": "张三",
+    "bankCode": "ICBC",
+    "bankName": "中国工商银行",
+    "branch": "上海分行",
+    "accountType": 1
+  },
   "status": 1
 }
 ```
@@ -73,8 +94,38 @@
 - `role`: 必填，范围 `[1, 2, 3]`
 - `shopId`: `recipientType=2` 时必填；`recipientType=1` 时必须为 null
 - `recipientName`: 必填，长度 `1-64`
-- `memberId`: 必填，长度 `1-64`，英文/数字/下划线
+- `memberType`: 必填，`1`=个人，`2`=企业
+- `memberInfo`: 必填，内容随 `memberType` 变化
+  - 个人：至少 `phone`、`realName`、`idCard`
+  - 企业：至少 `corpName`、`businessLicenseNo`、`legalName`、`legalIdCard`、`attachFileUrl`
+- `settleAccount`: 必填，至少 `cardNo`、`cardName`、`bankCode`
 - `status`: 必填，范围 `[0, 1]`
+
+**企业 Member 请求示例**:
+```json
+{
+  "recipientType": 1,
+  "role": 1,
+  "recipientName": "平台公司",
+  "memberType": 2,
+  "memberInfo": {
+    "corpName": "上海某某科技有限公司",
+    "businessLicenseNo": "91310000********",
+    "legalName": "李四",
+    "legalIdCard": "310101198001011234",
+    "attachFileUrl": "https://.../license.zip"
+  },
+  "settleAccount": {
+    "cardNo": "1234567890123456",
+    "cardName": "上海某某科技有限公司",
+    "bankCode": "ICBC",
+    "bankName": "中国工商银行",
+    "branch": "上海分行",
+    "accountType": 2
+  },
+  "status": 1
+}
+```
 
 **Response**:
 ```json
@@ -88,11 +139,11 @@
 
 #### PUT /admin-api/pay/profit-recipient/update
 
-更新分账收款人。`recipientType`、`role`、`shopId` 不可变更。
+更新分账收款人。`recipientType`、`role`、`shopId`、`memberType`、`memberId`、`settleAccountId` 不可变更；仅允许更新 `recipientName`、`status` 等非 Adapay 侧字段。若需变更 Member 信息或结算账户，应删除后重建。
 
 **权限**: `pay:profit-recipient:update`
 
-**Request Body**: 同 create，增加 `id` 字段。
+**Request Body**: 同 create，增加 `id` 字段；`memberInfo` 与 `settleAccount` 字段可忽略或仅做展示。
 
 **Response**: `CommonResult<Boolean>`
 
@@ -127,8 +178,10 @@
     "role": 1,
     "shopId": null,
     "recipientName": "平台分账账户",
+    "memberType": 1,
     "memberId": "m_xxx",
-    "settleAccountBound": 0,
+    "settleAccountBound": 1,
+    "settleAccountId": "sa_xxx",
     "status": 1,
     "createTime": "2026-07-06T10:00:00"
   },
@@ -332,6 +385,8 @@ public class CreateSharingOrderDTO {
 | `PROFIT_SHARING_SHOP_RECIPIENT_MISSING` (1_xxx_008) | 店铺未绑定收款人 | 支付时店铺启用分账但无绑定收款人 |
 | `PROFIT_SHARING_AMOUNT_MISMATCH` (1_xxx_009) | 分账金额校验失败 | platform + shop != payPrice |
 | `PROFIT_SHARING_PAY_DISABLED` (1_xxx_010) | 分账配置不完整，禁止支付 | 支付时缺少有效收款人 |
+| `PROFIT_RECIPIENT_MEMBER_CREATE_FAILED` (1_xxx_011) | Adapay Member 创建失败 | 调用 Adapay 创建 Member 失败 |
+| `PROFIT_RECIPIENT_SETTLE_ACCOUNT_FAILED` (1_xxx_012) | Adapay 结算账户绑定失败 | 调用 Adapay 绑定结算账户失败 |
 
 > 注：具体错误码数值由 backend-agent 在实现时按模块错误码段分配。
 
