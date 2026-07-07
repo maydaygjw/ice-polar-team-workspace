@@ -20,6 +20,7 @@ Clarify and document requirements before any code is written.
 ### Data Model Changes
 ### API Requirements
 ### Frontend Requirements
+### Configuration Requirements
 ### Edge Cases
 ### Acceptance Criteria
 ```
@@ -28,3 +29,7 @@ Clarify and document requirements before any code is written.
 - Never write code
 - Always check existing similar features for consistency
 - Always reference `CONTRACTS.md` and `ADR/` for architectural constraints
+- **Requirements specs must not contain technical implementation details.** Describe *what* the system must do, not *how*.
+  - Forbidden: class names, method names, frameworks, libraries, file paths, code snippets, package names, annotations, sequence diagrams, internal wiring
+  - Allowed: business rules, user-visible behavior, data model changes, API endpoint paths, field names, configuration values, enum values, error scenarios
+- Technical implementation details belong in `technical-design.md` (or equivalent design doc) produced by the design/development agent

@@ -60,27 +60,36 @@ All existing endpoints continue to work unchanged:
 
 ### Callback Handling — No New Endpoints
 
-Adapay payment callbacks arrive at the same eGzosN-built-in endpoint:
+Adapay payment callbacks reuse the existing WeChat/Alipay callback endpoint:
 
 ```
-POST /admin-api/pay/notify/order
-POST /admin-api/pay/notify/refund
+POST /app-api/order/notify/payBack{detailsId}.json
 ```
 
-These endpoints are excluded from tenant-id header requirements in `application.yaml`:
+For Adapay H5, the concrete callback URL is:
 
-```yaml
-yshop:
-  tenant:
-    ignore-urls:
-      - /admin-api/pay/notify/**
+```
+POST /app-api/order/notify/payBackadapay_h5{tenantId}.json
 ```
 
-The eGzosN framework automatically:
-1. Receives the callback at `/admin-api/pay/notify/order`
-2. Identifies the payment platform from the request payload
-3. Dispatches to the registered `AdapayPayMessageHandler` (via `MerchantPayServiceConfigurer`)
-4. Handler checks payment status and sends `PayNoticeMessage(type="adapay")`
+Example for tenant 154:
+
+```
+POST /app-api/order/notify/payBackadapay_h5154.json
+```
+
+This endpoint is already excluded from authentication and tenant-id header requirements:
+
+- `app-api` URLs are permit-all by Spring Security configuration.
+- `/app-api/order/notify/*` is listed in `yshop.tenant.ignore-urls` in `application.yaml`.
+
+The flow is:
+1. `AppOrderController.payBack(detailsId)` receives the callback.
+2. `PayServiceManager.payBack(detailsId, request)` loads the matching `merchant_details` row.
+3. eGzosN creates the `AdapayPayService` and wires the registered `AdapayPayMessageHandler`.
+4. `AdapayPayMessageHandler.handle()` checks payment status and sends `PayNoticeMessage(type="adapay")`.
+
+**Note:** Earlier drafts referenced `/admin-api/pay/notify/order`, but that endpoint does not exist in the project and `admin-api` requires authentication. Use `/app-api/order/notify/payBackadapay_h5{tenantId}.json` instead.
 
 ### MQ Contract — Unchanged
 
@@ -114,7 +123,7 @@ The payType `<el-select>` dropdown gains one new option:
 <el-option label="微信支付V3" value="wxV3Pay" />
 
 <!-- After (add) -->
-<el-option label="Adapay支付" value="adapayPay" />
+<el-option label="Adapay支付" value="adapay" />
 ```
 
 The detailsId `<el-select>` dropdown gains one new option:
@@ -142,7 +151,7 @@ The miniapp is WeChat-pay-only. It does not support Adapay. No miniapp changes a
 |----------|------|--------|
 | `PayTypeEnum.java` | Enum addition | `ADAPAY("adapay","Adapay支付")` |
 | `PayIdEnum.java` | Enum addition | `ADAPAY_H5("adapay_h5","Adapay支付H5")` |
-| `MerchantDetailsForm.vue` | UI option | Add `adapayPay` to payType dropdown |
+| `MerchantDetailsForm.vue` | UI option | Add `adapay` to payType dropdown |
 | `MerchantDetailsForm.vue` | UI option | Add `adapay_h5` to detailsId dropdown |
 | `CONTRACTS.md` | No change | Feature-level only; no platform contract impact |
 | All APIs | No change | Existing endpoints accept new values |
