@@ -1,203 +1,198 @@
-# Create Engineering Team
+# 创建工程团队
 
-## Objective
+分析功能需求，从 `governance/AGENTS/` 组建团队，按阶段推进需求、设计、实现、测试、审查和交付。
 
-Analyze a feature request, assemble the right engineering team from `governance/AGENTS/`, and execute the full delivery workflow through to merge.
+本 prompt 是**交付编排器**：负责读上下文、选 Agent、执行门禁、同步状态、产出报告、等待用户确认。专业产物由对应 Agent 完成。
 
-## Roles
+## 适用范围
+适用于正式功能交付：新功能、跨端改动、跨仓库改动、契约变更、UI/UX 改动、需要测试审查和 PR 的任务。
+不适用于：单文件热修、纯咨询、纯 review、临时实验。
 
-This prompt acts as the **orchestrator**. It drives phase transitions, enforces gates, collects artifacts, generates reports, and handles all user communication. Agents do the specialist work — this prompt keeps them aligned.
+## 全局规则
 
-## Pre-flight
+1. 所有命令从工作区根执行；进入子仓库使用 `(cd subdir && cmd)`。
+2. 开始前读取 `governance/CLAUDE.md`、`governance/ARCHITECTURE.md`、相关 `governance/ADR/`、目标仓库 `AGENTS.md`。
+3. API、DB、MQ、依赖、权限、外部系统边界变化，必须先由 Architecture agent 定义契约。
+4. 小程序不得直接调用 `icepolar-dms`；DMS 只能由后端设备模块调用。
+5. 多租户默认开启；新增业务表和查询必须考虑 `tenant_id` 与数据权限。
+6. 不提交密钥，不修改本地私密配置。
+7. 除非用户明确要求，不自动 commit、push、创建 PR 或合并 PR。
+8. 阻塞时产出 `REPORT.md`，说明事实、影响、选项，暂停等待用户确认。
 
-Read before assembly: `CLAUDE.md` → `ARCHITECTURE.md` → relevant `ADR/` entries.
+## 初始化
+识别信息：
 
-## Team Assembly
+| 字段 | 要求 |
+|------|------|
+| Feature name | 短横线命名，如 `order-refund-reject` |
+| 业务目标 | 用户要解决的问题 |
+| 影响端 | `backend` / `admin` / `miniapp` / `icepolar-dms` / `governance` |
+| UI/UX | 页面、组件、样式、交互变化时激活 |
+| 契约 | API / DB / MQ / 依赖 / 权限 / 外部系统变化时激活 |
 
-Agents are defined in `governance/AGENTS/`. Read each active agent before assignment.
+所有产物写入 `governance/feature-docs/{feature-name}/`：
 
-### Always-on Agents
+| 文件 | 阶段 |
+|------|------|
+| `requirements-spec.md` | Phase 1 |
+| `technical-design.md` | Phase 2 |
+| `contract-changes.md` | Phase 2，契约变化时 |
+| `ui-ux-design.md` | Phase 2，UI/UX 激活时 |
+| `test-plan.md` 或 `test-notes.md` | Phase 3 |
+| `review-report.md` | Phase 4 |
+| `CHANGE-REPORT.md` | Phase 4 |
+| `REPORT.md` | 阻塞时 |
 
-| Agent | File | Phase |
-|-------|------|-------|
-| Requirements | `requirements-agent.md` | 1 |
-| Architecture | `architecture-agent.md` | 1 |
-| Test | `test-agent.md` | 2 |
-| Review | `review-agent.md` | 3 |
+## 团队
+| Agent | 文件 | 触发条件 |
+|-------|------|----------|
+| Requirements | `requirements-agent.md` | 始终 |
+| Architecture | `architecture-agent.md` | 始终 |
+| UI/UX | `ui-ux-agent.md` | 页面、组件、样式、交互变化 |
+| Backend | `backend-agent.md` | `backend/` 变化 |
+| Frontend | `frontend-agent.md` | `admin/` 变化 |
+| MiniApp | `miniapp-agent.md` | `miniapp/` 变化 |
+| Test | `test-agent.md` | 跨端流程、关键链路、回归风险 |
+| Review | `review-agent.md` | 始终 |
 
-### Conditional Agents
+UI/UX 设计必须先于 `admin/` 或 `miniapp/` 的界面实现完成。
 
-| Agent | File | Invoke When |
-|-------|------|-------------|
-| Backend | `backend-agent.md` | `backend/` changes needed |
-| Frontend | `frontend-agent.md` | `admin/` changes needed |
-| MiniApp | `miniapp-agent.md` | `miniapp/` changes needed |
-| UI/UX | `ui-ux-agent.md` | Any new/modified UI component, page, style, or interaction |
+## Phase 1: 需求分析
+Requirements agent 产出 `requirements-spec.md`。
 
-> **UI/UX Agent Activation (Hard Rule)**: Activate if **any** of: new page/component, style/layout/interaction change, design spec change, or frontend/miniapp agent is activated **with component-level scope**. UI/UX Agent must complete design delivery before any frontend/miniapp implementation begins.
+进入规格编写前，必须至少完成一轮与用户的问答确认，并把确认结论写入 `requirements-spec.md`。
 
-## Phase Workflow
+必须包含：
 
----
+- Scope：In Scope / Out of Scope / Deferred
+- Use Cases：角色、目标、主流程、业务规则
+- Frontend Requirements：用户可见页面与功能
+- Edge Cases：业务边界与异常行为
+- Acceptance Criteria：业务验收 checklist
 
-### Phase 1: Discovery, Design & Contract Freeze
+门禁：
 
-**Participants**: requirements-agent, architecture-agent, ui-ux-agent (if activated)
+- 只描述 what，不写技术实现
+- 范围边界清楚，无明显冲突
+- 验收标准可测试或可人工验收
+- 已完成至少一轮用户问答确认；未确认项已记录假设
 
-**Parallel execution**:
-- requirements-agent: scope, edge cases, acceptance criteria
-- architecture-agent: data model, API contracts, module boundaries
-- ui-ux-agent: visual style, interaction patterns, component spec (when activated)
-- Meanwhile: init status tracker, confirm all required agents activated
+阻塞：核心规则缺失；解释会导致不同实现；涉及财务/支付/权限/历史数据但缺少确认；目标端或目标用户不清楚。
 
-**Contract freeze** (architecture-agent lead, requirements-agent review):
-1. For each contract layer, explicitly state: (a) changed → update doc, (b) reused as-is → cite existing doc, (c) no contract needed → state reason. No implicit skips.
-2. Update `ARCHITECTURE.md` 契约章节 if platform-level contracts changed
-3. Write `governance/feature-docs/{feature}/contract-changes.md` for feature-level API changes
-4. Verify against `CONTRACT/backend-api.json` via `extract-openapi` skill
-5. Write ADR only if introducing **new architectural patterns**
-6. Define branch names per repo
+## Phase 2: 技术设计
+Architecture agent 产出 `technical-design.md`，定义模块边界、实现策略、契约状态和分支计划。
 
-**Gate** — all must be green before proceeding:
-- [ ] Requirements spec with in-scope / out-scope boundaries
-- [ ] Technical design with DB changes, API contracts, module impact
-- [ ] Every contract layer has explicit status (changed / reused / N/A with reason)
-- [ ] API contracts documented: platform-level → `ARCHITECTURE.md`; feature-level → `governance/feature-docs/{feature}/contract-changes.md`
-- [ ] OpenAPI JSON snapshot generated if backend changed
-- [ ] UI/UX design review approved (if activated)
-- [ ] Branch names defined for every affected repo
+并行产物：
 
-**→ Escalation**: If any gate is blocked:
-1. Immediately stop all active agent work
-2. Produce `REPORT.md` in `governance/feature-docs/{feature}/` listing: which gate failed, why, what is missing, what the user must provide or decide
-3. **Pause and wait for explicit user confirmation** — no self-approving, skipping, or retrying without user
-4. No agent may proceed to Phase 2 until user explicitly clears the gate
+- 契约变化：`contract-changes.md`
+- 新模式或偏离 ADR：新增 ADR
+- UI/UX 激活：`ui-ux-design.md`
 
-**Document collection**:
+契约层必须声明状态：
 
-| Document | Source | Filename | Required |
-|----------|--------|----------|----------|
-| Requirements spec | requirements-agent | `requirements-spec.md` | Always |
-| Technical design | architecture-agent | `technical-design.md` | Always |
-| API contract changes | architecture-agent | `contract-changes.md` | If API changed |
-| UI/UX design | ui-ux-agent | `ui-ux-design.md` | If UI/UX activated |
-| ADR | architecture-agent | `adr-{nnn}.md` | If new pattern introduced |
+| 层 | 状态 |
+|----|------|
+| API | 变更 / 复用 / N/A |
+| DB schema | 变更 / 复用 / N/A |
+| 事件/MQ | 变更 / 复用 / N/A |
+| 权限与数据范围 | 变更 / 复用 / N/A |
+| 依赖 | 变更 / 复用 / N/A |
+| 外部系统 | 变更 / 复用 / N/A |
+| ADR | 需要 / 不需要 |
 
----
+契约写入：平台级写 `governance/ARCHITECTURE.md`；功能级写 `governance/feature-docs/{feature-name}/contract-changes.md`；机器可读写 `governance/CONTRACT/`。
 
-### Phase 2: Parallel Implementation
+分支计划：
 
-**Participants**: backend-agent, frontend-agent, miniapp-agent (as activated), ui-ux-agent (as activated), test-agent
+| 仓库 | base | branch |
+|------|------|--------|
+| workspace root | `main` | `feat/{feature-name}` 或 N/A |
+| `backend/` | `master` | `feat/{feature-name}` 或 N/A |
+| `admin/` | `master` | `feat/{feature-name}` 或 N/A |
+| `miniapp/` | `main` | `feat/{feature-name}` 或 N/A |
+| `icepolar-dms/` | `main` | `feat/{feature-name}` 或 N/A |
 
-**Dependency rule (hard)**: frontend-agent / miniapp-agent **blocked** until ui-ux-agent design delivery is complete. If ui-ux-agent is not activated, the frontend agent must produce a simplified component spec and save it to `governance/feature-docs/{feature}/ui-ux-design.md`.
+门禁：
 
-**Execution**:
-- Workspace root: commit directly to `main`, no feature branch
-- Submodules: one `feat/<feature-name>` branch per repo from base branch (`backend/` → `master`, `admin/` → `master`, `miniapp/` → `main`, `icepolar-dms/` → `main`)
-- Commit format: `feat(scope): description`
-- Never commit directly to submodule base branches
-- Include migration script in same PR as backend changes
-- test-agent designs test plan and writes E2E / unit tests in parallel
+- `technical-design.md` 已完成
+- 所有契约层有结论
+- 契约变化已写入 `contract-changes.md`
+- UI/UX 激活时已完成 `ui-ux-design.md`
+- DB 变化包含迁移脚本名与回滚策略
+- 用户已确认，或已记录可继续推进的假设
 
-**→ Escalation**: If implementation reveals design flaws, pause and assess. If flaw is minor, adjust within Phase 2. If flaw is structural, return to Phase 1 with a delta `REPORT.md` and wait for user confirmation.
+阻塞：契约冲突；破坏性 DB 变更无回滚；外部系统接入缺少版本/权限/SLA/回调策略；UI/UX 与需求冲突。
 
----
+## Phase 3: 实现与测试
+开发 Agent 按仓库所有权在 worktree 中实现；Test agent 按风险设计并执行测试。
 
-### Phase 3: Review, Deliver & Merge
+顺序：后端契约和 DB 迁移优先；API client、前端页面、小程序页面基于冻结契约实现；UI/UX 激活时不得绕过 `ui-ux-design.md`；Test agent 可并行准备测试。
 
-**Participants**: review-agent (technical), developer agents
+worktree 规则：
 
-#### Step 3.1: Code Review
+- 每个受影响子仓库创建独立 worktree，原子模块目录保持在 base 分支。
+- worktree 目录放在 `.worktrees/{repo}-{feature-name}`。
+- 所有命令仍从工作区根执行，进入 worktree 使用 `(cd .worktrees/... && cmd)`。
+- 未经用户确认，不在 worktree 中 commit、push 或创建 PR。
 
-**Review checklist** (review-agent):
-- [ ] Implementation matches requirements spec
-- [ ] API contracts match `ARCHITECTURE.md` and/or `contract-changes.md`
-- [ ] No hardcoded secrets
-- [ ] Tenant isolation verified in all new queries
-- [ ] Migration script present and correct
-- [ ] Tests cover the change
-- [ ] ADR updated if needed
-- [ ] Submodule branches follow naming convention
-- [ ] No code duplication
-- [ ] Security checked (SQL injection, XSS, etc.)
-- [ ] Visual consistency verified (if ui-ux-agent activated)
+创建示例：`(cd backend && git worktree add ../.worktrees/backend-{feature-name} -b feat/{feature-name} origin/master)`；其他仓库按 base 分支替换。
 
-**Process check**:
-- [ ] All activated agents reported completion
-- [ ] All required artifacts present
-- [ ] No unresolved escalation reports
+职责：`backend/` 负责 API/服务/迁移；`admin/` 负责后台页面/API client/E2E；`miniapp/` 负责小程序页面/配置/工具；`icepolar-dms/` 仅设备系统自身变化时修改；`governance/` 负责文档和契约。
 
-**Gate**: PASS → proceed to Step 3.2; FAIL → return to Phase 2.
+验证命令按受影响仓库执行；无法执行必须记录原因：
 
-#### Step 3.2: User Confirmation
+```bash
+(cd .worktrees/backend-{feature-name} && mvn test)
+(cd .worktrees/admin-{feature-name} && pnpm ts:check && pnpm build)
+(cd .worktrees/icepolar-dms-{feature-name} && pytest -v)
+```
 
-1. Collect change summaries from all agents
-2. Review-agent outputs review conclusion
-3. Present `CHANGE-REPORT.md` (overview, affected files, API/DB/UI changes, test coverage, review conclusion, risks) and **wait for explicit user confirmation**
+门禁：
 
-**Gate**: user confirms → Step 3.3; user requests changes → back to Phase 2/3.1; user rejects → terminate.
+- 实现与需求、设计、契约一致
+- 必要验证已执行或记录原因
+- 测试产物已写入 `test-plan.md` 或 `test-notes.md`
+- 无非预期文件、密钥或本地私密配置变更
 
-#### Step 3.3: Pull Request Creation
+设计偏差：小偏差在 Phase 3 更新文档；结构性偏差回 Phase 2，并产出 `REPORT.md` 等待确认。
 
-**Actions**:
-1. Workspace root: already on `main`, push if needed
-2. Push submodule feature branches to remote
-3. Auto-create PR via CLI: GitHub → `gh pr create`; Gitee → `@gitee-pr-submit` skill
-4. If auto-create fails, list branches/remote URLs and wait for manual PR
-5. PR description must **embed** the actual content of: requirements spec, technical design, `ARCHITECTURE.md` 契约章节, ADR. Do **not** use file path references (e.g. `governance/feature-docs/...`) — these documents live in the workspace repo, not in the submodule repo, and cannot be viewed on GitHub/Gitee
-6. Record PR URLs for tracking
+## Phase 4: 审查与交付
+Review agent 产出 `review-report.md`，通过后产出 `CHANGE-REPORT.md`。
 
-#### Step 3.4: Merge & Cleanup
+审查清单：
 
-**Prerequisite**: All submodule PRs reviewed and approved.
+- 实现满足 `requirements-spec.md`
+- 技术方案符合 `technical-design.md`
+- 契约与 `contract-changes.md` 一致
+- 无密钥、无私密配置
+- 新查询满足租户隔离和数据权限
+- DB 迁移存在且可回滚
+- 测试覆盖变更范围，失败项已说明
+- UI/UX 激活时视觉和交互一致
+- 分支名、提交说明、PR 范围符合规范
 
-**Actions per repo**:
-- Workspace root: `git pull origin main`, verify clean working tree on `main`
-- Submodules: squash-merge PR into base branch → switch local to base → `git pull` → delete local `feat/` branch → delete remote `feat/` branch
+`CHANGE-REPORT.md` 包含：业务目标、影响仓库和主要文件、契约变化、DB 迁移、测试结果、风险、建议 PR 标题和描述。
 
-**Final verification**:
-- [ ] Workspace root on `main` with clean tree
-- [ ] Each submodule on base branch with clean tree
-- [ ] Merge commit present in `git log --oneline -5`
-- [ ] No dangling feature branches locally
-- [ ] No unresolved escalation reports
-- [ ] `ARCHITECTURE.md` 契约章节 updated if API changes
-- [ ] ADR written if new patterns introduced
+审查通过后暂停，等待用户确认是否 commit、push、创建 PR、使用 Gitee PR 流程、PR 合入后删除本地/远程 feature 分支。
 
----
+PR 描述必须嵌入需求、设计、契约和 ADR 摘要，不只写文件路径。
 
-## Escalation Rules
+## 阻塞报告模板
+```markdown
+# 阻塞报告 — [Feature]
+## 当前阶段
+## 已完成
+## 阻塞点
+## 影响
+## 建议选项
+## 需要用户确认的问题
+```
 
-| Scenario | Action |
-|----------|--------|
-| Any Phase exceeds **10 minutes** | Output progress summary to conversation, then **continue execution** |
-| Phase 1 gate blocked | Generate `REPORT.md`, **pause and wait for user confirmation** |
-| Phase 2 design flaw (minor) | Adjust within Phase 2 |
-| Phase 2 design flaw (structural) | Return to Phase 1 with delta `REPORT.md`, pause for user |
-
----
-
-## Branch & Commit Rules
-
-| Rule | Value |
-|------|-------|
-| Workspace root branch | `main` (direct commits) |
-| Submodule branch naming | `feat/<feature-name>` |
-| Submodule base branches | `backend/` → `master`, `admin/` → `master`, `miniapp/` → `main`, `icepolar-dms/` → `main` |
-| Commit format | `feat(scope): description` |
-| Direct commit to submodule base branches | Forbidden |
-| Migration script inclusion | Same PR as backend changes |
-
----
-
-## Completion Criteria
-
-A feature is complete when **all** are true:
-
-1. All activated agents completed; review-agent passed; all gates verified
-2. Phase 3 Step 3.2 user confirmation received
-3. Submodule PRs created, merged, and feature branches deleted (local + remote)
-4. Workspace root on `main` with clean state; submodules on base branches with clean state
-5. No unresolved escalation reports
-6. `ARCHITECTURE.md` 契约章节 updated and ADR written if applicable
-7. All delivery documents archived to `governance/feature-docs/{feature}/` (requirements-spec, technical-design, contract-changes, plus ui-ux-design / adr if applicable)
+## 完成标准
+- 所有阶段门禁通过
+- 用户已确认提交、推送、PR 或合并动作
+- 验证命令已执行，或原因已记录
+- `review-report.md` 和 `CHANGE-REPORT.md` 已归档
+- PR 已创建，或用户明确选择暂不创建
+- 工作区和子模块状态已报告清楚
+- 交付文档归档在 `governance/feature-docs/{feature-name}/`
