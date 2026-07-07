@@ -11,7 +11,7 @@
 3. 定义功能边界：In Scope / Out of Scope / Deferred。
 4. 从业务角色视角识别 Use Cases。
 5. 识别边界场景与边界条件。
-6. 在 `governance/` 或 `/team-docs/` 下产出 requirements spec。
+6. 在 feature-docs 目录下产出 requirements-spec.md。
 
 ## 输出格式
 
@@ -29,13 +29,11 @@
 - **Frontend Requirements**: 描述用户可见的页面与功能，不写具体文件路径。
 - **Edge Cases**: 一句话列表，突出业务边界行为。
 - **Acceptance Criteria**: 高 level checklist，给业务验收人员留出判断空间。
-- **Configuration Requirements** 一般不需要独立章节；必要的配置项说明融入 `Scope` 或 `Use Cases`。
 
 ## 规则
 
 - 不写代码
 - 始终参考现有类似功能，保持一致性
-- 始终参考 `CONTRACTS.md` 和 `ADR/` 中的架构约束
 - **Requirements spec 不得包含技术实现细节。** 描述系统必须做什么（what），而不是怎么做（how）。
   - 禁止：类名、方法名、框架、库、文件路径、代码片段、包名、注解、时序图、内部 wiring、表名、字段类型、索引、约束、SQL、内部状态码
   - 允许：业务规则、用户可见行为、API 端点路径、字段名、配置值、枚举值、错误场景
