@@ -26,7 +26,7 @@
 |------|------|------|
 | 收款人名称 | `el-input` | 模糊搜索 |
 | 级别 | `el-select` | 平台级 / 店铺级 |
-| 角色 | `el-select` | 平台 / 配送方 / 销售方 |
+| 角色 | `el-select` | 平台 / 配送方 / 销售方（级别=店铺级时隐藏） |
 | 店铺名称 | `el-select` | 级别=店铺级时可用，关联店铺下拉 |
 | 状态 | `el-select` | 启用 / 禁用 |
 
@@ -36,7 +36,7 @@
 |----|------|------|
 | ID | `id` | 居中 |
 | 级别 | `recipientType` | `平台级` / `店铺级` |
-| 角色 | `role` | `平台` / `配送方` / `销售方` |
+| 角色 | `role` | 平台级显示 `平台`/`配送方`/`销售方`；店铺级显示 `--` |
 | 店铺名称 | `shopName` | 平台级显示 `--` |
 | 收款人名称 | `recipientName` | 居中 |
 | Member 类型 | `memberType` | `个人` / `企业` |
@@ -56,16 +56,17 @@
 | 字段 | 组件 | 校验规则 |
 |------|------|----------|
 | 级别 | `el-radio-group` | `required` |
-| 角色 | `el-select` | `required` |
+| 角色 | `el-select` | 级别=平台级时 `required`；级别=店铺级时隐藏且不传递 |
 | 关联店铺 | `el-select` | 级别=店铺级时 `required`；级别=平台级时隐藏 |
 | 收款人名称 | `el-input` | `required`, max 64 |
 | Member 类型 | `el-radio-group` | `required`：`1`=个人，`2`=企业 |
 | 个人实名信息 | 动态表单 | `memberType=1` 时显示：手机号、真实姓名、身份证号 |
 | 企业信息 | 动态表单 | `memberType=2` 时显示：企业名称、营业执照号、法人姓名、法人身份证号、营业执照附件 |
-| 结算银行卡 | 动态表单 | `required`：银行卡号、开户名、银行代码、开户行、账户类型 |
-| 状态 | `el-switch` | 默认启用 |
+| 结算银行卡 | 动态表单 | 创建/编辑均显示；`required`：银行卡号、开户名、银行（`el-select` 从银行列表加载，显示 `bankCode + bankName`，绑定 `bankCode`）、账户类型 |
 
-> 创建收款人提交后，后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后才入库。表单不再由管理员填写 `member_id`。
+> 创建收款人提交后，后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后才入库。`member_id` 由后端按 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0}` 生成，前端不传。
+>
+> 编辑模式下允许修改结算银行卡信息，后台同步调用 Adapay 更新绑定。
 
 #### Empty / Error States
 
@@ -93,13 +94,13 @@
 
 | 字段 | 组件 | 校验规则 |
 |------|------|----------|
-| 分账收款人 | `el-select` | 可选，从已启用的平台级（角色=平台）+ 该店铺级收款人列表中选择 |
+| 分账收款人 | `el-select` | 可选，仅列出绑定该店铺的店铺级收款人（`shopId` = 当前店铺，`status=1`） |
 | 启用分账 | `el-switch` | 选择收款人后自动启用；解绑时关闭 |
 
 交互逻辑：
 
-- `el-select` 的 `options` 由 `getProfitSharingReceiverList({ status: 1, shopId: formData.id })` 提供。
-- 下拉选项按级别分组：选项前缀区分 `平台级` / `店铺级`。
+- `el-select` 的 `options` 由 `getProfitSharingReceiverList({ status: 1, shopId: formData.id, recipientType: 2 })` 提供。
+- 只显示该店铺的店铺级收款人，不可跨店选择。
 - 选择收款人后，启用分账开关自动打开；清空选择时，开关关闭。
 - **本期不包含分账比例覆盖字段**，分账比例固定使用 `commissionRate`。
 
@@ -242,12 +243,12 @@
 export interface ProfitSharingReceiverVO {
   id: number
   recipientType: number  // 1=平台级, 2=店铺级
-  role: number           // 1=平台, 2=配送方, 3=销售方
+  role?: number          // 平台级: 1=平台, 2=配送方, 3=销售方；店铺级: null
   memberType: number     // 1=个人, 2=企业
   shopId?: number
   shopName?: string
   recipientName: string
-  memberId: string
+  memberId: string       // 后端按规则编码
   settleAccountBound: number // 0=未绑定, 1=已绑定
   status: number         // 0=禁用, 1=启用
 }

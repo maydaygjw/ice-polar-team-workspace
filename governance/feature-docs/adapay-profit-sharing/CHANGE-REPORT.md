@@ -2,77 +2,60 @@
 
 ## 变更概述
 
-实现基于 Adapay 三方支付的延迟分账与日终自动结算功能。支持分账收款人管理（平台级/店铺级）、店铺绑定收款人、Adapay 延迟分账、日终自动结算、失败回退与手动重试。
+本次为 Phase 3 文档对齐修复，同步 `requirements-spec.md`、`technical-design.md`、`contract-changes.md`、`ui-ux-design.md` 的 5 项规则调整到 `backend/` 和 `admin/`。
 
 ## 影响范围
 
 | 模块/仓库 | 变更类型 | 说明 |
 |-----------|----------|------|
-| `backend/` | 新增 + 修改 | 分账收款人、分账订单、结算 Job、支付集成、店铺绑定 |
-| `admin/` | 新增 + 修改 | 分账收款人管理页、分账结算记录页、店铺绑定配置 |
-| `governance/` | 新增 + 修改 | Phase 1 设计文档、review 报告、OpenAPI 快照 |
+| `backend/` | 修改 | MemberId 编码、结算可编辑、role 可选、list-by-shop 约束 |
+| `admin/` | 修改 | 角色条件渲染、银行下拉、TypeScript 类型 |
+| `governance/` | 修改 + 新增 | 4 份设计文档更新、bank-list.json |
 
-## 新增表
+## 新增文件
 
-- `yshop_adapay_profit_recipient` — 分账收款人
-- `yshop_adapay_profit_sharing_order` — 分账订单记录
-- `yshop_adapay_profit_sharing_log` — 分账操作日志
+- `governance/feature-docs/adapay-profit-sharing/bank-list.json` — Adapay 支持银行列表（5260 条）
+- `.worktrees/admin-adapay-profit-sharing/public/bank-list.json` — 前端静态副本
 
-## 修改表
+## 变更详情
 
-- `yshop_store_shop` 新增 `profit_sharing_recipient_id`、`profit_sharing_enabled`
+| # | 变更 | 后端文件 | 前端文件 |
+|---|------|----------|----------|
+| 1 | **MemberId 编码规则** | `ProfitRecipientServiceImpl.java` | — |
+| | | `generateMemberId()` → `m_{tenantId}_{memberType}_{idCard}_{storeId\|0}` | |
+| | | 新增 `extractIdCard()` | |
+| | | 创建前校验 `member_id` 唯一性 | |
+| 2 | **结算账户可编辑** | `ProfitRecipientServiceImpl.java` | `ProfitSharingReceiverForm.vue` |
+| | | `updateProfitRecipient()` 处理 `settleAccount` 变更 | 结算账户区域始终可见 |
+| 3 | **店铺级无需角色** | `ProfitRecipientBaseVO.java`, `ErrorCodeConstants.java` | `ProfitSharingReceiverForm.vue`, `index.ts` |
+| | | `role` 移除 `@NotNull`，新增 `validateRole()` | `v-if="recipientType==1"`，提交时清空 |
+| 4 | **店铺只能选本店铺收款人** | `ProfitRecipientMapper.java` | — |
+| | | `selectListByShop()` 移除平台级+角色=1 的 OR | |
+| 5 | **银行下拉带编码** | — | `ProfitSharingReceiverForm.vue`, `bank-list.json` |
+| | | | `el-select` + `filterable` 替换 `el-input` |
 
-## 新增 Admin API
+## 构建验证
 
-- `POST /admin-api/pay/profit-recipient/create`
-- `PUT /admin-api/pay/profit-recipient/update`
-- `DELETE /admin-api/pay/profit-recipient/delete`
-- `GET /admin-api/pay/profit-recipient/get`
-- `GET /admin-api/pay/profit-recipient/page`
-- `GET /admin-api/pay/profit-recipient/list-by-shop`
-- `PUT /admin-api/store/shop/bind-profit-recipient`
-- `GET /admin-api/pay/profit-sharing-order/page`
-- `GET /admin-api/pay/profit-sharing-order/get`
-- `POST /admin-api/pay/profit-sharing-order/retry`
-
-## 新增内部 API
-
-- `ProfitSharingOrderApi.createSharingOrder(dto)`
-- `ProfitRecipientApi.listByShop(shopId)` / `getActiveRecipient(tenantId, role)` / `getRecipient(id)`
-- `StoreRevenueApi.batchCreateStoreRevenue(list)`
-- `StoreShopApi.isProfitRecipientBound(recipientId)`
-
-## 关键实现
-
-- 支付时若店铺启用分账，设置 `pay_mode=delay`，并提前校验收款人配置，缺失则拒绝支付。
-- 支付成功回调透传 `adapay_payment_id`，创建分账挂起记录。
-- `ProfitSharingSettlementJob` 每日 00:05 触发，调用 Adapay `PaymentConfirm.create` 执行分账。
-- 分账失败自动回退到现有 `RevenueJob` 虚拟余额结算。
+| 验证项 | 结果 |
+|--------|------|
+| `mvn compile` (pay-biz, pay-api) | ✅ 通过 |
+| `pnpm build:dev` (admin) | ✅ 通过 |
+| `pnpm ts:check` | ✅ 0 错误 |
 
 ## 测试覆盖
 
-- Admin E2E 测试：`admin/e2e/adapay-profit-sharing.spec.ts`
-- 后端编译通过（`mvn compile -DskipTests`）
-- 前端构建通过（`pnpm run build:local`）
+- 预存 `DesensitizeTest` 失败与本次变更无关
+- E2E 测试 `adapay-profit-sharing.spec.ts` 存在但未运行（需服务环境）
+- 测试建议记录在 `test-notes.md`
 
-## 已知技术债务
+## 预存技术债务
 
-- `yshop-module-order-biz` 和 `yshop-module-store-biz` 的 `pom.xml` 仍保留对 `yshop-module-pay-biz` 的直接依赖（旧代码 `StoreWithdrawalServiceImpl` 等依赖 pay-biz 具体类）。本次新增代码已通过 `-api` 模块调用，旧依赖未清理。
-- OpenAPI 快照当前从静态文件收集；服务运行后 `/v3/api-docs` 暂未包含新增接口，待排查 SpringDoc 扫描问题。
+以下为之前 Review 报告的遗留项，与本次 5 点修复无关：
 
-## Review 结论
-
-**PASS_WITH_NOTES**
-
-主要问题已在本次提交中修复：
-- 收款人删除前校验绑定状态
-- 支付前拒绝缺少分账配置的订单
-- 结算 Job 复用 Service 执行逻辑
-- 金额格式化、错误码统一、日志租户 ID 等
-
-剩余未处理问题：
-- 旧 `-biz` 模块之间的直接依赖
-- 后端单元/集成测试补充
+- `-biz` 模块间直接依赖（order-biz/store-biz → pay-biz）
+- 分账核心逻辑在 Service 与 Job 中重复
+- OpenAPI 快照未包含新增接口
+- 支付前收款人校验位置（在 `paySuccess` 而非 `pay`）
 
 ## 分支信息
 
@@ -81,11 +64,6 @@
 | `backend/` | `feat/adapay-profit-sharing` | `master` |
 | `admin/` | `feat/adapay-profit-sharing` | `master` |
 
-## PR 内容要求
+## Review 结论
 
-PR description 需嵌入以下文档内容：
-- `governance/feature-docs/adapay-profit-sharing/requirements-spec.md`
-- `governance/feature-docs/adapay-profit-sharing/technical-design.md`
-- `governance/feature-docs/adapay-profit-sharing/contract-changes.md`
-- `governance/ADR/adr-002-adapay-profit-sharing.md`
-- `governance/feature-docs/adapay-profit-sharing/review-report.md`
+**PASS** — 5 项修复均已实现，编译与构建通过，实现与设计文档一致。

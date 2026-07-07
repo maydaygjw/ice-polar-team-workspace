@@ -25,3 +25,4 @@ Thumbs.db
 *.log
 logs/
 governance/ENVIRONMENTS/cert/
+.worktrees/
