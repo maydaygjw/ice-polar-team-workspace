@@ -59,7 +59,7 @@
 
 #### POST /admin-api/pay/profit-recipient/create
 
-创建分账收款人。后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后入库。创建 `status=1` 的收款人时，同租户同角色下其他 `status=1` 的收款人将被自动禁用。
+创建分账收款人。后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后入库。创建 `status=1` 的**平台级**收款人时，同租户同角色下其他 `status=1` 的**平台级**收款人将被自动禁用。
 
 **权限**: `pay:profit-recipient:create`
 
@@ -383,7 +383,7 @@ public class CreateSharingOrderDTO {
 | `PROFIT_SHARING_STATUS_INVALID` (1_xxx_006) | 分账状态不允许操作 | 非失败状态调用重试 |
 | `PROFIT_SHARING_ROLE_RECIPIENT_MISSING` (1_xxx_007) | 某角色有效收款人未配置 | 创建分账记录时租户无该角色有效收款人 |
 | `PROFIT_SHARING_SHOP_RECIPIENT_MISSING` (1_xxx_008) | 店铺未绑定收款人 | 支付时店铺启用分账但无绑定收款人 |
-| `PROFIT_SHARING_AMOUNT_MISMATCH` (1_xxx_009) | 分账金额校验失败 | platform + shop != payPrice |
+| `PROFIT_SHARING_AMOUNT_MISMATCH` (1_xxx_009) | 分账金额校验失败 | 执行分账前 platform + shop != payPrice，或创建记录时金额不一致 |
 | `PROFIT_SHARING_PAY_DISABLED` (1_xxx_010) | 分账配置不完整，禁止支付 | 支付时缺少有效收款人 |
 | `PROFIT_RECIPIENT_MEMBER_CREATE_FAILED` (1_xxx_011) | Adapay Member 创建失败 | 调用 Adapay 创建 Member 失败 |
 | `PROFIT_RECIPIENT_SETTLE_ACCOUNT_FAILED` (1_xxx_012) | Adapay 结算账户绑定失败 | 调用 Adapay 绑定结算账户失败 |

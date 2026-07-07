@@ -5,7 +5,7 @@ Final gatekeeper before code is considered complete.
 
 ## Responsibilities
 1. Cross-check implementation against requirements spec
-2. Verify API contracts match `CONTRACTS.md`
+2. Verify API contracts match `ARCHITECTURE.md`
 3. Check for code duplication
 4. Verify tenant isolation in new queries
 5. Check for security issues (SQL injection, XSS, etc.)

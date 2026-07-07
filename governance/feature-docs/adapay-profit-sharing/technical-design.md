@@ -29,8 +29,8 @@
 
 **索引**: `idx_tenant_role_status` (`tenant_id`, `role`, `status`), `idx_tenant_shop` (`tenant_id`, `shop_id`, `status`), `idx_member_id` (`member_id`)
 
-**唯一约束**: `uniq_tenant_role_active` — 同一租户同一角色只能有一个 `status=1` 的收款人。
-实现方式：业务层校验 + 创建时将该角色下其他 `status=1` 记录置为 `status=0`。
+**唯一约束**: `uniq_tenant_role_active` — 同一租户同一角色的**平台级**收款人只能有一个 `status=1` 的记录。
+实现方式：业务层校验 + 创建平台级收款人时，将该租户该角色下其他 `status=1` 的平台级记录置为 `status=0`。店铺级收款人不受此约束。
 
 #### 2. `yshop_adapay_profit_sharing_order` — 分账订单记录
 
@@ -101,7 +101,7 @@
 ### 分账收款人创建流程
 
 1. 校验收款人类型、角色、店铺 ID 的一致性。
-2. 同角色平台级收款人唯一性校验（启用时）。
+2. **平台级收款人唯一性校验**（创建 `status=1` 的平台级收款人时）：将同租户同角色下其他 `status=1` 的平台级收款人置为 `status=0`。
 3. 加载当前租户的 Adapay 商户配置，构造支付服务。
 4. 调用 Adapay Member 创建接口（个人/企业），获取 `member_id`。
 5. 使用返回的 `member_id`，调用 Adapay 结算账户绑定接口，获取 `settle_account_id`。
@@ -226,14 +226,17 @@ Quartz Scheduler ──→ 每日 00:05 触发
                       ▼
               yshop-module-pay-biz (ProfitSharingSettlementJob)
                       │  @TenantJob 多租户遍历
-                      │  查询 sharing_status = 0 且 create_time < 今日 00:00 的记录
+                      │  查询 sharing_status = 0
+                      │  且关联订单状态为待收货或退款拒绝的记录
                       ▼
               遍历每个待分账订单（分页，每批 100）
                       │
                       ▼
-              计算分账金额
+              计算分账金额并校验
                       │  platform_amount = commission_amount
                       │  shop_amount = pay_price - commission_amount
+                      │  校验 platform_amount + shop_amount == pay_price
+                      │  校验失败则标记 sharing_status = 3（分账失败）
                       ▼
               调用 Adapay PaymentConfirm.create
                       │  payment_id: adapay_payment_id
@@ -283,12 +286,13 @@ Quartz Scheduler ──→ 每日 00:05 触发
 
 1. **延迟分账模式**：支付时设置 `pay_mode=delay`，资金冻结在平台账户，日终再执行分账确认。
 2. **分账金额固化**：在 `yshop_adapay_profit_sharing_order` 创建时即计算并固化 `commission_amount`、`shop_amount`。
-3. **平台级收款人角色化**：每个收款人带 `role` 字段；同一租户同一角色只能有一个 `status=1` 的有效收款人。
+3. **平台级收款人角色化**：每个收款人带 `role` 字段；同一租户同一角色的**平台级**收款人只能有一个 `status=1` 的有效收款人。
 4. **分账失败兜底**：Adapay 分账失败后，自动回退到现有 `RevenueJob` 虚拟余额结算，保证店铺收入不丢失。
 5. **支付前校验**：若店铺启用分账但缺少有效平台/店铺收款人，拒绝支付。
 6. **Job 幂等**：`ProfitSharingSettlementJob` 通过 `sharing_status` 状态机保证幂等，同一订单不会重复分账。
-7. **Member 与结算账户同步创建**：创建收款人时同步调用 Adapay 创建 Member 并绑定结算账户，避免后续分账因缺少结算账户失败。
-8. **Member 类型区分**：支持个人/企业两种 Member，企业需上传附件。
+7. **分账金额校验**：执行分账前校验 `platform_amount + shop_amount == pay_price`，不一致时标记分账失败。
+8. **Member 与结算账户同步创建**：创建收款人时同步调用 Adapay 创建 Member 并绑定结算账户，避免后续分账因缺少结算账户失败。
+9. **Member 类型区分**：支持个人/企业两种 Member，企业需上传附件。
 
 ## 风险与缓解
 

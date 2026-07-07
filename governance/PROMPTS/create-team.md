@@ -10,7 +10,7 @@ This prompt acts as the **orchestrator**. It drives phase transitions, enforces 
 
 ## Pre-flight
 
-Read before assembly: `CLAUDE.md` → `ARCHITECTURE.md` → `CONTRACTS.md` → relevant `ADR/` entries.
+Read before assembly: `CLAUDE.md` → `ARCHITECTURE.md` → relevant `ADR/` entries.
 
 ## Team Assembly
 
@@ -52,7 +52,7 @@ Agents are defined in `governance/AGENTS/`. Read each active agent before assign
 
 **Contract freeze** (architecture-agent lead, requirements-agent review):
 1. For each contract layer, explicitly state: (a) changed → update doc, (b) reused as-is → cite existing doc, (c) no contract needed → state reason. No implicit skips.
-2. Update `CONTRACTS.md` if platform-level contracts changed
+2. Update `ARCHITECTURE.md` 契约章节 if platform-level contracts changed
 3. Write `governance/feature-docs/{feature}/contract-changes.md` for feature-level API changes
 4. Verify against `CONTRACT/backend-api.json` via `extract-openapi` skill
 5. Write ADR only if introducing **new architectural patterns**
@@ -62,7 +62,7 @@ Agents are defined in `governance/AGENTS/`. Read each active agent before assign
 - [ ] Requirements spec with in-scope / out-scope boundaries
 - [ ] Technical design with DB changes, API contracts, module impact
 - [ ] Every contract layer has explicit status (changed / reused / N/A with reason)
-- [ ] API contracts documented: platform-level → `CONTRACTS.md`; feature-level → `governance/feature-docs/{feature}/contract-changes.md`
+- [ ] API contracts documented: platform-level → `ARCHITECTURE.md`; feature-level → `governance/feature-docs/{feature}/contract-changes.md`
 - [ ] OpenAPI JSON snapshot generated if backend changed
 - [ ] UI/UX design review approved (if activated)
 - [ ] Branch names defined for every affected repo
@@ -111,7 +111,7 @@ Agents are defined in `governance/AGENTS/`. Read each active agent before assign
 
 **Review checklist** (review-agent):
 - [ ] Implementation matches requirements spec
-- [ ] API contracts match `CONTRACTS.md` and/or `contract-changes.md`
+- [ ] API contracts match `ARCHITECTURE.md` and/or `contract-changes.md`
 - [ ] No hardcoded secrets
 - [ ] Tenant isolation verified in all new queries
 - [ ] Migration script present and correct
@@ -144,7 +144,7 @@ Agents are defined in `governance/AGENTS/`. Read each active agent before assign
 2. Push submodule feature branches to remote
 3. Auto-create PR via CLI: GitHub → `gh pr create`; Gitee → `@gitee-pr-submit` skill
 4. If auto-create fails, list branches/remote URLs and wait for manual PR
-5. PR description must **embed** the actual content of: requirements spec, technical design, `CONTRACTS.md`, ADR. Do **not** use file path references (e.g. `governance/feature-docs/...`) — these documents live in the workspace repo, not in the submodule repo, and cannot be viewed on GitHub/Gitee
+5. PR description must **embed** the actual content of: requirements spec, technical design, `ARCHITECTURE.md` 契约章节, ADR. Do **not** use file path references (e.g. `governance/feature-docs/...`) — these documents live in the workspace repo, not in the submodule repo, and cannot be viewed on GitHub/Gitee
 6. Record PR URLs for tracking
 
 #### Step 3.4: Merge & Cleanup
@@ -161,7 +161,7 @@ Agents are defined in `governance/AGENTS/`. Read each active agent before assign
 - [ ] Merge commit present in `git log --oneline -5`
 - [ ] No dangling feature branches locally
 - [ ] No unresolved escalation reports
-- [ ] `CONTRACTS.md` updated if API changes
+- [ ] `ARCHITECTURE.md` 契约章节 updated if API changes
 - [ ] ADR written if new patterns introduced
 
 ---
@@ -199,5 +199,5 @@ A feature is complete when **all** are true:
 3. Submodule PRs created, merged, and feature branches deleted (local + remote)
 4. Workspace root on `main` with clean state; submodules on base branches with clean state
 5. No unresolved escalation reports
-6. `CONTRACTS.md` updated and ADR written if applicable
+6. `ARCHITECTURE.md` 契约章节 updated and ADR written if applicable
 7. All delivery documents archived to `governance/feature-docs/{feature}/` (requirements-spec, technical-design, contract-changes, plus ui-ux-design / adr if applicable)

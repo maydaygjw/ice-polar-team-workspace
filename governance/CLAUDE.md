@@ -5,7 +5,7 @@ This file is the **team constitution** for the yshop AI engineering team. It is 
 ## Core Principles
 
 1. **Multi-repo, not monorepo** — Backend (`yshop-drink/`) and frontend (`yshop-drink-vue/`) are separate repositories with clear boundaries.
-2. **API first** — Any cross-repo change starts with contract definition in `CONTRACTS.md`.
+2. **API first** — Any cross-repo change starts with contract definition in `ARCHITECTURE.md`.
 3. **Multi-tenant by default** — All business tables contain `tenant_id`. MyBatis Plus interceptor injects it automatically.
 4. **Event-driven for async flows** — Payment callbacks, order timeouts, and notifications use MQ (RocketMQ) or Redis delay queue.
 5. **Historical data is immutable** — Order snapshots freeze data at payment time. Never retroactively modify historical records.
@@ -39,8 +39,7 @@ This file is the **team constitution** for the yshop AI engineering team. It is 
 | File/Dir | Purpose |
 |----------|---------|
 | `CLAUDE.md` | This file — team constitution |
-| `ARCHITECTURE.md` | System-wide architecture and data flow |
-| `CONTRACTS.md` | Cross-repo API/Event/DTO contracts |
+| `ARCHITECTURE.md` | System-wide architecture, data flow, and cross-repo contracts |
 | `AGENTS/` | Agent role definitions |
 | `ADR/` | Architecture Decision Records |
 | `PLAYBOOKS/` | Standard operating procedures |
