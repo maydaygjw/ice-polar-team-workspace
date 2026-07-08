@@ -73,6 +73,25 @@
 
 **PASS** — 银行列表后端化已实现，后端编译与前端构建通过，实现与设计文档一致。
 
+## 2026-07-08 追加修正：禁用分账时允许解绑收款人
+
+用户反馈：店铺分账配置无法解绑分账收款人。修正后规则：
+
+- 禁用分账时，允许 `recipientId` 为空，店铺进入无分账收款人状态。
+- 前端未选择收款人时，强制将分账置为禁用。
+- 后端 `bindProfitRecipient` 在 `enabled=false` 分支中清空 `profit_sharing_recipient_id` 与 `profit_sharing_enabled`。
+
+### 变更文件
+
+- `backend/yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/StoreShopServiceImpl.java`
+- `backend/yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/controller/admin/storeshop/vo/profitrecipient/ShopBindProfitRecipientReqVO.java`
+- `admin/src/views/mall/store/shop/ShopForm.vue`
+
+### 验证
+
+- `mvn -pl yshop-module-mall/yshop-module-store-biz -am compile -DskipTests` ✅
+- `pnpm build:dev` (admin) ✅
+
 ## PR 信息
 
 | 仓库 | PR | 状态 |

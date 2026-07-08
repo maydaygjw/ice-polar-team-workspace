@@ -27,9 +27,13 @@
 
 | 端点 | 变更类型 | 说明 |
 |------|----------|------|
-| `PUT /admin-api/store/shop/bind-profit-recipient` | 新增 | 绑定/解绑店铺分账收款人 |
+| `PUT /admin-api/store/shop/bind-profit-recipient` | 修改 | 绑定/解绑店铺分账收款人；`enabled=false` 时 `recipientId` 必须为空，后端清空绑定 |
 
 **权限**: `store:shop:update`（复用）
+
+**请求参数规则**：
+- `recipientId` 在 `enabled=true` 时必填，且必须是本店铺启用中的店铺级收款人。
+- `recipientId` 在 `enabled=false` 时必须为空；后端会同步将 `profit_sharing_recipient_id` 与 `profit_sharing_enabled` 清空。
 
 ### 分账订单
 
