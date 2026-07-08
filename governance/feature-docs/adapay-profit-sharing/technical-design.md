@@ -4,7 +4,7 @@
 
 | 模块 | 变更类型 | 说明 |
 |------|----------|------|
-| `yshop-module-pay-biz` | 修改 | 新增分账收款人 CRUD、分账订单 Service、Adapay 分账 SDK 封装（Member/结算账户创建、`Payment.create` delay、`PaymentConfirm.create`）、日终结算 Job、分账失败回退 |
+| `yshop-module-pay-biz` | 修改 | 新增分账收款人 CRUD、分账订单 Service、Adapay 分账 SDK 封装（Member/结算账户创建、结算账户更换、`Payment.create` delay、`PaymentConfirm.create`）、日终结算 Job、分账失败回退 |
 | `yshop-module-pay-api` | 修改 | 新增分账 DTO、Service 接口、ErrorCode |
 | `yshop-module-store-biz` | 修改 | 店铺绑定/解绑分账收款人；查询时返回分账启用状态 |
 | `yshop-module-store-api` | 修改 | 新增店铺绑定分账收款人 DTO |
@@ -25,12 +25,13 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 3. **MemberId 编码**：`member_id` 不依赖 Adapay 返回值，按本地规则 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0 for 平台}` 生成。天然保证同店铺同身份证号不可重复创建收款人。
 4. **平台级收款人角色唯一**：同租户同角色只有一个启用中的平台级收款人。通过业务层校验实现（创建时将同角色其他记录置为 `status=0`），不用数据库唯一索引。
 5. **店铺级收款人无角色**：店铺级收款人默认归属于指定店铺，无需分账角色。店铺只能选择绑定该店铺的收款人。
-6. **结算账户可修改**：编辑收款人时允许修改结算账户（银行卡），后台同步调用 Adapay 更新绑定。
+6. **结算账户以“更换”方式修改**：编辑收款人基础信息时不重新提交银行卡；只有管理员明确选择更换结算账户时，才提交完整新银行卡信息并同步调用 Adapay 更新绑定。详情接口只返回脱敏摘要，不返回完整旧卡号。
 7. **分账失败兜底**：Adapay 分账失败后，自动回退到现有 `RevenueJob` 虚拟余额结算，标记 `fallback_revenue=1`，保证店铺收入不丢失。
 8. **支付前置校验**：店铺启用分账但缺少有效平台/店铺收款人时，拒绝支付。失败在支付前暴露，不等到日终才报错。
 9. **Member 与结算账户同步创建**：创建收款人时串行调用 Adapay 创建 Member → 绑定结算账户，任一步失败直接抛错不入库，避免后续分账因缺少结算账户失败。
 10. **Job 幂等**：通过 `sharing_status` 状态机保证，同一订单不会重复分账。
 11. **分账前金额校验**：执行分账前校验 `platform_amount + shop_amount == pay_price`，不一致时标记失败不分账。
+12. **更换失败保持原账户**：更换结算账户调用 Adapay 失败时，本地收款人基础信息和原结算账户绑定保持不变，避免出现本地显示已更新但远程仍为旧账户的不一致状态。
 
 > 无新架构范式，复用现有模块分层、多租户拦截器、Job 调度模式。不新增 ADR。
 
@@ -60,6 +61,8 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 
 **失败回退**：`status=3` → 写入 `RevenueJob` 店铺收入（type=1）和平台抽成（type=3）→ 标记 `fallback_revenue=1`
 
+**编辑收款人**：管理员打开编辑弹窗 → 后台返回收款人基础信息与结算账户脱敏摘要 → 未选择更换时仅更新基础信息 → 选择更换时提交完整新银行卡 → Adapay 绑定成功后本地更新脱敏摘要与结算账户标识
+
 ## 风险评估
 
 | 风险 | 等级 | 缓解措施 |
@@ -67,6 +70,8 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 | Adapay 分账 API 调用失败 | 高 | 自动回退 RevenueJob + 后台手动重试 |
 | 分账金额计算错误 | 高 | 创建时固化 + 执行前校验 `platform + shop == payPrice` |
 | 店铺未绑定收款人 | 中 | 支付时前置校验，明确错误提示 |
+| 更换结算账户失败导致本地/远程不一致 | 高 | Adapay 成功后再更新本地；失败时保留原账户并提示 |
+| 银行卡敏感信息泄露 | 高 | 详情接口仅返回脱敏摘要，不返回完整旧卡号 |
 | 退款订单已分账 | 中 | 本期 deferred；后续通过 `PaymentConfirmReverse` 实现 |
 | 日终 Job 超时 | 低 | 分页处理，每批 100；支持幂等重跑 |
 | 企业 Member 附件存储 | 低 | 复用现有文件存储接口 |
