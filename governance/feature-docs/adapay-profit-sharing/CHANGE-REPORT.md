@@ -73,6 +73,14 @@
 
 **PASS** — 银行列表后端化已实现，后端编译与前端构建通过，实现与设计文档一致。
 
+## PR 信息
+
+| 仓库 | PR | 状态 |
+|------|-----|------|
+| `backend/` | [!30](https://gitee.com/icepolar/yshop-drink/pulls/30) | 已 push 到 `feat/adapay-profit-sharing`，PR 自动更新 |
+| `admin/` | [!16](https://gitee.com/icepolar/yshop-drink-vue/pulls/16) | 已创建 |
+| workspace root | `main` | 已 push |
+
 ## 建议 PR 标题
 
 `feat(adapay-profit-sharing): 银行列表后端化`
