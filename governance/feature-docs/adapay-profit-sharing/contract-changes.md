@@ -2,6 +2,14 @@
 
 ## 端点变更
 
+### 银行列表
+
+| 端点 | 变更类型 | 说明 |
+|------|----------|------|
+| `GET /admin-api/pay/bank/list` | 新增 | 查询全部启用中的银行列表。返回 `{ bankCode, bankName }[]`；支持可选 `keyword` 按银行名称/编码过滤 |
+
+**权限**: `pay:bank:query`（复用 `pay:profit-recipient:query` 亦可，由 backend agent 按现有权限段分配）
+
 ### 分账收款人管理
 
 | 端点 | 变更类型 | 说明 |
@@ -44,7 +52,8 @@
 
 | DTO | 用途 | 关键字段 |
 |-----|------|----------|
-| `ProfitRecipientCreateReqVO` | 创建收款人 | `recipientType`, `role`（仅平台级必填，店铺级不传）, `shopId`, `recipientName`, `memberType`, `memberInfo`（个人/企业不同）, `settleAccount`（含 `cardNo`/`cardName`/`bankCode`，银行选项来自 Adapay 支持银行列表） |
+| `BankRespVO` | 银行列表项 | `bankCode`, `bankName` |
+| `ProfitRecipientCreateReqVO` | 创建收款人 | `recipientType`, `role`（仅平台级必填，店铺级不传）, `shopId`, `recipientName`, `memberType`, `memberInfo`（个人/企业不同）, `settleAccount`（含 `cardNo`/`cardName`/`bankCode`，银行选项来自后端银行列表） |
 | `ProfitRecipientUpdateReqVO` | 更新收款人 | `id`, `recipientName`, `status`, `settleAccount`（可选；仅更换结算账户时传入，传入后同步调用 Adapay 更新结算账户绑定） |
 | `ProfitRecipientRespVO` | 收款人响应 | `id`, `recipientType`, `role`（平台级有值，店铺级为 null）, `shopId`, `recipientName`, `memberType`, `memberId`（按编码规则生成）, `settleAccountBound`, `settleAccountId`, `settleAccountSummary`, `status` |
 | `ProfitRecipientPageReqVO` | 收款人分页查询 | `recipientType`, `role`（仅平台级查询时可用）, `shopId`, `status`, `recipientName` |
@@ -59,7 +68,7 @@
 - `memberType`: `[1, 2]`
 - `shopId`: `recipientType=2` 时必填，`recipientType=1` 时必须为 null
 - `memberInfo`: 个人需 `phone`/`realName`/`idCard`；企业需 `corpName`/`businessLicenseNo`/`legalName`/`legalIdCard`/`attachFileUrl`
-- `settleAccount`: 创建收款人时必填；更新收款人时可选，仅表示更换结算账户。传入时需包含 `cardNo`/`cardName`/`bankCode`；`bankCode` 来自 Adapay 支持银行列表（`governance/feature-docs/adapay-profit-sharing/bank-list.json`）
+- `settleAccount`: 创建收款人时必填；更新收款人时可选，仅表示更换结算账户。传入时需包含 `cardNo`/`cardName`/`bankCode`；`bankCode` 必须存在于 `yshop_pay_bank` 且状态启用
 - `settleAccountSummary`: 响应侧脱敏摘要，可包含 `cardNoMask`/`cardNameMask`/`bankCode`/`bankName`/`accountType`；不得返回完整旧银行卡号
 - `recipientName`: 1-64 字符
 - `member_id` 编码规则：`m_{tenantId}_{memberType}_{idCard}_{storeId}`，平台级 `storeId=0`
@@ -70,9 +79,21 @@
 
 ## 数据库变更
 
-迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`；本次结算账户更换澄清需补充迁移脚本 `sql/upgrade-adapay-profit-sharing-settle-account-replacement.sql`
+迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`；本次结算账户更换澄清需补充迁移脚本 `sql/upgrade-adapay-profit-sharing-settle-account-replacement.sql`；银行列表后端化需补充迁移脚本 `sql/upgrade-adapay-profit-sharing-bank.sql`（含 `yshop_pay_bank` 建表及从 `bank-list.json` 导入数据）
 
 ### 新建表
+
+**`yshop_pay_bank`** — 银行字典表（Adapay 支持银行列表）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | bigint PK | |
+| `bank_code` | varchar(16) NOT NULL | 银行编码，唯一 |
+| `bank_name` | varchar(128) NOT NULL | 银行名称 |
+| `status` | tinyint NOT NULL DEFAULT 1 | 0=禁用, 1=启用 |
+| `create_time` / `update_time` | datetime NOT NULL | |
+
+索引：`uk_bank_code` (`bank_code` 唯一)
 
 **`yshop_adapay_profit_recipient`** — 分账收款人
 
@@ -165,19 +186,20 @@
 | `PROFIT_SHARING_SHOP_RECIPIENT_MISSING` | 店铺未绑定收款人 |
 | `PROFIT_SHARING_AMOUNT_MISMATCH` | 分账金额校验失败 |
 | `PROFIT_SHARING_PAY_DISABLED` | 分账配置不完整，禁止支付 |
+| `BANK_NOT_EXISTS` | 银行编码不存在或已禁用 |
 
 > 具体数值由 backend-agent 实现时按模块错误码段分配。
 
 ## 银行列表
 
-`settleAccount.bankCode` 选项来自 Adapay 支持银行列表，数据源为 `governance/feature-docs/adapay-profit-sharing/bank-list.json`（由 `Adapay支持银行列表.xlsx` 转换）。
+`settleAccount.bankCode` 选项来自后端银行字典表 `yshop_pay_bank`，通过 `GET /admin-api/pay/bank/list` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/bank-list.json` 经迁移脚本 `sql/upgrade-adapay-profit-sharing-bank.sql` 导入。
 
 格式：`[{ "bankCode": "01020000", "bankName": "中国工商银行" }, ...]`，共约 5260 条。
 
-> 前端 `el-select` 使用此列表作为银行选项，绑定 `bankCode` 为值，显示 `bankCode + bankName`。
+> 前端 `el-select` 通过 API 加载银行列表，不再依赖 `public/bank-list.json` 静态文件；创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。
 
 ## 兼容性
 
 - 向后兼容：是。未启用分账的店铺行为不变；新增表不影响现有查询。
-- 前端同步变更：`admin/` 需新增分账收款人管理和分账订单查询页面；店铺编辑页新增分账配置区块。
+- 前端同步变更：`admin/` 需新增分账收款人管理和分账订单查询页面；店铺编辑页新增分账配置区块；**银行下拉改为调用后端 API，移除 `public/bank-list.json` 静态文件**。
 - `miniapp/` 无变更。

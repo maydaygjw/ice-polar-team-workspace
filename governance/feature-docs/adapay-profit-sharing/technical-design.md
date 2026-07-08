@@ -4,8 +4,8 @@
 
 | 模块 | 变更类型 | 说明 |
 |------|----------|------|
-| `yshop-module-pay-biz` | 修改 | 新增分账收款人 CRUD、分账订单 Service、Adapay 分账 SDK 封装（Member/结算账户创建、结算账户更换、`Payment.create` delay、`PaymentConfirm.create`）、日终结算 Job、分账失败回退 |
-| `yshop-module-pay-api` | 修改 | 新增分账 DTO、Service 接口、ErrorCode |
+| `yshop-module-pay-biz` | 修改 | 新增分账收款人 CRUD、分账订单 Service、Adapay 分账 SDK 封装（Member/结算账户创建、结算账户更换、`Payment.create` delay、`PaymentConfirm.create`）、日终结算 Job、分账失败回退、**银行字典表与列表 API** |
+| `yshop-module-pay-api` | 修改 | 新增分账 DTO、Service 接口、ErrorCode、**银行列表 DTO** |
 | `yshop-module-store-biz` | 修改 | 店铺绑定/解绑分账收款人；查询时返回分账启用状态 |
 | `yshop-module-store-api` | 修改 | 新增店铺绑定分账收款人 DTO |
 | `yshop-module-order-biz` | 修改 | `paySuccess()` 中 Adapay 支付且店铺启用分账时，调用 pay-api 创建分账挂起记录；校验收款人配置 |
@@ -32,6 +32,7 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 10. **Job 幂等**：通过 `sharing_status` 状态机保证，同一订单不会重复分账。
 11. **分账前金额校验**：执行分账前校验 `platform_amount + shop_amount == pay_price`，不一致时标记失败不分账。
 12. **更换失败保持原账户**：更换结算账户调用 Adapay 失败时，本地收款人基础信息和原结算账户绑定保持不变，避免出现本地显示已更新但远程仍为旧账户的不一致状态。
+13. **银行列表后端化**：Adapay 支持银行列表（约 5260 条）由前端静态 JSON 改为后端数据库表 `yshop_pay_bank` 维护。前端通过 API 动态获取，创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。数据通过迁移脚本从 `bank-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
 
 > 无新架构范式，复用现有模块分层、多租户拦截器、Job 调度模式。不新增 ADR。
 
@@ -63,6 +64,8 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 
 **编辑收款人**：管理员打开编辑弹窗 → 后台返回收款人基础信息与结算账户脱敏摘要 → 未选择更换时仅更新基础信息 → 选择更换时提交完整新银行卡 → Adapay 绑定成功后本地更新脱敏摘要与结算账户标识
 
+**银行列表加载**：前端打开收款人表单 → 调用 `GET /admin-api/pay/bank/list` → 后端从缓存/数据库返回启用中的银行列表 → 前端渲染 `el-select` 下拉
+
 ## 风险评估
 
 | 风险 | 等级 | 缓解措施 |
@@ -75,6 +78,8 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 | 退款订单已分账 | 中 | 本期 deferred；后续通过 `PaymentConfirmReverse` 实现 |
 | 日终 Job 超时 | 低 | 分页处理，每批 100；支持幂等重跑 |
 | 企业 Member 附件存储 | 低 | 复用现有文件存储接口 |
+| 银行列表数据初始化失败 | 中 | 迁移脚本包含回滚；初始化后校验记录数与 `bank-list.json` 一致 |
+| 银行列表查询性能 | 低 | 启用本地缓存或 Redis 缓存；列表只读，变更极少 |
 
 ## 分支计划
 

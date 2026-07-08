@@ -62,7 +62,7 @@
 | Member 类型 | `el-radio-group` | `required`：`1`=个人，`2`=企业 |
 | 个人实名信息 | 动态表单 | `memberType=1` 时显示：手机号、真实姓名、身份证号 |
 | 企业信息 | 动态表单 | `memberType=2` 时显示：企业名称、营业执照号、法人姓名、法人身份证号、营业执照附件 |
-| 结算银行卡 | 动态表单 | 创建时显示且必填；编辑时默认显示绑定状态/脱敏摘要，点击“更换结算账户”后显示并必填：银行卡号、开户名、银行（`el-select` 从银行列表加载，显示 `bankCode + bankName`，绑定 `bankCode`）、账户类型 |
+| 结算银行卡 | 动态表单 | 创建时显示且必填；编辑时默认显示绑定状态/脱敏摘要，点击“更换结算账户”后显示并必填：银行卡号、开户名、银行（`el-select` 从后端 `GET /pay/bank/list` 加载，显示 `bankCode + bankName`，绑定 `bankCode`）、账户类型 |
 
 > 创建收款人提交后，后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后才入库。`member_id` 由后端按 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0}` 生成，前端不传。
 >
@@ -291,6 +291,19 @@ export const getProfitSharingRecord = async (id: number) => { ... }
 export const retryProfitSharingRecord = async (id: number) => { ... }
 ```
 
+**`admin/src/api/pay/bank/index.ts`**
+
+```typescript
+export interface BankVO {
+  bankCode: string
+  bankName: string
+}
+
+export const getBankList = async (keyword?: string) => {
+  return await request.get({ url: '/pay/bank/list', params: { keyword } })
+}
+```
+
 ---
 
 ### File Structure
@@ -310,4 +323,7 @@ admin/src/
 │   │   └── index.ts
 │   └── profitSharingRecord/
 │       └── index.ts
+├── api/pay/
+│   └── bank/
+│       └── index.ts            ← 新增：银行列表 API
 ```
