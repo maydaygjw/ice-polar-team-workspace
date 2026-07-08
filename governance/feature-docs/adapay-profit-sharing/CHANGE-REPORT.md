@@ -4,11 +4,13 @@
 
 本次为 Phase 3 文档对齐修复，同步 `requirements-spec.md`、`technical-design.md`、`contract-changes.md`、`ui-ux-design.md` 的 5 项规则调整到 `backend/` 和 `admin/`。
 
+> 2026-07-08 需求澄清：结算账户编辑口径已调整为“更换结算账户”模式，旧卡号不明文展示，未选择更换时可保存基础信息。本文以下实现报告为 2026-07-07 历史交付结论，不代表该澄清已完成实现。
+
 ## 影响范围
 
 | 模块/仓库 | 变更类型 | 说明 |
 |-----------|----------|------|
-| `backend/` | 修改 | MemberId 编码、结算可编辑、role 可选、list-by-shop 约束 |
+| `backend/` | 修改 | MemberId 编码、结算账户更换、role 可选、list-by-shop 约束 |
 | `admin/` | 修改 | 角色条件渲染、银行下拉、TypeScript 类型 |
 | `governance/` | 修改 + 新增 | 4 份设计文档更新、bank-list.json |
 
@@ -25,8 +27,8 @@
 | | | `generateMemberId()` → `m_{tenantId}_{memberType}_{idCard}_{storeId\|0}` | |
 | | | 新增 `extractIdCard()` | |
 | | | 创建前校验 `member_id` 唯一性 | |
-| 2 | **结算账户可编辑** | `ProfitRecipientServiceImpl.java` | `ProfitSharingReceiverForm.vue` |
-| | | `updateProfitRecipient()` 处理 `settleAccount` 变更 | 结算账户区域始终可见 |
+| 2 | **结算账户更换** | `ProfitRecipientServiceImpl.java` | `ProfitSharingReceiverForm.vue` |
+| | | `updateProfitRecipient()` 处理可选 `settleAccount` 变更 | 编辑时默认显示绑定状态，显式更换时展开新账户表单 |
 | 3 | **店铺级无需角色** | `ProfitRecipientBaseVO.java`, `ErrorCodeConstants.java` | `ProfitSharingReceiverForm.vue`, `index.ts` |
 | | | `role` 移除 `@NotNull`，新增 `validateRole()` | `v-if="recipientType==1"`，提交时清空 |
 | 4 | **店铺只能选本店铺收款人** | `ProfitRecipientMapper.java` | — |
