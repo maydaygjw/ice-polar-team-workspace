@@ -77,8 +77,8 @@
 
 | 仓库 | PR | 状态 |
 |------|-----|------|
-| `backend/` | [!30](https://gitee.com/icepolar/yshop-drink/pulls/30) | 已 push 到 `feat/adapay-profit-sharing`，PR 自动更新 |
-| `admin/` | [!16](https://gitee.com/icepolar/yshop-drink-vue/pulls/16) | 已创建 |
+| `backend/` | [#35](https://gitee.com/icepolar/yshop-drink/pulls/35) | 已创建，目标分支 `master` |
+| `admin/` | [#16](https://gitee.com/icepolar/yshop-drink-vue/pulls/16) | 已创建，目标分支 `master` |
 | workspace root | `main` | 已 push |
 
 ## 建议 PR 标题
