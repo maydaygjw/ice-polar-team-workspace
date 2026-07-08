@@ -2,7 +2,9 @@
 
 ## 1. 总体结论：PASS
 
-本次审查覆盖 5 项文档对齐修复，涉及 `backend/` 与 `admin/` 的 MemberId 编码、结算账户可编辑、店铺级角色、银行列表和店铺收款人约束。
+本次审查覆盖 5 项文档对齐修复，涉及 `backend/` 与 `admin/` 的 MemberId 编码、结算账户更换、店铺级角色、银行列表和店铺收款人约束。
+
+> 2026-07-08 需求澄清：结算账户编辑口径已调整为“更换结算账户”模式，旧卡号不明文展示，未选择更换时可保存基础信息。本报告为 2026-07-07 历史审查结论，不覆盖该澄清后的实现状态。
 
 ---
 
@@ -14,7 +16,7 @@
 |--------|------|------|
 | MemberId 按 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0}` 编码 | ✅ 通过 | `generateMemberId()` 已改为规则编码，创建前校验唯一性 |
 | 同店铺同身份证号不可重复 | ✅ 通过 | 创建前查 `member_id` 唯一性，冲突抛 `PROFIT_RECIPIENT_MEMBER_ID_DUPLICATE` |
-| 结算账户可编辑 | ✅ 通过 | `updateProfitRecipient()` 接受新 `settleAccount`，同步调用 Adapay 更新 |
+| 结算账户更换 | 需复审 | 澄清后要求 `settleAccount` 可选、旧卡号不明文展示、更换失败保持原账户 |
 | 平台级需角色，店铺级无需 | ✅ 通过 | `role` 字段可选；新增 `validateRole()` 仅平台级校验 |
 | 店铺只能选本店铺收款人 | ✅ 通过 | `selectListByShop()` 仅返回 `recipientType=2` 且 `shopId` 匹配的记录 |
 | 银行选项来自 Adapay 银行列表 | ✅ 通过 | 前端 `el-select` + `filterable` 从 `/bank-list.json` 加载 5260 条银行 |
@@ -29,7 +31,7 @@
 | 路径与权限 | ✅ 通过 | 与 contract-changes.md 一致 |
 | `member_id` 编码规则 | ✅ 通过 | 后端生成，前端不传 |
 | `role` 平台级必填/店铺级不传 | ✅ 通过 | `ProfitRecipientBaseVO.role` 移除 `@NotNull` |
-| 结算账户在 UpdateReqVO 中可用 | ✅ 通过 | `updateProfitRecipient` 处理 `settleAccount` 变更 |
+| 结算账户在 UpdateReqVO 中可选 | 需复审 | 澄清后仅显式更换账户时传入 `settleAccount` |
 | `list-by-shop` 仅返回店铺级 | ✅ 通过 | Mapper 移除平台级 OR 条件 |
 
 ### 2.3 无硬编码密钥
@@ -68,7 +70,7 @@
 
 | 文件 | 变更 | 说明 |
 |------|------|------|
-| `ProfitRecipientServiceImpl.java` | MemberId 编码 + 结算可编辑 + role 可选 | 核心逻辑 |
+| `ProfitRecipientServiceImpl.java` | MemberId 编码 + 结算账户更换 + role 可选 | 核心逻辑，澄清后需复审 |
 | `ProfitRecipientBaseVO.java` | role `@NotNull` 移除 | DTO 层 |
 | `ProfitRecipientMapper.java` | `selectListByShop` 仅店铺级 | 查询层 |
 | `ProfitRecipientDO.java` | 注释更新 | 文档对齐 |

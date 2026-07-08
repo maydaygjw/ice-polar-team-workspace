@@ -7,7 +7,7 @@
 | 端点 | 变更类型 | 说明 |
 |------|----------|------|
 | `POST /admin-api/pay/profit-recipient/create` | 新增 | 创建收款人。后台按 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0}` 生成 `member_id`，同步调用 Adapay 创建 Member 并绑定结算账户 |
-| `PUT /admin-api/pay/profit-recipient/update` | 新增 | 更新收款人（含结算账户修改，同步调用 Adapay 更新绑定） |
+| `PUT /admin-api/pay/profit-recipient/update` | 新增 | 更新收款人基础信息；`settleAccount` 可选，仅在更换结算账户时传入，传入后同步调用 Adapay 更新绑定 |
 | `DELETE /admin-api/pay/profit-recipient/delete` | 新增 | 删除收款人（已绑定店铺时拒绝） |
 | `GET /admin-api/pay/profit-recipient/get` | 新增 | 收款人详情 |
 | `GET /admin-api/pay/profit-recipient/page` | 新增 | 收款人分页列表 |
@@ -45,8 +45,8 @@
 | DTO | 用途 | 关键字段 |
 |-----|------|----------|
 | `ProfitRecipientCreateReqVO` | 创建收款人 | `recipientType`, `role`（仅平台级必填，店铺级不传）, `shopId`, `recipientName`, `memberType`, `memberInfo`（个人/企业不同）, `settleAccount`（含 `cardNo`/`cardName`/`bankCode`，银行选项来自 Adapay 支持银行列表） |
-| `ProfitRecipientUpdateReqVO` | 更新收款人 | `id`, `recipientName`, `status`, `settleAccount`（修改时同步调用 Adapay 更新结算账户绑定） |
-| `ProfitRecipientRespVO` | 收款人响应 | `id`, `recipientType`, `role`（平台级有值，店铺级为 null）, `shopId`, `recipientName`, `memberType`, `memberId`（按编码规则生成）, `settleAccountBound`, `settleAccountId`, `status` |
+| `ProfitRecipientUpdateReqVO` | 更新收款人 | `id`, `recipientName`, `status`, `settleAccount`（可选；仅更换结算账户时传入，传入后同步调用 Adapay 更新结算账户绑定） |
+| `ProfitRecipientRespVO` | 收款人响应 | `id`, `recipientType`, `role`（平台级有值，店铺级为 null）, `shopId`, `recipientName`, `memberType`, `memberId`（按编码规则生成）, `settleAccountBound`, `settleAccountId`, `settleAccountSummary`, `status` |
 | `ProfitRecipientPageReqVO` | 收款人分页查询 | `recipientType`, `role`（仅平台级查询时可用）, `shopId`, `status`, `recipientName` |
 | `ShopBindProfitRecipientReqVO` | 店铺绑定 | `shopId`, `recipientId`, `enabled`；`recipientId` 必须为 `shopId` 对应的店铺级收款人 |
 | `ProfitSharingOrderRespVO` | 分账订单响应 | `orderId`, `shopId`, `payPrice`, `commissionAmount`, `shopAmount`, `sharingStatus`, `fallbackRevenue`, `errorMsg` |
@@ -59,7 +59,8 @@
 - `memberType`: `[1, 2]`
 - `shopId`: `recipientType=2` 时必填，`recipientType=1` 时必须为 null
 - `memberInfo`: 个人需 `phone`/`realName`/`idCard`；企业需 `corpName`/`businessLicenseNo`/`legalName`/`legalIdCard`/`attachFileUrl`
-- `settleAccount`: 需 `cardNo`/`cardName`/`bankCode`；`bankCode` 来自 Adapay 支持银行列表（`governance/feature-docs/adapay-profit-sharing/bank-list.json`）
+- `settleAccount`: 创建收款人时必填；更新收款人时可选，仅表示更换结算账户。传入时需包含 `cardNo`/`cardName`/`bankCode`；`bankCode` 来自 Adapay 支持银行列表（`governance/feature-docs/adapay-profit-sharing/bank-list.json`）
+- `settleAccountSummary`: 响应侧脱敏摘要，可包含 `cardNoMask`/`cardNameMask`/`bankCode`/`bankName`/`accountType`；不得返回完整旧银行卡号
 - `recipientName`: 1-64 字符
 - `member_id` 编码规则：`m_{tenantId}_{memberType}_{idCard}_{storeId}`，平台级 `storeId=0`
 
@@ -69,7 +70,7 @@
 
 ## 数据库变更
 
-迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`
+迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`；本次结算账户更换澄清需补充迁移脚本 `sql/upgrade-adapay-profit-sharing-settle-account-replacement.sql`
 
 ### 新建表
 
@@ -88,6 +89,14 @@
 | `status` | tinyint NOT NULL DEFAULT 1 | 0=禁用, 1=启用 |
 | `settle_account_bound` | tinyint NOT NULL DEFAULT 0 | 0=未绑定, 1=已绑定 |
 | `settle_account_id` | varchar(64) NULL | Adapay 结算账户 ID |
+| `settle_account_card_no_mask` | varchar(32) NULL | 银行卡号脱敏摘要，仅用于后台展示 |
+| `settle_account_card_name_mask` | varchar(64) NULL | 开户名脱敏摘要，仅用于后台展示 |
+| `settle_account_bank_code` | varchar(32) NULL | 银行编码 |
+| `settle_account_bank_name` | varchar(128) NULL | 银行名称 |
+| `settle_account_account_type` | tinyint NULL | 账户类型 |
+| `member_phone_snapshot` | varchar(32) NULL | Adapay 更换结算账户所需的 Member 手机号快照，禁止用于页面明文展示 |
+| `member_cert_id_snapshot` | varchar(64) NULL | Adapay 更换结算账户所需的 Member 证件号快照，禁止用于页面明文展示 |
+| `member_cert_type_snapshot` | varchar(16) NULL | Adapay 更换结算账户所需的 Member 证件类型快照 |
 | `create_time` / `update_time` | datetime NOT NULL | |
 | `deleted` | tinyint NOT NULL DEFAULT 0 | |
 
@@ -148,6 +157,8 @@
 | `PROFIT_RECIPIENT_BOUND` | 收款人已被店铺绑定，无法删除 |
 | `PROFIT_RECIPIENT_MEMBER_CREATE_FAILED` | Adapay Member 创建失败 |
 | `PROFIT_RECIPIENT_SETTLE_ACCOUNT_FAILED` | Adapay 结算账户绑定失败 |
+| `PROFIT_RECIPIENT_MEMBER_INFO_REQUIRED` | 分账收款人 Member 信息不完整 |
+| `PROFIT_RECIPIENT_SETTLE_ACCOUNT_REQUIRED` | 结算账户信息不完整 |
 | `PROFIT_SHARING_ORDER_NOT_EXISTS` | 分账订单不存在 |
 | `PROFIT_SHARING_STATUS_INVALID` | 分账状态不允许操作 |
 | `PROFIT_SHARING_RECIPIENT_MISSING` | 角色有效收款人未配置 |
