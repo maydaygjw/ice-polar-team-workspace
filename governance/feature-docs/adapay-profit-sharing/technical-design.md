@@ -30,10 +30,11 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 8. **支付前置校验**：店铺启用分账但缺少有效平台/店铺收款人时，拒绝支付。失败在支付前暴露，不等到日终才报错。
 9. **禁用分账允许解绑收款人**：店铺关闭分账启用开关时，`profit_sharing_recipient_id` 与 `profit_sharing_enabled` 同步清空，店铺可回到无分账收款人状态。
 10. **Member 与结算账户同步创建**：创建收款人时串行调用 Adapay 创建 Member → 绑定结算账户，任一步失败直接抛错不入库，避免后续分账因缺少结算账户失败。
-10. **Job 幂等**：通过 `sharing_status` 状态机保证，同一订单不会重复分账。
-11. **分账前金额校验**：执行分账前校验 `platform_amount + shop_amount == pay_price`，不一致时标记失败不分账。
-12. **更换失败保持原账户**：更换结算账户调用 Adapay 失败时，本地收款人基础信息和原结算账户绑定保持不变，避免出现本地显示已更新但远程仍为旧账户的不一致状态。
-13. **银行列表后端化**：Adapay 支持银行列表（约 5260 条）由前端静态 JSON 改为后端数据库表 `yshop_pay_bank` 维护。前端通过 API 动态获取，创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。数据通过迁移脚本从 `bank-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
+11. **Job 幂等**：通过 `sharing_status` 状态机保证，同一订单不会重复分账。
+12. **分账前金额校验**：执行分账前校验 `platform_amount + shop_amount == pay_price`，不一致时标记失败不分账。
+13. **更换失败保持原账户**：更换结算账户调用 Adapay 失败时，本地收款人基础信息和原结算账户绑定保持不变，避免出现本地显示已更新但远程仍为旧账户的不一致状态。
+14. **Adapay Member 已存在时复用并清理旧结算账户**：创建收款人时若 Adapay 返回 `member_id_exists`，不再强制创建 Member，而是复用该 MemberId；通过 Adapay `Member.query` / `CorpMember.query` 获取其下结算账户列表并逐条删除，再绑定新的结算账户。Adapay 不支持强制删除 Member，因此通过清理结算账户实现“重置”效果。
+15. **银行列表后端化**：Adapay 支持银行列表（约 5260 条）由前端静态 JSON 改为后端数据库表 `yshop_pay_bank` 维护。前端通过 API 动态获取，创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。数据通过迁移脚本从 `bank-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
 
 > 无新架构范式，复用现有模块分层、多租户拦截器、Job 调度模式。不新增 ADR。
 

@@ -24,11 +24,15 @@
 
 ## 后端变更点测试建议
 
-### 1. MemberId 编码
+### 1. MemberId 编码与 Member 复用
 
 - **创建平台级个人收款人**：验证 `member_id` = `m_{tenantId}_1_{idCard}_0`
 - **创建店铺级企业收款人**：验证 `member_id` = `m_{tenantId}_2_{businessLicenseNo}_{shopId}`
 - **同店铺同身份证号重复创建**：应返回 `PROFIT_RECIPIENT_MEMBER_ID_DUPLICATE`
+- **Adapay 侧已存在 Member（本地无记录）**：创建时应复用该 Member，查询并删除其下所有结算账户，再绑定新账户；本地记录成功写入
+- **Adapay 侧已存在 Member 且无结算账户**：直接复用 Member 并绑定新账户
+- **Adapay 侧已存在 Member 但结算账户删除失败**：整体创建失败，本地不写入
+- **Adapay Member 查询失败**：应返回 `PROFIT_RECIPIENT_MEMBER_QUERY_FAILED`
 
 ### 2. 结算账户更换
 

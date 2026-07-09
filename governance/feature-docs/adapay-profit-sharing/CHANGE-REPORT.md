@@ -92,25 +92,66 @@
 - `mvn -pl yshop-module-mall/yshop-module-store-biz -am compile -DskipTests` ✅
 - `pnpm build:dev` (admin) ✅
 
+## 2026-07-09 追加修正：Adapay Member 已存在时复用并清理旧结算账户
+
+用户反馈：新建分账收款人时，Adapay 返回 `member_id_exists`（`member_id已存在`），因 Adapay 不支持强制删除 Member，导致无法重新创建。修正后规则：
+
+- 创建收款人时若 Adapay 返回 `member_id_exists`，不再失败，直接复用该 MemberId。
+- 通过 Adapay `Member.query` / `CorpMember.query` 查询该 Member 下已有结算账户。
+- 逐条删除已有结算账户。
+- 绑定新的结算账户并保存本地记录。
+
+### 变更文件
+
+- `backend/yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitrecipient/ProfitRecipientServiceImpl.java`
+  - 新增 `AdapayContext` 持有 `AdapayPayService`、`AdapayPayConfigStorage`、`MerchantDetailsDO`
+  - `createProfitRecipient`：复用 Member 并清理旧结算账户
+  - 新增 `queryAdapayMemberSettleAccountIds`、`deleteExistingSettleAccounts`、`isMemberIdExistsError`
+- `backend/yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/enums/ErrorCodeConstants.java`
+  - 新增 `PROFIT_RECIPIENT_MEMBER_QUERY_FAILED`（1008009028）
+
+### 契约变化
+
+| 层 | 状态 | 说明 |
+|---|---|---|
+| API | N/A | 无接口变化 |
+| DB schema | N/A | 无表结构变化 |
+| 外部系统 | 行为调整 | 新增调用 Adapay `Member.query` / `CorpMember.query` 查询结算账户列表 |
+
+### 验证
+
+- `mvn clean compile -pl yshop-module-pay/yshop-module-pay-biz -am -DskipTests` ✅
+- `mvn test -pl yshop-module-pay/yshop-module-pay-biz` ✅
+- 全量 `mvn test -pl yshop-module-pay/yshop-module-pay-biz -am` 因预存 `DesensitizeTest` 失败中断，与本次变更无关
+
+### 风险与缓解
+
+| 风险 | 说明 | 缓解 |
+|---|---|---|
+| `settle_accounts` 返回结构与预期不符 | 无法正确提取结算账户 ID | 对 `List<Map>` / `List<String>` / `null` 做防御性处理并记录日志 |
+| 删除结算账户失败 | 旧账户未清理导致新账户无法绑定 | 删除失败直接抛异常，本地不保存收款人 |
+| `member_id_exists` 错误信息无法识别 | 复用逻辑不触发 | 同时匹配英文错误码 `member_id_exists` 和中文提示 `member_id已存在` |
+| 并发下 Adapay 静态配置被重置 | 查询/删除使用错误配置 | 在 `synchronized (AdapayPayConfigStorage.class)` 块内初始化配置，与 SDK 同步策略一致 |
+
+### 建议 PR 标题
+
+`fix(pay/profitrecipient): 复用 Adapay 已存在 Member 并清理旧结算账户`
+
+### 建议 PR 描述
+
+```
+当 Adapay 返回 member_id_exists 时，不再直接失败，而是：
+1. 复用已有 MemberId；
+2. 查询 Member 下已有结算账户；
+3. 逐条删除旧结算账户；
+4. 绑定新结算账户并保存本地记录。
+
+新增错误码 PROFIT_RECIPIENT_MEMBER_QUERY_FAILED 用于查询失败场景。
+```
+
 ## PR 信息
 
 | 仓库 | PR | 状态 |
 |------|-----|------|
-| `backend/` | [#35](https://gitee.com/icepolar/yshop-drink/pulls/35) | 已创建，目标分支 `master` |
-| `admin/` | [#16](https://gitee.com/icepolar/yshop-drink-vue/pulls/16) | 已创建，目标分支 `master` |
-| workspace root | `main` | 已 push |
+| `backend/` | `feat/adapay-profit-sharing-member-reuse` | 待创建，目标分支 `master` |
 
-## 建议 PR 标题
-
-`feat(adapay-profit-sharing): 银行列表后端化`
-
-## 建议 PR 描述
-
-- 业务目标：将 Adapay 分账收款人表单中的银行列表由前端静态 JSON 改为后端数据库维护，便于统一管理与校验。
-- 主要变更：
-  - 后端新增 `yshop_pay_bank` 表、`BankController`、`BankService`、`PayBankMapper`，提供 `GET /admin-api/pay/bank/list`。
-  - 创建/更新分账收款人时，后端强制校验 `bankCode` 必须存在且启用。
-  - 前端移除 `public/bank-list.json`，新增 `src/api/pay/bank/index.ts`，表单通过 API 加载银行列表。
-- 契约变化：新增 `GET /admin-api/pay/bank/list`、`BankRespVO`、`BANK_NOT_EXISTS` 错误码；`settleAccount.bankCode` 来源改为后端银行字典表。
-- DB 迁移：`sql/upgrade-adapay-profit-sharing-bank.sql`（建表 + 5260 条银行数据初始化）。
-- 验证：`mvn -pl yshop-module-pay/yshop-module-pay-biz -am compile` 通过，`pnpm build:dev` 通过。`pnpm ts:check` 因既有类型定义问题失败，与本次变更无关。
