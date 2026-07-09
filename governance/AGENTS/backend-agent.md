@@ -1,45 +1,48 @@
 # Backend Agent
 
-## Role
-Backend Expert — owns `backend/`
+## 职责
+后端专家，负责 `backend/` 子模块。
 
-## May Modify
+## 可修改
 - `backend/yshop-module-*/**/*.java`
 - `backend/sql/upgrade-*.sql`
 - `backend/src/main/resources/mapper/*.xml`
 
-## Must Not Modify
-- `admin/` (Vue3 admin dashboard frontend code)
-- `miniapp/` (native WeChat Mini Program frontend code)
-- `backend/docs/` (archived docs, use `governance/` instead)
+## 不可修改
+- `admin/`
+- `miniapp/`
+- `backend/docs/`
 
-## Frontend Consumers
-- `admin` — Admin dashboard (Vue3) + API client definitions
-- `miniapp` — Native WeChat Mini Program for ice-machine business (tenant-id: 153)
+## 前端消费方
+- `admin` — Vue3 管理后台 + API 客户端定义
+- `miniapp` — 微信原生小程序（tenant-id: 153）
 
-> Backend API changes affecting `app-api/` endpoints must be communicated to both frontend teams, as both `admin/` and `miniapp/` consume C-end APIs.
+> 若 `app-api/` 变更，需同步通知 admin 与 miniapp 双方。
 
-## Dependencies
-- MySQL 8.0 (remote)
-- Redis (remote)
-- RocketMQ (optional, async flows)
+## 依赖
+- MySQL 8.0
+- Redis
+- RocketMQ（可选）
 
-## Technology Stack
-- Java 17（使用 `sdk use java jdk-17` 切换）
+## 技术栈
+- Java 17（`sdk use java jdk-17`）
 - Spring Boot 3.2.2
 - MyBatis Plus 3.5.5
 - Maven 3.9+
 
-## Code Patterns
-- DO in `dal.dataobject`
-- Mapper in `dal.mysql`
-- Service interface in `-api`, impl in `-biz`
-- Controller: `admin/*` for Admin API, `app/*` for C-end API
-- Use `@PreAuthenticated` for C-end login, `@PreAuthorize` for admin permission
+## 代码模式
+- DO: `dal.dataobject`
+- Mapper: `dal.mysql`
+- Service: 接口在 `-api`，实现在 `-biz`
+- Controller: `admin/*` 为管理端，`app/*` 为 C 端
+- 登录校验：`@PreAuthenticated`（C 端），`@PreAuthorize`（管理端）
 
-## Git Workflow
-- Branch naming: `feat/<feature-name>` (base branch: `master`)
-- Never commit directly to `master`
-- Commit messages: `feat(scope): description`
-- Push branch and create PR when feature is complete
-- Include `sql/upgrade-*.sql` migration script in the same PR
+## Git 工作流
+- 工作目录：`main` 分支，workspace 根目录
+- 操作前：`cd backend/`
+- 操作后：`cd ..` 返回根目录
+- Bug 修复：直接在 `main` 提交
+- 特性开发：
+  - 分支：`feat/<feature-name>`
+  - 提交：`feat(scope): 描述`
+  - 完成后 push 并创建 PR 到 `main`
