@@ -2,7 +2,7 @@
 
 ## 范围
 
-覆盖 Adapay 支付主流程、重新支付时 `outPayNo` 递增、回调幂等，以及管理后台展示。
+覆盖 Adapay 支付主流程、待支付订单重复调用支付接口时 `outPayNo` 递增、`pay_out_order_no` 当前有效记录唯一、回调幂等，以及管理后台展示。
 
 ## 环境前置条件
 
@@ -21,7 +21,7 @@
 | 编号 | 名称 | 文件 | 状态 |
 |---|---|---|---|
 | ADAPAY-E2E-001 | Adapay 支付主流程（创建支付单 → 回调成功 → 订单已支付） | `test/e2e/adapay/adapay_pay_flow.spec.js` | 待实现 |
-| ADAPAY-E2E-002 | Adapay 重新支付时 outPayNo 递增 | `test/e2e/adapay/adapay_retry_out_pay_no.spec.js` | 待实现 |
+| ADAPAY-E2E-002 | Adapay 待支付订单重复 pay 时 outPayNo 递增且旧记录失效 | `test/e2e/adapay/adapay_retry_out_pay_no.spec.js` | 待实现 |
 | ADAPAY-E2E-003 | Adapay 回调幂等（重复回调不重复履约） | `test/e2e/adapay/adapay_notify_idempotency.spec.js` | 待实现 |
 | ADAPAY-E2E-004 | 管理后台订单列表/详情展示 Adapay 支付方式 | `test/e2e/adapay/adapay_admin_display.spec.js` | 待实现 |
 | ADAPAY-E2E-005 | 已支付订单不允许再次支付 | `test/e2e/adapay/adapay_paid_order_repay.spec.js` | 待实现 |
@@ -44,14 +44,16 @@
    - `pay_out_order_no.status` = 1
 5. 断言后续履约动作触发（如库存扣减、权益发放记录存在）。
 
-### ADAPAY-E2E-002 重新支付 outPayNo 递增
+### ADAPAY-E2E-002 待支付订单重复 pay 时 outPayNo 递增
 
 1. 对同一订单首次调用 `POST /app-api/order/pay`（`paytype=adapay`），记录 `outPayNo = {orderId}-1`。
 2. 不完成支付，再次发起支付请求，断言：
    - 接口返回成功
    - 数据库新增 `pay_out_order_no` 记录，`out_pay_no = {orderId}-2`
-3. 再次发起支付，断言 `out_pay_no = {orderId}-3`。
-4. 对每次 `outPayNo` 发起回调，仅对应记录状态变为 1，订单最终支付成功。
+   - 上一条 `{orderId}-1` 不再是当前有效待支付记录（例如 `status = 2`）
+   - 同一 `order_id + pay_type = adapay` 下 `status = 0` 的记录数为 1
+3. 再次发起支付，断言 `out_pay_no = {orderId}-3`，且只有 `{orderId}-3` 为当前有效待支付记录。
+4. 对任一历史 `outPayNo` 发起成功回调，订单最多完成一次支付履约，库存、权益、订单日志不重复产生。
 
 ### ADAPAY-E2E-003 回调幂等
 

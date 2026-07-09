@@ -11,9 +11,9 @@ Adapay（汇付天下）不允许对同一个订单号重复发起支付。当�
 引入独立的 **外部支付单号（outPayNo）**，作为系统订单号与第三方支付平台订单号之间的映射层：
 
 - **微信支付**：`outPayNo = orderId`，保持不变，与现有行为一致。
-- **Adapay**：每次支付请求生成新的 `outPayNo`，格式为 `orderId-{递增序号}`。首次支付为 `orderId-1`，重新支付时取该订单下 Adapay 记录最大序号加 1。
+- **Adapay**：待支付订单每次支付请求都生成新的 `outPayNo`，格式为 `orderId-{递增序号}`。首次支付为 `orderId-1`，重新支付时先关闭上一条当前有效待支付 attempt，再取该订单下 Adapay 历史记录最大序号加 1。
 
-新增 `pay_out_order_no` 表持久化 `outPayNo` 与 `orderId` 的映射关系，并在回调时通过 `outPayNo` 反查系统订单。
+新增 `pay_out_order_no` 表持久化 `outPayNo` 与 `orderId` 的映射关系，并在回调时通过 `outPayNo` 反查系统订单。该表保留历史 attempt，但同一订单同一支付渠道任一时刻只能有一条当前有效待支付记录。
 
 ## 替代方案
 
@@ -25,6 +25,7 @@ Adapay（汇付天下）不允许对同一个订单号重复发起支付。当�
 ## 影响
 
 - 所有支付请求在发起前需先确定或生成 `outPayNo`。
+- Adapay 重新发起支付前必须关闭旧的当前有效待支付 attempt，不能复用旧 `outPayNo` 再次请求 Adapay。
 - Adapay 回调处理不再依赖回调参数中的系统订单号，而是通过 `outPayNo` 反查。
 - MQ `order.pay.notice` 消息增加 `outPayNo` 字段，便于后续对账与问题追踪。
 - 新增 `pay_out_order_no` 表，微信支付也会产生一条记录（`outPayNo = orderId`），保证模型统一。

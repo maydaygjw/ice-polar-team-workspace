@@ -25,15 +25,15 @@
 | 管理后台配置 Adapay | 通过 | `MerchantDetailsForm.vue` 已新增 Adapay 支付类型与 `adapay_h5{tenantId}` 支付 ID。 |
 | 管理后台展示 Adapay 文案 | 通过 | 订单列表、订单详情、店内订单、积分订单、服务订单详情、收银台等视图已统一展示“Adapay支付”。 |
 | 回调异步通知链路 | 通过 | `AdapayPayMessageHandler` 校验状态后通过 Redis Stream `order.pay.notice` 异步投递。 |
-| 渠道锁定 | 通过 | `pay()` 中新增 `checkPayTypeLocked()`，对微信/Adapay 互切以及同一渠道重复发起做了校验。 |
+| 渠道锁定 | 部分通过 | `pay()` 中新增 `checkPayTypeLocked()`，可拒绝微信/Adapay 互切；但同一 Adapay 渠道重复发起时当前实现会复用旧 `outPayNo`，不符合最新契约。 |
 
 ### 1.2 技术设计与架构决策
 
 | 检查点 | 结论 | 说明 |
 |--------|------|------|
 | 复用现有支付抽象 | 通过 | 复用 `/app-api/order/pay`、回调端点、`merchant_details` 配置表、`order.pay.notice` 链路。 |
-| outPayNo 映射层 | 通过 | 新增 `pay_out_order_no` 表与 `PayOutOrderNoService`，微信 `outPayNo = orderId`，Adapay 为 `orderId-{递增序号}`。 |
-| outPayNo 生成规则 | 通过 | 取同一订单下 Adapay 记录最大序号 +1，唯一索引兜底，冲突时重试。 |
+| outPayNo 映射层 | 部分通过 | 新增 `pay_out_order_no` 表与 `PayOutOrderNoService`，微信 `outPayNo = orderId`，Adapay 支持 `orderId-{递增序号}`；但支付入口会复用同渠道未关闭记录。 |
+| outPayNo 生成规则 | 不通过 | Adapay 待支付订单再次调用 `pay` 时应关闭旧 attempt 并生成 `orderId-{n+1}`；当前 `lockedRecord != null` 时复用旧 `outPayNo`。 |
 | 微信支付兼容性 | 通过 | 微信支付分支已调用 `generateOutPayNo(param.getUni(), "weixin")`，保持 `outPayNo = orderId`，并在 `pay_out_order_no` 留痕。 |
 | 回调反查 | 通过 | `AdapayPayMessageHandler` 通过 `outPayNo` 反查 `orderId`，不依赖回调参数中的系统订单号。 |
 | MQ 扩展 | 通过 | `PayNoticeMessage` 增加 `adapayPaymentId`、`outPayNo` 字段；`PayNoticeProducer` 提供三/四参数重载。 |
@@ -83,35 +83,42 @@
 
 ## 2. 问题项
 
-### 2.1 Adapay 错误码未实际投入使用
+### 2.1 Adapay 待支付重复 pay 会复用旧 outPayNo
+
+- **严重等级**：高
+- **说明**：Adapay 不允许同一个外部订单号重复发起支付。最新契约要求待支付订单每次调用 `POST /app-api/order/pay` 都生成新的 `outPayNo`，并保证 `pay_out_order_no` 只有一条当前有效待支付记录。当前实现中 `checkPayTypeLocked()` 返回同渠道最新未关闭记录后，`ADAPAY` 分支直接使用 `lockedRecord.getOutPayNo()`，会复用上一条 `orderId-1`。
+- **影响**：用户未完成付款后再次点击支付，后端可能继续向 Adapay 发送旧 `outPayNo`，触发 Adapay orderId 重复错误；同时 `pay_out_order_no` 的“当前有效记录唯一”语义没有被显式实现。
+- **建议**：Adapay 分支同渠道重复发起时不要复用 `lockedRecord`；应在事务内关闭上一条 `status=0` 记录，再调用 `generateOutPayNo()` 新建 `orderId-{n+1}`。微信支付可继续复用 `orderId`。
+
+### 2.2 Adapay 错误码未实际投入使用
 
 - **严重等级**：低
 - **说明**：`ADAPAY_PAYMENT_QUERY_FAILED`、`ADAPAY_PAYMENT_STATUS_INVALID`、`ADAPAY_PAYMENT_DUPLICATE_ORDER` 在最新提交中对应的复用逻辑已被删除，但错误码常量仍保留。
 - **影响**：代码中存在未引用常量，契约变更文档与实际实现出现偏差。
 - **建议**：要么恢复 Adapay 支付单查询/复用逻辑，要么从 `ErrorCodeConstants` 移除未使用常量并同步更新契约文档。
 
-### 2.2 分账金额校验逻辑存在冗余/风险
+### 2.3 分账金额校验逻辑存在冗余/风险
 
 - **严重等级**：低
 - **说明**：`createProfitSharingOrder` 中 `orderInfo.getPayPrice().compareTo(commissionAmount.add(shopAmount)) != 0` 在 `shopAmount = payPrice - commissionAmount` 恒成立，该校验无意义；若浮点/decimal 精度问题可能误抛异常。
 - **影响**：逻辑上必然为 0，但 `BigDecimal` 未显式设置精度时，若中间计算产生精度差异会触发异常。
 - **建议**：移除该校验或改为 `compareTo(BigDecimal.ZERO) == 0`，并对金额计算显式指定 `MathContext`/`setScale`。
 
-### 2.3 订单列表查询存在 SQL 注入风险（既有代码，本次未新增但相关）
+### 2.4 订单列表查询存在 SQL 注入风险（既有代码，本次未新增但相关）
 
 - **严重等级**：中
 - **说明**：`orderList()` 使用 `wrapper.apply("FIND_IN_SET ('" + uid + "',user_ids)")` 拼接用户 ID 字符串。
 - **影响**：`uid` 来自登录会话，当前为 `Long`，风险较低；但若后续类型变更或外部调用，可能引入注入。
 - **建议**：优先使用 MyBatis Plus 的 `apply` 占位符写法或改为 `INSTR` 函数参数化查询。
 
-### 2.4 回调处理缺少非成功状态的 outPayNo 关闭逻辑
+### 2.5 回调处理缺少非成功状态的 outPayNo 关闭逻辑
 
 - **严重等级**：低
 - **说明**：Adapay 回调状态非 `PAY_SUCCESS` 时直接返回 FAIL，但未将对应 `outPayNo` 标记为关闭。设计文档中 `status` 枚举含“2 关闭”。
 - **影响**：失败/关闭的支付单在 `pay_out_order_no` 中一直为 0，重新支付时会继续递增序号；虽不阻断业务，但不利于对账。
 - **建议**：在回调处理非终态/失败时调用 `payOutOrderNoService.markClosed(id)`。
 
-### 2.5 `paySuccess` 中混用 `System.out.println`
+### 2.6 `paySuccess` 中混用 `System.out.println`
 
 - **严重等级**：低
 - **说明**：`AppStoreOrderServiceImpl.paySuccess()` 存在 `System.out.println("orderInfo:"+orderInfo.getTenantId());`。
@@ -123,7 +130,7 @@
 ## 3. 建议项
 
 1. **统一支付方式展示组件**：admin 多处使用 `v-if` 硬编码支付方式映射，建议抽取为 `PayTypeLabel` 组件/过滤器，避免新增渠道时遗漏。
-2. **为 `PayOutOrderNoService` 增加单元测试**：重点覆盖并发序号生成、微信记录幂等插入、回调反查租户隔离。
+2. **为 `PayOutOrderNoService` 和 Adapay 支付入口增加测试**：重点覆盖待支付重复 pay 时关闭旧 attempt、生成新 `outPayNo`、同一订单同一渠道仅一条 `status=0`、并发序号生成、微信记录幂等插入、回调反查租户隔离。
 3. **为 Adapay 回调增加签名校验说明**：当前依赖 eGzosN 适配层验签，应在代码注释或运维文档中明确验签配置与沙箱验证步骤。
 4. **E2E 用例落地**：test_plan.md 中 6 个用例当前均为“待实现”，建议在合并前至少完成主流程、幂等、渠道锁定三个用例的自动化脚本。
 5. **错误码文档同步**：contract-changes.md 中的错误码列表需根据实现最终状态更新（删除未使用或补充使用位置）。
@@ -133,6 +140,6 @@
 
 ## 4. 总体结论
 
-实现已满足 Adapay 支付主流程、outPayNo 映射层、渠道锁定、管理后台配置与展示等技术设计要求；租户隔离、MQ 扩展、枚举扩展、迁移脚本与回滚均已落地。原审查报告中的高优先级阻塞问题“渠道锁定未实现”已在本次复审中修复并通过。
+复审发现 Adapay 待支付订单重复调用 `pay` 时仍会复用上一条未关闭 `outPayNo`，与最新契约中“每次支付请求生成新 `outPayNo`、同一订单同一渠道只有一条当前有效待支付记录”的规则冲突。管理后台展示、基础枚举、MQ 扩展、迁移脚本与回调反查链路已基本落地，但该支付入口偏差会直接导致 Adapay orderId 重复错误。
 
-**当前状态：通过，仍建议修复 2.1–2.5 问题项后再合并。**
+**当前状态：不通过。需先修复 2.1 阻塞问题并补充对应测试后再复审。**

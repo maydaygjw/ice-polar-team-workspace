@@ -8,6 +8,7 @@
 - 支付成功后订单状态更新为已支付，并触发后续履约流程。
 - 管理后台可配置 Adapay 商户参数，并在订单视图中正确展示“Adapay支付”。
 - 通过引入 `outPayNo` 外部支付单号映射层，解决 Adapay 不允许同一订单号重复发起支付的问题。
+- Adapay 待支付订单每次重新调用支付接口都必须生成新的 `outPayNo`，并关闭上一条当前有效待支付 attempt。
 - 同一订单一旦使用某渠道发起支付，即锁定为该渠道，不可切换为其他支付渠道。
 
 ---
@@ -107,6 +108,7 @@ Topic `order.pay.notice` Payload 扩展：
 | 问题 | 原状态 | 当前状态 | 说明 |
 |------|--------|----------|------|
 | 渠道锁定未实现 | 阻塞 | 已修复 | `AppStoreOrderServiceImpl.pay()` 增加 `checkPayTypeLocked()`，对微信/Adapay 互切及同一渠道重复发起做了校验。 |
+| Adapay 待支付重复 pay 复用旧 outPayNo | 新发现 | 阻塞 | 同渠道重复发起时当前实现复用 `lockedRecord.getOutPayNo()`，应关闭旧 attempt 并生成 `orderId-{n+1}`。 |
 
 ---
 
@@ -118,6 +120,7 @@ Topic `order.pay.notice` Payload 扩展：
 - E2E 测试方案已制定（`test_plan.md`），但 6 个用例当前仍为“待实现”。
 - 建议优先完成以下用例后再合并：
   - ADAPAY-E2E-001 主流程
+  - ADAPAY-E2E-002 待支付重复 pay 时 outPayNo 递增且旧记录失效
   - ADAPAY-E2E-003 回调幂等
   - ADAPAY-E2E-006 渠道锁定
 
@@ -127,6 +130,7 @@ Topic `order.pay.notice` Payload 扩展：
 
 | 风险 | 等级 | 说明 | 缓解措施 |
 |------|------|------|----------|
+| Adapay 重复 pay 复用旧 outPayNo | 高 | 待支付订单再次发起支付时可能向 Adapay 重复提交旧外部订单号，触发 orderId 重复错误 | 修复支付入口：关闭旧 `status=0` attempt 后生成新的 `orderId-{n+1}`；补充 ADAPAY-E2E-002 |
 | outPayNo 并发重复 | 中 | 高并发下可能生成相同序号 | 唯一索引 + 重试机制已覆盖 |
 | 回调验签失败 | 中 | Adapay SDK 适配层验签配置错误会导致回调被拒 | 沙箱环境验证，运维文档明确配置 |
 | 错误码与实现不一致 | 低 | 部分错误码未使用 | 同步契约文档或移除未使用常量 |
@@ -158,11 +162,12 @@ feat(pay/order/admin): Adapay 第三方支付集成
 
 ## 已知待优化
 - [ ] 移除未使用的 Adapay 错误码常量，或恢复对应查询/复用逻辑。
+- [ ] 修复 Adapay 待支付重复 pay 复用旧 outPayNo：关闭旧当前有效记录并生成 `orderId-{n+1}`。
 - [ ] 回调非成功状态时关闭对应 outPayNo 记录。
 - [ ] paySuccess 中 System.out.println 改为日志。
 
 ## 测试
-- [ ] 完成后端单元测试与 E2E 用例（ADAPAY-E2E-001/003/006）。
+- [ ] 完成后端单元测试与 E2E 用例（ADAPAY-E2E-001/002/003/006）。
 
 ## 相关文档
 - governance/feature-docs/adapay-payment/requirements-spec.md
@@ -176,6 +181,6 @@ feat(pay/order/admin): Adapay 第三方支付集成
 
 ## 9. 审查结论
 
-变更范围与契约文档基本一致，核心支付链路、outPayNo 映射层、渠道锁定、管理后台展示、DB 迁移均已落地。原高优先级阻塞问题“渠道锁定未实现”已修复并通过审查。仍有低/中风险项建议修复后再合并，但不构成阻塞。
+变更范围与契约文档大体一致，基础支付链路、outPayNo 映射层、渠道锁定、管理后台展示、DB 迁移均已落地。但复审发现 Adapay 待支付订单重复调用 `pay` 时会复用旧 `outPayNo`，与“每次支付请求生成新 `outPayNo`、仅一条当前有效待支付记录”的契约冲突，属于合并前阻塞问题。
 
-**当前状态：通过，建议修复问题项后合并。**
+**当前状态：不通过，需修复阻塞问题并补充测试后再合并。**
