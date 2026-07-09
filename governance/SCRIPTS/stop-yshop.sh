@@ -24,13 +24,13 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
   if systemctl list-units --type=service | grep -q yshop.service; then
     systemctl stop yshop.service || true
     for i in \$(seq 1 30); do
-      if ! pgrep -f 'java -jar target/${YSHOP_JAR}' > /dev/null 2>&1; then
+      if ! pgrep -f '[j]ava -jar target/${YSHOP_JAR}' > /dev/null 2>&1; then
         break
       fi
       sleep 1
     done
   else
-    pkill -9 -f 'java -jar target/${YSHOP_JAR}' || true
+    pkill -9 -f '[j]ava -jar target/${YSHOP_JAR}' || true
     sleep 3
   fi
 "
