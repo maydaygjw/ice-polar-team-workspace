@@ -1,157 +1,107 @@
-# CHANGE-REPORT: Adapay 分账结算
+# CHANGE-REPORT: Adapay 分账规则与订单状态变更
 
-## 变更概述
+## 1. 业务目标
 
-本次在 `feat/adapay-profit-sharing` 分支追加银行列表后端化实现：银行列表由前端静态 JSON 改为后端 `yshop_pay_bank` 表维护，前端通过 `GET /pay/bank/list` 动态获取，创建/更新收款人时后端校验 `bankCode`。
+为店铺按角色配置分账计费规则，按规则计算各方分账金额与手续费承担方；走 Adapay 分账的订单在分账成功或回退到虚拟余额结算后，订单状态更新为待评价。
 
-> 2026-07-08 需求澄清：结算账户编辑口径已调整为“更换结算账户”模式，旧卡号不明文展示，未选择更换时可保存基础信息。
+## 2. 影响仓库和主要文件
 
-## 影响范围
+| 仓库 | 主要文件 |
+|---|---|
+| `backend/` | `sql/upgrade-adapay-profit-sharing-rule.sql` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/dal/dataobject/profitsharingrule/ProfitSharingRuleDO.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitsharingrule/ProfitSharingRuleServiceImpl.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitsharingorder/ProfitSharingOrderServiceImpl.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/controller/admin/profitsharingorder/ProfitSharingOrderController.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/job/ProfitSharingSettlementJob.java` |
+| | `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java` |
+| | `yshop-module-mall/yshop-module-order-api/src/main/java/co/yixiang/yshop/module/order/api/OrderApi.java` |
+| | `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/api/OrderApiImpl.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/pom.xml` |
+| `admin/` | `src/api/pay/profitSharingRule.ts` |
+| | `src/views/mall/store/profitSharingRule/index.vue` |
+| | `src/views/mall/store/profitSharingRule/ProfitSharingRuleForm.vue` |
+| | `src/views/mall/store/shop/ShopForm.vue` |
+| | `src/views/mall/store/profitSharingRecord/index.vue` |
+| `governance/` | `feature-docs/adapay-profit-sharing/requirements-spec.md` |
+| | `feature-docs/adapay-profit-sharing/technical-design.md` |
+| | `feature-docs/adapay-profit-sharing/contract-changes.md` |
+| | `feature-docs/adapay-profit-sharing/test-notes.md` |
 
-| 模块/仓库 | 变更类型 | 说明 |
-|-----------|----------|------|
-| `backend/` | 修改 | MemberId 编码、结算账户更换、role 可选、list-by-shop 约束、**银行字典表与列表 API** |
-| `admin/` | 修改 | 角色条件渲染、银行下拉、TypeScript 类型、**银行列表 API 调用** |
-| `governance/` | 修改 + 新增 | 4 份设计文档更新、bank-list.json |
+## 3. 契约变化摘要
 
-## 新增文件
+### API
 
-- `governance/feature-docs/adapay-profit-sharing/bank-list.json` — Adapay 支持银行列表（5260 条）
-- `.worktrees/admin-adapay-profit-sharing/public/bank-list.json` — 前端静态副本（**待移除**）
-- `sql/upgrade-adapay-profit-sharing-bank.sql` — 银行字典表建表与数据初始化
+| 端点 | 方法 | 说明 | 权限 |
+|---|---|---|---|
+| `/admin-api/pay/profit-sharing-rule/list-by-shop` | GET | 按店铺查询分账计费规则 | `pay:profit-sharing-rule:query` |
+| `/admin-api/pay/profit-sharing-rule/save-set` | POST | 保存/覆盖店铺整套规则 | `pay:profit-sharing-rule:update` |
+| `/admin-api/pay/profit-sharing-order/page` | GET | 分账订单分页 | `pay:profit-sharing:query` |
+| `/admin-api/pay/profit-sharing-order/get` | GET | 分账订单详情 | `pay:profit-sharing:query` |
+| `/admin-api/pay/profit-sharing-order/retry` | POST | 失败分账手动重试 | `pay:profit-sharing:update` |
 
-## 变更详情
+### 内部 API
 
-| # | 变更 | 后端文件 | 前端文件 |
-|---|------|----------|----------|
-| 1 | **MemberId 编码规则** | `ProfitRecipientServiceImpl.java` | — |
-| | | `generateMemberId()` → `m_{tenantId}_{memberType}_{idCard}_{storeId\|0}` | |
-| | | 新增 `extractIdCard()` | |
-| | | 创建前校验 `member_id` 唯一性 | |
-| 2 | **结算账户更换** | `ProfitRecipientServiceImpl.java` | `ProfitSharingReceiverForm.vue` |
-| | | `updateProfitRecipient()` 处理可选 `settleAccount` 变更 | 编辑时默认显示绑定状态，显式更换时展开新账户表单 |
-| 3 | **店铺级无需角色** | `ProfitRecipientBaseVO.java`, `ErrorCodeConstants.java` | `ProfitSharingReceiverForm.vue`, `index.ts` |
-| | | `role` 移除 `@NotNull`，新增 `validateRole()` | `v-if="recipientType==1"`，提交时清空 |
-| 4 | **店铺只能选本店铺收款人** | `ProfitRecipientMapper.java` | — |
-| | | `selectListByShop()` 移除平台级+角色=1 的 OR | |
-| 5 | **银行下拉带编码** | — | `ProfitSharingReceiverForm.vue`, `bank-list.json` |
-| | | | `el-select` + `filterable` 替换 `el-input` |
-| 6 | **银行列表后端化** | `BankController.java`, `BankServiceImpl.java`, `BankMapper.java`, `BankDO.java` | `ProfitSharingReceiverForm.vue`, `api/pay/bank/index.ts` |
-| | | 新增 `yshop_pay_bank` 表与 `BankRespVO`；创建/更新收款人时校验 `bankCode` | 移除 `public/bank-list.json`；表单通过 `GET /pay/bank/list` 加载银行列表 |
+- `ProfitSharingRuleApi.validateAndGetRules(Long shopId, BigDecimal payPrice)`
+- `ProfitSharingRuleApi.isRuleComplete(Long shopId)`
+- `OrderApi.markOrderSettled(String orderId)`
 
-## 构建验证
+### DB
 
-| 验证项 | 结果 |
-|--------|------|
-| `mvn -pl yshop-module-pay/yshop-module-pay-biz -am compile` | ✅ SUCCESS |
-| `pnpm build:dev` (admin) | ✅ Build successful |
-| `pnpm ts:check` | ❌ 既有类型定义问题，与本次变更无关 |
+- 新建 `yshop_adapay_profit_sharing_rule`
+- 新建 `yshop_adapay_profit_sharing_order_item`
+- 扩展 `yshop_adapay_profit_sharing_order`（`calculation_type`, `fee_bearer_role`）
+- 追加菜单与权限（`system_menu` / `system_role_menu`）
 
-## 测试覆盖
+### 依赖
 
-- 预存 `DesensitizeTest` 失败与本次变更无关
-- E2E 测试 `adapay-profit-sharing.spec.ts` 存在但未运行（需服务环境）
-- 测试建议记录在 `test-notes.md`
+- `yshop-module-pay-biz` 新增依赖 `yshop-module-order-api`
 
-## 预存技术债务
+### 枚举
 
-以下为之前 Review 报告的遗留项，与本次 5 点修复无关：
+- 新增 `ProfitSharingRoleEnum`（平台/店铺/配送方/销售方）
+- 新增 `ProfitSharingCalculationTypeEnum`（计费规则/佣金比例回退）
 
-- `-biz` 模块间直接依赖（order-biz/store-biz → pay-biz）
-- 分账核心逻辑在 Service 与 Job 中重复
-- OpenAPI 快照未包含新增接口
-- 支付前收款人校验位置（在 `paySuccess` 而非 `pay`）
+## 4. DB 迁移脚本名
 
-## 分支信息
+`sql/upgrade-adapay-profit-sharing-rule.sql`
 
-| 仓库 | 功能分支 | 目标分支 |
-|------|----------|----------|
-| `backend/` | `feat/adapay-profit-sharing` | `master` |
-| `admin/` | `feat/adapay-profit-sharing` | `master` |
+## 5. 测试结果
 
-## Review 结论
-
-**PASS** — 银行列表后端化已实现，后端编译与前端构建通过，实现与设计文档一致。
-
-## 2026-07-08 追加修正：禁用分账时允许解绑收款人
-
-用户反馈：店铺分账配置无法解绑分账收款人。修正后规则：
-
-- 禁用分账时，允许 `recipientId` 为空，店铺进入无分账收款人状态。
-- 前端未选择收款人时，强制将分账置为禁用。
-- 后端 `bindProfitRecipient` 在 `enabled=false` 分支中清空 `profit_sharing_recipient_id` 与 `profit_sharing_enabled`。
-
-### 变更文件
-
-- `backend/yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/StoreShopServiceImpl.java`
-- `backend/yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/controller/admin/storeshop/vo/profitrecipient/ShopBindProfitRecipientReqVO.java`
-- `admin/src/views/mall/store/shop/ShopForm.vue`
-
-### 验证
-
-- `mvn -pl yshop-module-mall/yshop-module-store-biz -am compile -DskipTests` ✅
-- `pnpm build:dev` (admin) ✅
-
-## 2026-07-09 追加修正：Adapay Member 已存在时复用并清理旧结算账户
-
-用户反馈：新建分账收款人时，Adapay 返回 `member_id_exists`（`member_id已存在`），因 Adapay 不支持强制删除 Member，导致无法重新创建。修正后规则：
-
-- 创建收款人时若 Adapay 返回 `member_id_exists`，不再失败，直接复用该 MemberId。
-- 通过 Adapay `Member.query` / `CorpMember.query` 查询该 Member 下已有结算账户。
-- 逐条删除已有结算账户。
-- 绑定新的结算账户并保存本地记录。
-
-### 变更文件
-
-- `backend/yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitrecipient/ProfitRecipientServiceImpl.java`
-  - 新增 `AdapayContext` 持有 `AdapayPayService`、`AdapayPayConfigStorage`、`MerchantDetailsDO`
-  - `createProfitRecipient`：复用 Member 并清理旧结算账户
-  - 新增 `queryAdapayMemberSettleAccountIds`、`deleteExistingSettleAccounts`、`isMemberIdExistsError`
-- `backend/yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/enums/ErrorCodeConstants.java`
-  - 新增 `PROFIT_RECIPIENT_MEMBER_QUERY_FAILED`（1008009028）
-
-### 契约变化
-
-| 层 | 状态 | 说明 |
+| 验证项 | 命令 | 结果 |
 |---|---|---|
-| API | N/A | 无接口变化 |
-| DB schema | N/A | 无表结构变化 |
-| 外部系统 | 行为调整 | 新增调用 Adapay `Member.query` / `CorpMember.query` 查询结算账户列表 |
+| 后端编译 | `mvn clean compile -DskipTests` | ✅ BUILD SUCCESS |
+| 前端构建 | `pnpm run build:local` | ✅ Build successful |
+| 前端类型检查 | `pnpm run ts:check` | ❌ 失败，原因：既有类型定义文件缺失（`@intlify/unplugin-vue-i18n/types`、`@types/qrcode`、`element-plus/global`、`vite-plugin-svg-icons/client`），与本次变更无关 |
+| 单元测试 | — | ⚠️ 未发现新增测试 |
 
-### 验证
+> 注：构建结果为上一轮 Review 实测数据；本次修复仅调整状态校验、错误码、事件传参和展示字段，未引入新的编译依赖或契约变更。
 
-- `mvn clean compile -pl yshop-module-pay/yshop-module-pay-biz -am -DskipTests` ✅
-- `mvn test -pl yshop-module-pay/yshop-module-pay-biz` ✅
-- 全量 `mvn test -pl yshop-module-pay/yshop-module-pay-biz -am` 因预存 `DesensitizeTest` 失败中断，与本次变更无关
+## 6. 风险与注意事项
 
-### 风险与缓解
+1. **测试覆盖不足**：本次新增金额计算、状态机、Job 调度等关键逻辑，但仍无自动化测试覆盖，建议补充 `ProfitSharingRuleServiceImpl.validateAndGetRules`、`ProfitSharingOrderServiceImpl.executeSharing/fallbackToRevenue` 及 `ProfitSharingSettlementJob` 的单元测试。
+2. **M-4 整单替换语义**：实现要求一次提交 4 条不同角色并拒绝重复角色，与测试计划 R-06 的“去重后整单替换”期望存在偏差。当前以代码严格校验为准，需同步更新测试计划或明确需求。
+3. **订单状态更新失败需监控**：分账成功/回退后 `orderApi.markOrderSettled` 已改为 try-catch，失败仅记录日志，不会回滚分账状态。建议对这类日志增加告警，避免订单状态长期不一致。
 
-| 风险 | 说明 | 缓解 |
-|---|---|---|
-| `settle_accounts` 返回结构与预期不符 | 无法正确提取结算账户 ID | 对 `List<Map>` / `List<String>` / `null` 做防御性处理并记录日志 |
-| 删除结算账户失败 | 旧账户未清理导致新账户无法绑定 | 删除失败直接抛异常，本地不保存收款人 |
-| `member_id_exists` 错误信息无法识别 | 复用逻辑不触发 | 同时匹配英文错误码 `member_id_exists` 和中文提示 `member_id已存在` |
-| 并发下 Adapay 静态配置被重置 | 查询/删除使用错误配置 | 在 `synchronized (AdapayPayConfigStorage.class)` 块内初始化配置，与 SDK 同步策略一致 |
+## 7. 建议 PR 标题和描述
 
-### 建议 PR 标题
+**标题**: `feat(pay/order): Adapay 分账计费规则与订单状态变更`
 
-`fix(pay/profitrecipient): 复用 Adapay 已存在 Member 并清理旧结算账户`
-
-### 建议 PR 描述
+**描述**:
 
 ```
-当 Adapay 返回 member_id_exists 时，不再直接失败，而是：
-1. 复用已有 MemberId；
-2. 查询 Member 下已有结算账户；
-3. 逐条删除旧结算账户；
-4. 绑定新结算账户并保存本地记录。
+- 新增店铺分账计费规则，按角色（平台/店铺/配送方/销售方）配置比例与手续费承担方
+- 支付时按规则计算各角色分账金额并固化到分账明细表；无规则时 fallback 到 commission_rate
+- 日终 Job 分账确认并更新 yshop_store_order.status = 2（待评价）
+- 分账失败时回退到 RevenueJob，并同样更新订单状态为待评价
+- 管理后台新增店铺分账计费规则配置页、分账结算记录详情展示计算方式/承担方/明细
+- 店铺编辑页新增分账计费规则入口
+- 修复：分账成功后先持久化状态再更新订单；手动重试增加状态校验；fallback 校验平台收款人启用状态；规则保存错误码统一；明细返回 recipientName；前端手续费互斥与成功提示
 
-新增错误码 PROFIT_RECIPIENT_MEMBER_QUERY_FAILED 用于查询失败场景。
+关联文档：
+- governance/feature-docs/adapay-profit-sharing/requirements-spec.md
+- governance/feature-docs/adapay-profit-sharing/technical-design.md
+- governance/feature-docs/adapay-profit-sharing/contract-changes.md
+- governance/feature-docs/adapay-profit-sharing/test-notes.md
+- governance/feature-docs/adapay-profit-sharing/review-report.md
 ```
-
-## PR 信息
-
-| 仓库 | PR | 状态 |
-|------|-----|------|
-| `backend/` | `feat/adapay-profit-sharing-member-reuse` | 待创建，目标分支 `master` |
-

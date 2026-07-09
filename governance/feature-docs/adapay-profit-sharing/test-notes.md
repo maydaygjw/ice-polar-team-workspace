@@ -1,90 +1,134 @@
-# 测试笔记 — Adapay 分账结算
+# 测试计划 — Adapay 分账规则与订单状态变更
 
-## 变更范围
+## 1. 测试范围
 
-本次变更为 Phase 3 实现后的文档对齐修复，涉及 5 个规则调整：
+| 端 | 功能点 |
+|----|--------|
+| 后端 | 店铺分账计费规则 CRUD、整单校验；按规则计算金额与手续费承担方；无规则 fallback 到 `commission_rate`；规则不完整时拒绝支付；日终分账 Job；分账失败回退 RevenueJob；订单状态更新为待评价。 |
+| admin 前端 | 店铺分账计费规则配置页；店铺编辑页入口；分账结算记录详情展示 `calculationType` / `feeBearerRole` / `items`。 |
 
-| # | 变更 | 影响端 |
-|---|------|--------|
-| 1 | MemberId 编码规则 `m_{租户Id}_{memberType}_{IdCard}_{storeId\|0}` | backend |
-| 2 | 结算账户可通过“更换结算账户”修改（含远程 Adapay 银行卡信息） | backend + admin |
-| 3 | 店铺级收款人无需角色 | backend + admin |
-| 4 | 店铺只能选绑定本店铺的收款人 | backend + admin |
-| 5 | 银行选项从 Adapay 银行列表加载，带出编码 | admin |
+> 小程序端无变更，不纳入测试。
 
-## 构建验证
+## 2. 测试策略
 
-| 验证 | 结果 |
+| 类型 | 取舍 |
 |------|------|
-| `mvn compile` (pay-biz, pay-api) | ✅ 通过 |
-| `pnpm build:dev` (admin) | ✅ 通过 |
-| `mvn test` (pay module) | ✅ 编译通过 |
+| 单元测试 | 重点覆盖金额计算、整单校验、状态机转换。对 `ProfitSharingRuleService`、`ProfitSharingOrderService`、`ProfitSharingSettlementJob` 增加单元测试。 |
+| 接口测试 | 覆盖规则保存/查询、分账订单查询/重试、店铺绑定收款人。Mock Adapay 调用，避免依赖沙箱。 |
+| 端到端测试 | 实现后验证：admin 规则配置页 → 创建订单 → 支付回调 → 日终 Job → 订单状态更新全流程。 |
+| 回归测试 | 必做。覆盖 Adapay 支付、分账收款人、店铺分账绑定、分账结算记录查询，确保既有分账流程不受影响。 |
 
-> 注意：`yshop-spring-boot-starter-web` 模块的 `DesensitizeTest` 存在预存失败（期望中文脱敏但得到英文），与本次变更无关。
+## 3. 测试用例清单
 
-## 后端变更点测试建议
+### 3.1 店铺计费规则 CRUD 与整单校验
 
-### 1. MemberId 编码与 Member 复用
+| 编号 | 用例 | 预期 |
+|------|------|------|
+| R-01 | 保存完整规则：4 角色均存在，比例和 = 100%，有且仅有一个承担方 | 保存成功，返回 4 条启用记录 |
+| R-02 | 比例和 ≠ 100% | 后端拒绝，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
+| R-03 | 缺少任一角色 | 后端拒绝，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
+| R-04 | 无承担方 | 后端拒绝，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
+| R-05 | 多个承担方 | 后端拒绝，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
+| R-06 | 同一角色存在两条启用记录 | 后端按整单替换处理，最终生效态唯一 |
+| R-07 | 将某角色 status 设为 0 | 规则不完整，后续支付被拒绝 |
+| R-08 | 删除店铺整套规则 | 后续支付 fallback 到 `commission_rate` |
+| R-09 | 查询 `list-by-shop?shopId=1` | 返回该店铺所有角色规则及 `feeBearer` 标记 |
 
-- **创建平台级个人收款人**：验证 `member_id` = `m_{tenantId}_1_{idCard}_0`
-- **创建店铺级企业收款人**：验证 `member_id` = `m_{tenantId}_2_{businessLicenseNo}_{shopId}`
-- **同店铺同身份证号重复创建**：应返回 `PROFIT_RECIPIENT_MEMBER_ID_DUPLICATE`
-- **Adapay 侧已存在 Member（本地无记录）**：创建时应复用该 Member，查询并删除其下所有结算账户，再绑定新账户；本地记录成功写入
-- **Adapay 侧已存在 Member 且无结算账户**：直接复用 Member 并绑定新账户
-- **Adapay 侧已存在 Member 但结算账户删除失败**：整体创建失败，本地不写入
-- **Adapay Member 查询失败**：应返回 `PROFIT_RECIPIENT_MEMBER_QUERY_FAILED`
+### 3.2 无规则时 fallback 到 `commission_rate`
 
-### 2. 结算账户更换
+| 编号 | 用例 | 预期 |
+|------|------|------|
+| F-01 | 店铺启用分账但 `yshop_adapay_profit_sharing_rule` 无任何记录 | 创建分账记录，`calculation_type=2`，`platform_amount=commission_amount`，`shop_amount=pay_price-commission_amount` |
+| F-02 | fallback 时仍缺少平台/店铺收款人 | 支付被拒绝，返回 `PROFIT_SHARING_PAY_DISABLED` |
+| F-03 | fallback 记录不写入 `yshop_adapay_profit_sharing_order_item` | 表中无对应明细 |
 
-- **编辑收款人-不更换银行卡**：不传 `settleAccount`，基础信息可保存，原结算账户保持不变
-- **编辑收款人-更换银行卡**：显式传入完整新 `settleAccount`，Adapay 同步更新绑定
-- **编辑收款人-更换银行卡失败**：Adapay 返回失败时，原结算账户保持有效，基础信息不产生部分保存
-- **编辑收款人-空卡号**：若选择更换结算账户，应按必填校验拦截；未选择更换时不应传 `settleAccount`
+### 3.3 规则不完整时支付被拒绝
 
-### 3. 店铺级无角色
+| 编号 | 用例 | 预期 |
+|------|------|------|
+| P-01 | 规则存在但角色缺失 | 支付前抛错，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
+| P-02 | 规则存在但比例和 ≠ 100 | 支付前抛错，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
+| P-03 | 规则存在但无承担方 | 支付前抛错，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
+| P-04 | 规则完整但某角色有效收款人缺失 | 支付前抛错，返回 `PROFIT_SHARING_RECIPIENT_MISSING_FOR_ROLE` |
+| P-05 | 店铺未绑定收款人 | 支付前抛错，返回 `PROFIT_SHARING_SHOP_RECIPIENT_MISSING` |
 
-- **创建平台级收款人不传 role**：应返回 `PROFIT_RECIPIENT_ROLE_REQUIRED`
-- **创建店铺级收款人传 role**：`role` 应被忽略/不校验
-- **平台级收款人 role 不可变更**：编辑时修改 role 应报错
-- **店铺级收款人编辑时传 role**：应忽略（店铺级不校验 role 变更）
+### 3.4 按规则计算各角色金额与手续费承担方
 
-### 4. 店铺收款人列表
+| 编号 | 用例 | 预期 |
+|------|------|------|
+| C-01 | 4 角色比例 10/70/10/10，店铺承担手续费 | 各角色金额按 `pay_price × percentage/100` 计算，店铺角色 `fee_flag=1`，其余 `0` |
+| C-02 | 比例含 0% | 对应角色金额为 0，仍参与 `div_members` 且 `fee_flag` 按规则标记 |
+| C-03 | 金额和因四舍五入差额 1 分 | 差额吸收到最大金额角色，最终 `Σamount = pay_price` |
+| C-04 | 创建分账记录后修改规则 | 已创建记录金额不变，验证固化逻辑 |
 
-- **`list-by-shop?shopId=1`**：仅返回 `recipientType=2` 且 `shopId=1` 的已启用记录
-- **平台级收款人不再出现在店铺可选列表中**
+### 3.5 分账成功/回退后订单状态更新为待评价
 
-## 前端变更点测试建议
+| 编号 | 用例 | 预期 |
+|------|------|------|
+| S-01 | 日终 Job 中 `PaymentConfirm.create` 成功 | `sharing_status=2`，`yshop_store_order.status=2` |
+| S-02 | 分账失败并回退到 RevenueJob | `sharing_status=4`，`fallback_revenue=1`，`yshop_store_order.status=2` |
+| S-03 | 分账未完成时订单状态仍为原状态 | `status ≠ 2` |
+| S-04 | `OrderApi.markOrderSettled` 失败 | 分账状态不推进，记录错误日志，Job 下次/手动重试 |
 
-### 1. 角色字段条件显示
+### 3.6 分账失败回退到 RevenueJob
 
-- **选择平台级**：角色下拉显示
-- **选择店铺级**：角色下拉隐藏
-- **提交店铺级**：请求体中不包含 `role`
+| 编号 | 用例 | 预期 |
+|------|------|------|
+| B-01 | Adapay 返回失败 | `sharing_status=3`，写入错误信息 |
+| B-02 | 失败后触发回退 | 创建店铺收入 type=1 与平台抽成 type=3 的 StoreRevenue 记录 |
+| B-03 | 已回退记录不可再次回退 | `fallback_revenue=1` 时跳过 |
+| B-04 | 已回退记录不允许手动重试 | 返回 `PROFIT_SHARING_ORDER_STATUS_INVALID_FOR_RETRY` |
 
-### 2. 银行下拉
+### 3.7 日终 Job 幂等性
 
-- **打开创建表单**：银行下拉加载 `/bank-list.json`
-- **搜索银行**：输入银行名称可模糊搜索
-- **选择银行**：`settleAccount.bankCode` 为选中银行的编码
-- **列表加载失败**：银行下拉为空，不影响其他表单功能
+| 编号 | 用例 | 预期 |
+|------|------|------|
+| J-01 | 同一订单 `sharing_status=2` | Job 不再处理 |
+| J-02 | 同一订单 `sharing_status=4` | Job 不再处理 |
+| J-03 | Job 中途异常重启 | 下次调度从 `sharing_status=0` 继续，已 `=1` 的记录视超时处理逻辑而定 |
+| J-04 | 重复调度同一批次 | 同一订单只向 Adapay 确认一次分账 |
 
-### 3. 结算账户在编辑模式下可更换
+### 3.8 管理后台规则配置页面交互
 
-- **编辑收款人**：结算账户绑定状态可见，可展示脱敏摘要，不展示完整旧卡号
-- **不更换账户提交**：无需填写银行卡号/开户名/银行，也可保存基础信息
-- **点击更换结算账户**：展开银行卡表单，银行卡号/开户名/银行/账户类型必填
-- **提交更换**：修改银行卡号/银行后，后端同步更新；失败时提示错误并保留原绑定
+| 编号 | 用例 | 预期 |
+|------|------|------|
+| A-01 | 打开规则配置页，选择店铺 | 展示 4 角色输入行，支持比例与承担方开关 |
+| A-02 | 保存时前端即时校验比例和 | 比例和 ≠ 100 时前端拦截并提示 |
+| A-03 | 保存时前端校验唯一承担方 | 未选或多选时前端拦截 |
+| A-04 | 店铺编辑页新增「分账计费规则」入口 | 点击跳转至规则配置页并带入 `shopId` |
+| A-05 | 分账结算记录详情 | 展示 `calculationType`、`feeBearerRole` 与 `items` 明细 |
 
-## 回归风险
+> 编号 A-01 ~ A-05 均为「实现后验证」。
 
-| 风险项 | 级别 | 说明 |
-|--------|------|------|
-| 已有收款人数据 member_id 格式不一致 | 低 | 本次为首次实现，无历史数据 |
-| Adapay 银行列表过大影响前端性能 | 低 | 使用 `el-select` + `filterable` 懒加载，首屏不阻塞 |
-| list-by-shop 返回结果变更影响店铺配置 | 低 | 原查询返回平台级+店铺级，现仅返回店铺级；ShopForm 已适配 |
+## 4. 测试数据准备
 
-## 未覆盖项
+| 数据 | 说明 |
+|------|------|
+| 租户 | 固定测试租户 `tenant_id=1` |
+| 店铺 | `shop_1`（启用分账）、`shop_2`（未启用分账） |
+| 平台级收款人 | 平台角色 `recipient_p`、配送角色 `recipient_d`、销售角色 `recipient_s`，均为启用状态 |
+| 店铺级收款人 | 归属 `shop_1` 的收款人 `recipient_shop`，已启用 |
+| 完整计费规则 | `shop_1` 下 4 角色比例 10/70/10/10，店铺承担手续费 |
+| 不完整计费规则 | `shop_1` 下仅平台/店铺两条角色记录 |
+| 订单 | Adapay 支付成功订单，状态为待收货（`status=1`），`refund_status=0`，`pay_price=100.00` |
+| 佣金配置 | `commission_rate` 配置使 `commission_amount=10.00` |
 
-- 无自动化单元测试（本次变更未新增测试类）
-- 无 E2E 测试（需 Admin Dashboard + 后端服务环境）
-- Adapay API 集成测试（需沙箱环境）
+## 5. 风险与重点关注点
+
+| 风险 | 关注点 |
+|------|--------|
+| 金额计算 | 比例和校验、四舍五入差额吸收、`Σamount = pay_price` 前置/执行前双重校验。 |
+| 订单状态一致性 | 分账记录与 `yshop_store_order.status` 必须同事务或最终一致；`markOrderSettled` 失败时状态不回滚。 |
+| 手续费承担方映射 | 仅承担方角色 `fee_flag=1`，其余 `0`；承担方必须是已配置的 4 角色之一。 |
+| 规则不完整 vs fallback | 完全无规则才 fallback；规则存在但不完整必须拒绝支付，不能静默 fallback。 |
+| Job 幂等 | 依赖 `sharing_status` 状态机，需验证重复调度不重复分账。 |
+| 跨模块调用 | `pay-biz → order-api` 调用失败时的降级与告警。 |
+
+## 6. 回归范围
+
+| 模块 | 回归点 |
+|------|--------|
+| Adapay 支付 | 未启用分账店铺支付流程不变；支付回调、订单状态流转正常。 |
+| 分账收款人 | 创建/编辑/删除/查询、结算账户更换、MemberId 编码、银行列表加载不受影响。 |
+| 店铺分账绑定 | 绑定/解绑店铺级收款人、启用/禁用开关逻辑不变。 |
+| 分账结算记录查询 | 列表/搜索/失败重试、详情字段扩展后既有查询条件仍可用。 |

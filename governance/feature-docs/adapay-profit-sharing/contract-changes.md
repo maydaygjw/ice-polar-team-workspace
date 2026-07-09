@@ -45,12 +45,31 @@
 
 **权限**: `pay:profit-sharing:query` / `pay:profit-sharing:update`
 
+### 分账计费规则管理
+
+| 端点 | 变更类型 | 说明 |
+|------|----------|------|
+| `GET /admin-api/pay/profit-sharing-rule/list-by-shop` | 新增 | 按店铺查询分账计费规则列表。参数 `shopId` |
+| `POST /admin-api/pay/profit-sharing-rule/save-set` | 新增 | 保存/覆盖店铺整套计费规则。请求体为完整规则集，后端原子性替换并整单校验 |
+
+**权限**：`pay:profit-sharing-rule:query`、`pay:profit-sharing-rule:update`
+
+校验规则（后端强制）：
+- 同一店铺同一角色只能有一条生效记录；
+- 4 个角色必须全部存在且启用；
+- `percentage` 之和必须等于 100；
+- 有且仅有一个角色 `fee_bearer=1`；
+- 各角色取值范围：`role ∈ [1,2,3,4]`，`percentage ∈ [0, 100]`，`fee_bearer ∈ [0,1]`，`status ∈ [0,1]`。
+
 ### 内部调用
 
 | 接口 | 调用方 → 被调用方 | 说明 |
 |------|-------------------|------|
 | `ProfitSharingOrderApi.createSharingOrder(DTO)` | order-biz → pay-api | 支付成功时创建待分账记录 |
 | `ProfitRecipientApi.listByShop(Long shopId)` | store-biz → pay-api | 查询店铺可选收款人 |
+| `ProfitSharingRuleApi.validateAndGetRules(Long shopId, BigDecimal payPrice)` | order-biz → pay-api | 校验规则完整性并返回计算后的分账明细；无规则时返回 fallback 标记 |
+| `ProfitSharingRuleApi.isRuleComplete(Long shopId)` | store-biz → pay-api | 查询店铺计费规则是否完整有效，供店铺列表/详情展示 |
+| `OrderApi.markOrderSettled(String orderId)` | pay-biz → order-api | 将 `yshop_store_order.status` 更新为 2（待评价） |
 
 ## DTO 变更
 
@@ -62,10 +81,16 @@
 | `ProfitRecipientRespVO` | 收款人响应 | `id`, `recipientType`, `role`（平台级有值，店铺级为 null）, `shopId`, `recipientName`, `memberType`, `memberId`（按编码规则生成）, `settleAccountBound`, `settleAccountId`, `settleAccountSummary`, `status` |
 | `ProfitRecipientPageReqVO` | 收款人分页查询 | `recipientType`, `role`（仅平台级查询时可用）, `shopId`, `status`, `recipientName` |
 | `ShopBindProfitRecipientReqVO` | 店铺绑定 | `shopId`, `recipientId`, `enabled`；`recipientId` 必须为 `shopId` 对应的店铺级收款人 |
-| `ProfitSharingOrderRespVO` | 分账订单响应 | `orderId`, `shopId`, `payPrice`, `commissionAmount`, `shopAmount`, `sharingStatus`, `fallbackRevenue`, `errorMsg` |
+| `ProfitSharingOrderRespVO` | 分账订单响应 | `orderId`, `shopId`, `payPrice`, `commissionAmount`, `shopAmount`, `sharingStatus`, `fallbackRevenue`, `errorMsg`, `calculationType`, `feeBearerRole`, `items` |
 | `ProfitSharingOrderPageReqVO` | 分账订单查询 | `orderId`, `shopId`, `sharingStatus`, `startTime`, `endTime` |
 | `ProfitSharingRetryReqVO` | 重试分账 | `id` |
-| `CreateSharingOrderDTO` | 内部 DTO | `orderId`, `shopId`, `payPrice`, `commissionAmount`, `platformRecipientId`, `shopRecipientId`, `adapayPaymentId`, `tenantId` |
+| `CreateSharingOrderDTO` | 内部 DTO | `orderId`, `shopId`, `payPrice`, `commissionAmount`, `platformRecipientId`, `shopRecipientId`, `adapayPaymentId`, `tenantId`, `calculationType`, `feeBearerRole`, `items` |
+| `ProfitSharingRuleRespVO` | 规则响应 | `id`, `shopId`, `role`, `percentage`, `feeBearer`, `status` |
+| `ProfitSharingRuleSaveReqVO` | 保存整套规则 | `shopId`, `rules: List<ProfitSharingRuleItemVO>` |
+| `ProfitSharingRuleItemVO` | 单条规则项 | `role`, `percentage`, `feeBearer` |
+| `ProfitSharingRuleItemDTO` | 内部计算结果 | `role`, `recipientId`, `amount`, `feeFlag` |
+| `ProfitSharingOrderItemRespVO` | 分账明细响应 | `role`, `recipientId`, `amount`, `feeFlag` |
+| `CreateSharingOrderItemDTO` | 内部分账明细 | `role`, `recipientId`, `amount`, `feeFlag` |
 
 **字段校验要点**：
 - `recipientType`: `[1, 2]`；`role`: `[1, 2, 3]`，`recipientType=1`（平台级）时必填，`recipientType=2`（店铺级）时不传/忽略
@@ -77,15 +102,58 @@
 - `recipientName`: 1-64 字符
 - `member_id` 编码规则：`m_{tenantId}_{memberType}_{idCard}_{storeId}`，平台级 `storeId=0`
 
+**字段校验要点（新增）**：
+- 计费规则：`role ∈ [1,2,3,4]`，`percentage ∈ [0, 100]`，一套规则内 4 个角色必须全存在且启用，比例和 = 100，有且仅有一个 `fee_bearer=1`。
+- 分账明细：`amount` 之和必须等于 `payPrice`。
+
+### 枚举新增
+
+| 枚举 | 新增值 |
+|------|--------|
+| `ProfitSharingRoleEnum` | `PLATFORM(1)`, `SHOP(2)`, `DELIVERY(3)`, `SALES(4)` |
+| `ProfitSharingCalculationTypeEnum` | `RULE(1)`, `COMMISSION_FALLBACK(2)` |
+
 ## 依赖变更
 
-无新增依赖。复用现有 Adapay SDK（已在 `ARCHITECTURE.md` 依赖登记册中）。
+| 依赖 | 变更 | 说明 |
+|------|------|------|
+| `yshop-module-pay-biz` → `yshop-module-order-api` | 新增 | 调用 `OrderApi.markOrderSettled` 更新订单状态 |
+| `yshop-module-order-biz` → `yshop-module-pay-api` | 已存在 | 调用 `ProfitSharingRuleApi` / `ProfitSharingOrderApi` / `ProfitRecipientApi` |
+
+无新增外部 SDK 或第三方依赖。
 
 ## 数据库变更
 
-迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`；本次结算账户更换澄清需补充迁移脚本 `sql/upgrade-adapay-profit-sharing-settle-account-replacement.sql`；银行列表后端化需补充迁移脚本 `sql/upgrade-adapay-profit-sharing-bank.sql`（含 `yshop_pay_bank` 建表及从 `bank-list.json` 导入数据）
+- 既有迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`（分账收款人、分账订单、日志、店铺扩展字段）、`sql/upgrade-adapay-profit-sharing-bank.sql`（银行字典表）、`sql/upgrade-adapay-profit-sharing-settle-account-replacement.sql`（结算账户更换快照字段）。
+- 本次新增迁移脚本：`sql/upgrade-adapay-profit-sharing-rule.sql`
+  - 新建 `yshop_adapay_profit_sharing_rule`
+  - 新建 `yshop_adapay_profit_sharing_order_item`
+  - 扩展 `yshop_adapay_profit_sharing_order`（`calculation_type`、`fee_bearer_role`）
+  - 追加菜单与权限
+- **回滚方案**：
+  1. `DROP TABLE yshop_adapay_profit_sharing_order_item;`
+  2. `ALTER TABLE yshop_adapay_profit_sharing_order DROP COLUMN calculation_type, DROP COLUMN fee_bearer_role;`
+  3. `DROP TABLE yshop_adapay_profit_sharing_rule;`
+  4. 删除新增的 `system_menu` / `system_role_menu` 记录。
 
 ### 新建表
+
+**`yshop_adapay_profit_sharing_rule`** — 店铺分账计费规则
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | bigint PK AUTO_INCREMENT | |
+| `tenant_id` | bigint NOT NULL | 租户隔离 |
+| `shop_id` | bigint NOT NULL | 关联 `yshop_store_shop.id` |
+| `role` | tinyint NOT NULL | 角色：1=平台，2=店铺，3=配送方，4=销售方 |
+| `percentage` | decimal(5,2) NOT NULL | 分账比例(%) |
+| `fee_bearer` | tinyint NOT NULL DEFAULT 0 | 是否承担手续费：0=否，1=是 |
+| `status` | tinyint NOT NULL DEFAULT 1 | 0=禁用，1=启用 |
+| `creator` / `updater` | varchar(64) | |
+| `create_time` / `update_time` | datetime NOT NULL | |
+| `deleted` | tinyint NOT NULL DEFAULT 0 | 逻辑删除 |
+
+索引：`idx_tenant_shop_status` (`tenant_id`, `shop_id`, `status`)，`idx_tenant_shop_role` (`tenant_id`, `shop_id`, `role`)，`uk_tenant_shop_role_deleted` (`tenant_id`, `shop_id`, `role`, `deleted`)
 
 **`yshop_pay_bank`** — 银行字典表（Adapay 支持银行列表）
 
@@ -146,6 +214,8 @@
 | `sharing_time` | datetime NULL | |
 | `error_msg` | varchar(512) NULL | |
 | `fallback_revenue` | tinyint NOT NULL DEFAULT 0 | 0=未回退, 1=已回退 |
+| `calculation_type` | tinyint NOT NULL DEFAULT 2 | 计算方式：1=计费规则，2=佣金比例回退 |
+| `fee_bearer_role` | tinyint NULL | 手续费承担角色：1=平台，2=店铺，3=配送方，4=销售方 |
 | `create_time` / `update_time` | datetime NOT NULL | |
 
 索引：`idx_tenant_order` (`tenant_id`, `order_id`), `idx_tenant_status_time` (`tenant_id`, `sharing_status`, `create_time`), `idx_tenant_shop` (`tenant_id`, `shop_id`)
@@ -165,7 +235,31 @@
 
 索引：`idx_sharing_order_id` (`sharing_order_id`)
 
+**`yshop_adapay_profit_sharing_order_item`** — 分账订单明细
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | bigint PK AUTO_INCREMENT | |
+| `tenant_id` | bigint NOT NULL | 租户隔离 |
+| `sharing_order_id` | bigint NOT NULL | 关联 `yshop_adapay_profit_sharing_order.id` |
+| `role` | tinyint NOT NULL | 角色：1=平台，2=店铺，3=配送方，4=销售方 |
+| `recipient_id` | bigint NOT NULL | 关联 `yshop_adapay_profit_recipient.id` |
+| `amount` | decimal(10,2) NOT NULL | 该角色分账金额 |
+| `fee_flag` | tinyint NOT NULL DEFAULT 0 | 是否承担手续费：0=N，1=Y |
+| `creator` / `updater` | varchar(64) | |
+| `create_time` / `update_time` | datetime NOT NULL | |
+| `deleted` | tinyint NOT NULL DEFAULT 0 | 逻辑删除 |
+
+索引：`idx_sharing_order_id` (`sharing_order_id`)，`idx_tenant_sharing_order` (`tenant_id`, `sharing_order_id`)
+
 ### 修改表
+
+**`yshop_adapay_profit_sharing_order`** — 新增字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `calculation_type` | tinyint NOT NULL DEFAULT 2 | 计算方式：1=计费规则，2=佣金比例回退 |
+| `fee_bearer_role` | tinyint NULL | 手续费承担角色 |
 
 **`yshop_store_shop`** — 新增字段：
 
@@ -173,6 +267,22 @@
 |------|------|------|
 | `profit_sharing_recipient_id` | bigint NULL | 关联分账收款人 |
 | `profit_sharing_enabled` | tinyint NOT NULL DEFAULT 0 | 0=未启用, 1=已启用 |
+
+### 菜单与权限
+
+在 `sql/upgrade-adapay-profit-sharing-rule.sql` 中追加：
+
+```sql
+INSERT IGNORE INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name, status, visible, keep_alive, creator, create_time, updater, update_time, deleted) VALUES
+(2508, '店铺分账计费规则', '', 2, 15, 2314, 'profit-sharing-rule', 'ep:money', '/mall/store/profitSharingRule/index', 'ProfitSharingRule', 0, 1, 1, 'admin', NOW(), 'admin', NOW(), 0),
+(2509, '店铺分账计费规则查询', 'pay:profit-sharing-rule:query', 3, 1, 2508, '', '', '', NULL, 0, 1, 1, 'admin', NOW(), 'admin', NOW(), 0),
+(2510, '店铺分账计费规则编辑', 'pay:profit-sharing-rule:update', 3, 2, 2508, '', '', '', NULL, 0, 1, 1, 'admin', NOW(), 'admin', NOW(), 0);
+
+INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id) VALUES
+(1, 2508, 'admin', NOW(), 'admin', NOW(), 0, 1),
+(1, 2509, 'admin', NOW(), 'admin', NOW(), 0, 1),
+(1, 2510, 'admin', NOW(), 'admin', NOW(), 0, 1);
+```
 
 ## 错误码
 
@@ -191,6 +301,12 @@
 | `PROFIT_SHARING_AMOUNT_MISMATCH` | 分账金额校验失败 |
 | `PROFIT_SHARING_PAY_DISABLED` | 分账配置不完整，禁止支付 |
 | `BANK_NOT_EXISTS` | 银行编码不存在或已禁用 |
+| `PROFIT_SHARING_RULE_INCOMPLETE` | 店铺计费规则不完整（角色缺失、比例和 ≠100、承担方不唯一等） |
+| `PROFIT_SHARING_RULE_ROLE_EXISTS` | 同一店铺同一角色已存在生效规则 |
+| `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` | 手续费承担方配置不合法 |
+| `PROFIT_SHARING_RECIPIENT_MISSING_FOR_ROLE` | 某角色未配置有效收款人 |
+| `PROFIT_SHARING_ORDER_STATUS_INVALID_FOR_RETRY` | 当前分账状态不允许重试 |
+| `ORDER_SETTLE_FAILED` | 订单状态更新为待评价失败 |
 
 > 具体数值由 backend-agent 实现时按模块错误码段分配。
 
@@ -204,6 +320,11 @@
 
 ## 兼容性
 
-- 向后兼容：是。未启用分账的店铺行为不变；新增表不影响现有查询。
-- 前端同步变更：`admin/` 需新增分账收款人管理和分账订单查询页面；店铺编辑页新增分账配置区块；**银行下拉改为调用后端 API，移除 `public/bank-list.json` 静态文件**。
-- `miniapp/` 无变更。
+- **向后兼容**：是。未启用分账的店铺行为不变；已启用分账但无计费规则的店铺 fallback 到原有 `commission_rate` 逻辑；新增表不影响现有查询。
+- **前端同步变更**：
+  - `admin/` 需新增「店铺分账计费规则」页面（菜单挂于门店管理下）；
+  - 分账收款人管理和分账订单查询页面保持原有功能；
+  - 店铺编辑页新增「分账计费规则」配置入口；
+  - 分账结算记录详情页展示 `calculationType`、`feeBearerRole` 与分账明细 `items`；
+  - 银行下拉继续调用后端 API。
+- **`miniapp/` 无变更**，C 端用户无感知。
