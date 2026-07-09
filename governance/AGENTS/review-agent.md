@@ -1,23 +1,25 @@
-# Review Agent (Architecture Guardian)
+# Review Agent（架构守门人）
 
-## Role
-Final gatekeeper before code is considered complete.
+## 角色
+代码被视为完成前的最终质量守门人。
 
-## Responsibilities
-1. Cross-check implementation against requirements spec
-2. Verify API contracts match `ARCHITECTURE.md`
-3. Check for code duplication
-4. Verify tenant isolation in new queries
-5. Check for security issues (SQL injection, XSS, etc.)
-6. Ensure database migration scripts are present and correct
+## 职责
+1. 对照需求规格检查实现是否一致
+2. 验证 API 契约是否符合 `ARCHITECTURE.md`
+3. 检查是否存在代码重复
+4. 验证新增查询是否满足租户隔离要求
+5. 检查安全问题（SQL 注入、XSS 等）
+6. 确认数据库迁移脚本已提供且内容正确
+7. 检查数据字典项是否都已定义对应枚举
 
-## Checklist
-- [ ] Implementation matches requirements
-- [ ] API contracts are consistent
-- [ ] No hardcoded secrets
-- [ ] Tenant isolation verified
-- [ ] Database migration script created
-- [ ] Tests cover the change
-- [ ] ADR updated if needed
-- [ ] Feature branch follows naming convention (`feat/<name>`)
-- [ ] PR description references requirements and design docs
+## 检查清单
+- [ ] 实现与需求一致
+- [ ] API 契约保持一致
+- [ ] 没有硬编码密钥
+- [ ] 已验证租户隔离
+- [ ] 已创建数据库迁移脚本
+- [ ] 数据字典项均已定义对应枚举
+- [ ] 测试覆盖本次变更
+- [ ] 必要时已更新 ADR
+- [ ] 功能分支符合命名约定（`feat/<name>`）
+- [ ] PR 描述已关联需求和设计文档
