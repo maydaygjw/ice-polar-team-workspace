@@ -84,33 +84,13 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "
 # 3. 停止旧进程；如服务器使用 systemd 管理，优先用 systemctl
 #    注意：不要同时用 systemctl stop + pkill，否则 systemd 的 Restart=on-failure
 #    会立刻拉起新进程，导致后续启动时的端口冲突。
-ssh ${DEPLOY_USER}@${SERVER_HOST} "
-  if systemctl list-units --type=service | grep -q yshop.service; then
-    systemctl stop yshop.service || true
-    # 轮询等待进程完全退出（最多 30s）
-    for i in \$(seq 1 30); do
-      if ! pgrep -f 'java -jar target/${YSHOP_JAR}' > /dev/null 2>&1; then
-        break
-      fi
-      sleep 1
-    done
-  else
-    pkill -9 -f 'java -jar target/${YSHOP_JAR}' || true
-    sleep 3
-  fi
-"
+bash governance/SCRIPTS/stop-yshop.sh
 
 # 4. 打包
 ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && mvn clean package -DskipTests"
 
-# 5. 启动服务；如存在 systemd 服务则使用 systemctl，否则用 nohup
-ssh ${DEPLOY_USER}@${SERVER_HOST} "
-  if systemctl list-unit-files | grep -q yshop.service; then
-    systemctl start yshop.service
-  else
-    cd ${YSHOP_START_PATH} && nohup java -jar target/${YSHOP_JAR} > ${YSHOP_START_PATH}/app.log 2>&1 &
-  fi
-"
+# 5. 启动服务；测试环境会在脚本内注入 ADAPAY_DEBUG=true
+bash governance/SCRIPTS/start-yshop.sh
 
 # 6. 验证服务是否启动（用 [j]ava 前缀排除 grep/SSH shell 自身的误匹配）
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[j]ava -jar target/${YSHOP_JAR}'"
@@ -131,9 +111,10 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
 
 > **注意**：
 > - 若启动失败并提示端口被占用，说明旧进程未停干净，执行 `fuser -k ${YSHOP_PORT}/tcp` 后重试。
+> - 测试环境启动 yshop 时必须通过 `governance/SCRIPTS/start-yshop.sh` 注入 `ADAPAY_DEBUG=true`；生产环境不得开启。
 > - 生产环境由 `systemd` 管理，必须通过 `systemctl start/stop yshop.service` 启停。
 > - **禁止**同时使用 `systemctl stop` 和 `pkill`。`Restart=on-failure` 的 systemd 服务在收到进程退出信号后会立刻重新拉起，此时再 `pkill` 反而会触发重启，导致短暂端口 8080 被占用，Spring Boot 启动失败。
-> - 停止旧进程后，应**轮询等待进程完全退出**（推荐方式见步骤 3），而非固定 `sleep 3`。
+> - 停止旧进程后，应**轮询等待进程完全退出**（推荐方式见 `governance/SCRIPTS/stop-yshop.sh`），而非固定 `sleep 3`。
 
 **健康检查**
 
