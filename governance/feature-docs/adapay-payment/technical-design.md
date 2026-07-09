@@ -1,181 +1,95 @@
-## Technical Design: Adapay Third-Party Payment Integration
+# 技术设计 — Adapay 第三方支付集成
 
-### Database Changes
+## 模块影响
 
-**No schema migration required.**
+| 模块 | 变更类型 | 说明 |
+|------|----------|------|
+| `yshop-module-pay-api` | 修改 | 注册 Adapay 支付平台与回调处理器；扩展支付通知 MQ 消息 |
+| `yshop-module-pay-biz` | 新增 | 新增 `outPayNo` 映射表及支付前记录逻辑 |
+| `yshop-module-order-api` | 修改 | 扩展支付方式枚举；扩展 `paySuccess` 服务接口 |
+| `yshop-module-order-biz` | 修改 | 增加 Adapay 支付分支与 `outPayNo` 生成/复用/回调处理链路 |
+| `yshop-framework/yshop-common` | 修改 | 扩展支付 ID 枚举 |
+| `admin/` | 修改 | 支付配置表单与订单视图增加 Adapay 选项 |
+| `miniapp/` | 复用 | 无变更 |
 
-The `merchant_details` table is designed generically — all columns (`appid`, `mch_id`, `key_private`, `key_public`, `notify_url`, `return_url`, `sign_type`, etc.) are platform-agnostic. The `pay_type` column stores the platform identifier as a string (e.g., `aliPay`, `wxV3Pay`). Adapay configuration is stored in the same rows with:
+## 架构决策
 
-- `pay_type` = `adapayPay` (platform class constant `AdapayPaymentPlatform.PLATFORM_NAME`)
-- `details_id` = `adapay_h5` + tenantId (following existing convention)
+1. **复用现有支付抽象**：Adapay 作为新的第三方支付渠道，复用现有 `merchant_details` 配置表、`/app-api/order/pay` 入口、`/app-api/order/notify/payBack{detailsId}.json` 回调端点、以及 `order.pay.notice` Redis Stream 异步通知链路，不新增独立端点。
+2. **配置方式与微信/支付宝一致**：管理后台“支付管理 > 支付配置”中新增 Adapay 选项，表单字段保持通用，不单独开发 Adapay 配置页面。
+3. **支付方式枚举扩展**：新增 `adapay` 作为订单 `pay_type` 的合法值；新增 `adapay_h5{tenantId}` 作为 `merchant_details.details_id`，与现有 `ali_h5{tenantId}`、`wx_h5{tenantId}` 对齐。
+4. **引入外部支付单号 outPayNo**：系统订单号 `orderId` 保持不变，但向第三方支付平台发起支付时使用独立的 `outPayNo`。
+   - 微信支付：`outPayNo = orderId`，同一订单始终不变。
+   - Adapay：每次重新支付生成新的 `outPayNo`（格式 `orderId-{递增序号}`），以满足 Adapay 不允许同一订单号重复发起的限制。
+5. **outPayNo 持久化**：新增 `pay_out_order_no` 表记录每次支付请求使用的 `outPayNo`、对应 `orderId`、支付渠道、状态，用于回调反查订单与幂等控制。
+6. **渠道锁定**：同一订单一旦通过某渠道发起支付，即锁定为该渠道，后续不允许切换为其他渠道。
+7. **C 端不直接接入**：本次仅完成后端支付接口与回调链路，C 端支付页面选择 Adapay 由后续需求独立实现。
 
-No ALTER TABLE or migration SQL is needed. A new PayIdEnum entry and admin UI option are sufficient.
+## 流程设计
 
-### Module Impact
-
-| Module | Change | Detail |
-|--------|--------|--------|
-| `yshop-module-pay-api` (pom.xml) | Add dependency | `com.holuntech:pay-java-adapay:2.14.14-SNAPSHOT` |
-| `yshop-module-pay-api` | New class | `AdapayPayMessageHandler.java` |
-| `yshop-module-pay-api` | Modify class | `MerchantPayServiceConfigurer.java` — register platform + handler |
-| `yshop-module-order-api` | Modify enum | `PayTypeEnum.java` — add `ADAPAY` |
-| `yshop-framework/yshop-common` | Modify enum | `PayIdEnum.java` — add `ADAPAY_H5` |
-| `yshop-module-order-biz` | Modify method | `AppStoreOrderServiceImpl.pay()` — add ADAPAY case |
-| `yshop-module-order-biz` | Modify method | `AppStoreOrderServiceImpl.paySuccess()` — add ADAPAY display text |
-| `admin/` | Modify file | `MerchantDetailsForm.vue` — add payType/detailsId options |
-| `miniapp/` | No change | WeChat-only miniapp; Adapay is web-side |
-
-### New Classes Needed
-
-#### 1. AdapayPayMessageHandler
-
-File: `backend/yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/config/handlers/AdapayPayMessageHandler.java`
-
-Pattern: mirror `WxPayMessageHandler` and `AliPayMessageHandler`.
-
-```java
-@Component
-@Slf4j
-public class AdapayPayMessageHandler implements PayMessageHandler<AdapayPayMessage, PayService> {
-
-    @Resource
-    private PayNoticeProducer payNoticeProducer;
-
-    @Override
-    public PayOutMessage handle(AdapayPayMessage payMessage, Map<String, Object> context,
-                                 PayService payService) throws PayErrorException {
-        log.info("======adapay pay notice ========");
-        log.info("payMessage:{}", payMessage);
-
-        // Check payment status — depends on AdapayPayMessage API
-        // Expected: check payMessage status field for "success"
-        if (/* payment succeeded */) {
-            String orderId = payMessage.getOutTradeNo();
-            log.info("orderId：{}", orderId);
-            payNoticeProducer.sendPayNoticeMessage(orderId, "adapay");
-            return payService.getPayOutMessage("SUCCESS", "OK");
-        }
-
-        return payService.getPayOutMessage("FAIL", "失败");
-    }
-}
-```
-
-Key unknowns (must be resolved during implementation):
-- Exact success status value from `AdapayPayMessage`
-- Exact `PayMessage` subclass name provided by `pay-java-adapay` (assumed: `AdapayPayMessage`)
-- Payment platform constant name (assumed: `AdapayPaymentPlatform.PLATFORM_NAME`)
-
-#### 2. MerchantPayServiceConfigurer Changes
-
-```java
-// Add field:
-@Resource
-private AdapayPayMessageHandler adapayPayMessageHandler;
-
-// Add in configure(PayMessageConfigurer):
-PaymentPlatform adapayPlatform = PaymentPlatforms.getPaymentPlatform(
-    AdapayPaymentPlatform.PLATFORM_NAME);
-configurer.addHandler(adapayPlatform, adapayPayMessageHandler);
-```
-
-#### 3. PayTypeEnum Addition
-
-```java
-ADAPAY("adapay", "Adapay支付"),
-```
-
-#### 4. PayIdEnum Addition
-
-```java
-ADAPAY_H5("adapay_h5", "Adapay支付H5"),
-```
-
-### Configuration Changes
-
-**application-local.yaml / application-dev.yaml / application-prod.yaml:**
-
-Update the payment callback URL to the existing `app-api` endpoint used by WeChat/Alipay:
-
-```yaml
-yshop:
-  pay:
-    order-notify-url: https://{domain}/app-api/order/notify/payBackadapay_h5{tenantId}.json
-```
-
-Replace `{domain}` with the actual public domain and `{tenantId}` with the target tenant id. No new configuration keys are needed — Adapay reuses the same callback mechanism as WeChat/Alipay.
-
-**Callback URL pattern:** `{domain}/app-api/order/notify/payBack{detailsId}.json`
-- Reuses the existing `AppOrderController.payBack()` endpoint, identical to WeChat/Alipay callbacks
-- `detailsId` = `adapay_h5{tenantId}`, e.g. `payBackadapay_h5154.json`
-- eGzosN loads the matching `merchant_details` row, creates the `AdapayPayService`, and dispatches to the registered `AdapayPayMessageHandler`
-- The `MerchantPayServiceConfigurer.configure(PayMessageConfigurer)` registration wires `AdapayPayMessageHandler` into the `AdapayPayService` when the merchant is loaded
-
-### Sequence Diagram
+### 支付流程
 
 ```
-Order Flow: Adapay H5 Payment
-
-  User Browser        yshop-drink           Adapay Gateway       Redis Stream       Order Consumer
-      |                    |                      |                    |                   |
-      |  1. POST /order/pay|                      |                    |                   |
-      |  (paytype=adapay)  |                      |                    |                   |
-      |------------------>>|                      |                    |                   |
-      |                    |                      |                    |                   |
-      |                    | 2. MerchantPayOrder  |                    |                   |
-      |                    |    + PayServiceManager.getOrderInfo()     |                    |
-      |                    |--------------------->>|                   |                   |
-      |                    |                      |                   |                   |
-      |  3. Redirect to     |  4. Adapay H5       |                   |                   |
-      |     Adapay checkout |     pay page URL    |                   |                   |
-      |<-------------------|<---------------------|                   |                   |
-      |                    |                      |                   |                   |
-      |  5. User completes payment on Adapay page |                   |                   |
-      |===================>>|                      |                   |                   |
-      |                    |                      |                   |                   |
-      |                    |  6. POST /app-api/   |                   |                   |
-      |                    |     order/notify/    |                   |                   |
-      |                    |     payBackadapay_h5{tenantId}.json      |                   |                   |
-      |                    |<---------------------|                   |                   |
-      |                    |                      |                   |                   |
-      |                    | 7. AppOrderController|                   |                   |
-      |                    |    .payBack(detailsId)|                  |                   |
-      |                    |    -> manager.payBack()                  |                   |                   |
-      |                    |                      |                   |                   |
-      |                    | 8. eGzosN loads      |                   |                   |
-      |                    |    AdapayPayService + |                  |                   |
-      |                    |    AdapayPayMessageHandler               |                   |                   |
-      |                    |                      |                   |                   |
-      |                    | 9. AdapayPayMessageHandler.handle()      |                   |                   |
-      |                    |    checks status == SUCCESS              |                   |                   |
-      |                    |                      |                   |                   |
-      |                    | 10. sendPayNoticeMessage(orderId,"adapay")|                  |                   |
-      |                    |----------------------------------------->>|                   |                   |
-      |                    |                      |                   |                   |
-      |                    |                      |           11. PayNoticeConsumer      |
-      |                    |                      |             onMessage()             |
-      |                    |                      |              paySuccess(orderId,     |
-      |                    |                      |              "adapay")               |
-      |                    |                      |                   |---------------->>|
-      |                    |                      |                   |                  |
-      |                    |                      |                   |   12. Update order|
-      |                    |                      |                   |   status to PAID |
-      |                    |                      |                   |   payType=adapay |
-      |                    |                      |                   |   payTime=now    |
-      |                    |                      |                   |                  |
-      |                    |  13. return          |                   |                  |
-      |                    |      PayOutMessage("SUCCESS","OK")        |                  |
-      |                    |--------------------->>|                   |                  |
-      |                    |                      |                   |                  |
+调用方 → POST /app-api/order/pay (paytype=adapay)
+        → 生成/复用 outPayNo
+        → 记录 pay_out_order_no
+        → 使用 outPayNo 创建 Adapay 支付单
+        → 返回支付参数
+        → 用户完成 Adapay 付款
+        → Adapay 回调 /app-api/order/notify/payBackadapay_h5{tenantId}.json (携带 outPayNo)
+        → 回调处理器通过 outPayNo 反查 orderId
+        → 校验成功 → 发送 order.pay.notice (含 orderId, payType, adapayPaymentId)
+        → PayNoticeConsumer 更新订单为已支付
 ```
 
-### Risk Assessment
+### outPayNo 生成规则
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| **Unknown Adapay adapter API surface** — The exact class names (`AdapayPayMessage`, `AdapayPaymentPlatform.PLATFORM_NAME`, success status field) in the `pay-java-adapay` adapter are not verified. | High | Inspect the adapter JAR before writing handler code. Confirm class names, platform identifier constant, and message structure. |
-| **H5 redirect URL mismatch** — Adapay H5 payment return URL must be configured in both `merchant_details` and the Adapay merchant dashboard. | Medium | Document that `.return_url` in merchant_details must match the Adapay dashboard configuration. |
-| **Callback signature verification** — Adapay's signature algorithm may differ from WeChat/Alipay. The eGzosN adapter should handle this, but verify. | Medium | Test callback end-to-end in a sandbox environment. The `pay-java-adapay` adapter should implement `PayService.verify()` correctly. |
-| **Admin UI payType dropdown** — Current form has only 2 options (aliPay, wxV3Pay). Adding "adapay" shows fields like `certificateSerialNo` and `wechatPayPublicKey` which are irrelevant for Adapay. | Low | UI is functional but confusing. Acceptable for MVP. Future: conditional field display based on selected payType. |
-| **PayTypeEnum `adapay` vs `PayIdEnum` `adapay_h5`** — Two different naming conventions exist: PayTypeEnum uses `adapay` (matching existing `alipay`, `weixin`) while PayIdEnum uses `adapay_h5` (matching existing `ali_h5`, `wx_h5`). | Low | Document this distinction clearly. PayTypeEnum value is stored in orders; PayIdEnum is used only for merchant_details id lookup. |
-| **Callback URL prefix mismatch** — Documents earlier referenced `/admin-api/pay/notify/order`, but the project has no such endpoint and `admin-api` requires authentication. Adapay must use the existing `/app-api/order/notify/payBack{detailsId}.json` path. | High | Update all documentation and Adapay dashboard callback configuration to use `/app-api/order/notify/payBackadapay_h5{tenantId}.json`. Verify the path is in `yshop.tenant.ignore-urls`. |
+```
+微信支付
+    └── outPayNo = orderId（永远不变）
+
+Adapay 支付
+    └── 首次支付：outPayNo = orderId + "-1"
+    └── 重新支付：取该 orderId 下 Adapay 记录最大序号 +1，生成 orderId + "-{n}"
+```
+
+### 支付单状态处理
+
+```
+创建支付单
+    │
+    ├─ 成功 → 记录 outPayNo → 返回支付参数
+    │
+    ├─ outPayNo 已存在且已支付 → 直接完成订单
+    │
+    ├─ outPayNo 已存在且支付中 → 复用支付参数
+    │
+    └─ 失败 → 返回错误
+```
+
+## 风险评估
+
+| 风险 | 等级 | 缓解措施 |
+|------|------|----------|
+| Adapay SDK API 与状态值理解偏差 | 高 | 实现前确认 `AdapayPayMessage`、`AdapayStatus`、平台常量 |
+| outPayNo 生成并发重复 | 中 | 使用数据库唯一索引（tenant_id + out_pay_no）兜底，冲突时重试取新序号 |
+| 回调验签失败 | 中 | 复用 eGzosN 适配层验签，沙箱环境验证 |
+| 渠道锁定与现有支付流程冲突 | 中 | 在支付入口统一判断订单已存在支付单时拒绝切换渠道 |
+| 管理后台表单字段通用导致配置困惑 | 低 | MVP 接受，后续 deferred 动态字段展示 |
+
+## 分支计划
+
+| 仓库 | 分支名 |
+|------|--------|
+| `backend/` | `feat/adapay-payment` |
+| `admin/` | `feat/adapay-payment` |
+
+## 契约层状态
+
+| 层 | 状态 | 引用 |
+|----|------|------|
+| DB schema | 变更 | 新增 `pay_out_order_no` 表 → contract-changes.md |
+| API | 复用 | 现有 `/app-api/order/pay`、回调端点、管理后台商户配置 API 接受新枚举值 → contract-changes.md |
+| 事件/MQ | 变更 | `PayNoticeMessage` 扩展字段 → contract-changes.md |
+| 依赖 | 变更 | 新增 Adapay SDK → contract-changes.md |
+| 外部系统 | 变更 | 接入 Adapay 支付网关与回调 → contract-changes.md |
+| ADR | 需要 | adr-003-adapay-out-pay-no.md |
