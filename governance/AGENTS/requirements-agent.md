@@ -25,10 +25,11 @@
 ```
 
 - **Scope**: 明确 In Scope / Out of Scope / Deferred。
-- **Use Cases**: 按角色/目标/主流程/业务规则描述，聚焦业务行为。
+  - **Out-of-scope 只写与 In-scope 有歧义或容易模糊的内容**，不罗列显而易见无关项（如“不修改其他模块”“不修复历史 bug”）。
+- **Use Cases**: 按角色/目标/主流程/业务规则描述，聚焦业务行为；
 - **Frontend Requirements**: 描述用户可见的页面与功能，不写具体文件路径。
-- **Edge Cases**: 一句话列表，突出业务边界行为。
-- **Acceptance Criteria**: 高 level checklist，给业务验收人员留出判断空间。
+- **Edge Cases**: 最多 3 条，聚焦开发中易遗漏的业务边界行为，常规校验留到技术设计阶段。
+- **Acceptance Criteria**: 最多 3 条高 level checklist，给业务验收人员留出判断空间；不写大路货（如“编译通过”“无报错”）。
 
 ## 规则
 
