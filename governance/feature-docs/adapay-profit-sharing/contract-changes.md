@@ -95,10 +95,10 @@
 | `ProfitRecipientRespVO` | 收款人响应 | `id`, `recipientType`, `role`（平台级有值，店铺级为 null）, `shopId`, `recipientName`, `memberType`, `memberId`（按编码规则生成）, `settleAccountBound`, `settleAccountId`, `settleAccountSummary`, `status` |
 | `ProfitRecipientPageReqVO` | 收款人分页查询 | `recipientType`, `role`（仅平台级查询时可用）, `shopId`, `status`, `recipientName` |
 | `ShopBindProfitRecipientReqVO` | 店铺绑定 | `shopId`, `recipientId`, `enabled`；`recipientId` 必须为 `shopId` 对应的店铺级收款人 |
-| `ProfitSharingOrderRespVO` | 分账订单响应 | `orderId`, `shopId`, `payPrice`, `commissionAmount`, `shopAmount`, `sharingStatus`, `fallbackRevenue`, `errorMsg`, `calculationType`, `feeBearerRole`, `items` |
+| `ProfitSharingOrderRespVO` | 分账订单响应 | `orderId`, `shopId`, `payPrice`, `sharingStatus`, `fallbackRevenue`, `errorMsg`, `calculationType`, `feeBearerRole`, `items` |
 | `ProfitSharingOrderPageReqVO` | 分账订单查询 | `orderId`, `shopId`, `sharingStatus`, `startTime`, `endTime` |
 | `ProfitSharingRetryReqVO` | 重试分账 | `id` |
-| `CreateSharingOrderDTO` | 内部 DTO | `orderId`, `shopId`, `payPrice`, `commissionAmount`, `platformRecipientId`, `shopRecipientId`, `adapayPaymentId`, `tenantId`, `calculationType`, `feeBearerRole`, `items` |
+| `CreateSharingOrderDTO` | 内部 DTO | `orderId`, `shopId`, `payPrice`, `adapayPaymentId`, `tenantId`, `calculationType`, `feeBearerRole`, `items` |
 | `ProfitSharingRuleRespVO` | 规则响应 | `id`, `shopId`, `role`, `percentage`, `feeBearer`, `status` |
 | `ProfitSharingRuleSaveReqVO` | 保存整套规则 | `shopId`, `rules: List<ProfitSharingRuleItemVO>` |
 | `ProfitSharingRuleItemVO` | 单条规则项 | `role`, `percentage`, `feeBearer` |
@@ -142,8 +142,12 @@
 - 本次新增迁移脚本：`sql/upgrade-adapay-profit-sharing-region.sql`
   - 新建 `yshop_pay_adapay_region`
   - 从 Adapay 省市编码 JSON 初始化 34 个省份、378 个城市
+- **本次需求变更迁移脚本**：`sql/upgrade-adapay-profit-sharing-dynamic-role.sql`
+  - 将 `yshop_adapay_profit_sharing_order` 中现有记录的 `commission_amount`/`shop_amount`/`platform_recipient_id`/`shop_recipient_id` 迁移到 `yshop_adapay_profit_sharing_order_item`；
+  - 删除 `yshop_adapay_profit_sharing_order` 的 `commission_amount`、`shop_amount`、`platform_recipient_id`、`shop_recipient_id` 字段；
+  - 更新 `ProfitSharingOrderDO`/`ProfitSharingOrderMapper.xml` 结果映射。
 - **回滚方案**：
-  1. `DROP TABLE yshop_pay_adapay_region;`
+  1. 恢复字段并回写数据（如需回滚，需按历史备份或反向迁移处理）。
 
 ### 新建表
 
@@ -242,10 +246,6 @@
 | `order_id` | varchar(32) NOT NULL | 关联 `yshop_store_order.order_id` |
 | `shop_id` | bigint NOT NULL | |
 | `pay_price` | decimal(10,2) NOT NULL | |
-| `commission_amount` | decimal(10,2) NOT NULL | 平台抽成 |
-| `shop_amount` | decimal(10,2) NOT NULL | = pay_price - commission_amount |
-| `platform_recipient_id` | bigint NOT NULL | |
-| `shop_recipient_id` | bigint NOT NULL | |
 | `sharing_status` | tinyint NOT NULL DEFAULT 0 | 0=待分账, 1=分账中, 2=成功, 3=失败, 4=已回退 |
 | `adapay_payment_id` | varchar(64) NULL | |
 | `adapay_confirm_id` | varchar(64) NULL | |
@@ -292,12 +292,21 @@
 
 ### 修改表
 
-**`yshop_adapay_profit_sharing_order`** — 新增字段：
+**`yshop_adapay_profit_sharing_order`** — 移除字段：
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `calculation_type` | tinyint NOT NULL DEFAULT 2 | 计算方式：1=计费规则，2=佣金比例回退 |
-| `fee_bearer_role` | tinyint NULL | 手续费承担角色 |
+| 字段 | 说明 |
+|------|------|
+| `commission_amount` | 平台抽成金额（改为从明细表汇总） |
+| `shop_amount` | 店铺分账金额（改为从明细表汇总） |
+| `platform_recipient_id` | 平台角色收款人 ID（改为从明细表获取） |
+| `shop_recipient_id` | 店铺角色收款人 ID（改为从明细表获取） |
+
+保留字段：`id`, `tenant_id`, `order_id`, `shop_id`, `pay_price`, `sharing_status`, `adapay_payment_id`, `adapay_confirm_id`, `sharing_time`, `error_msg`, `fallback_revenue`, `calculation_type`, `fee_bearer_role`, `create_time`, `update_time`。
+
+**`yshop_adapay_profit_sharing_order_item`** — 行为变更：
+
+- 无论 `calculation_type` 是计费规则还是佣金比例回退，均必须写入明细记录。
+- 佣金比例回退模式下，固定写入平台、店铺两条明细，金额分别为 `commission_amount` 与 `pay_price - commission_amount`。
 
 **`yshop_store_shop`** — 新增字段：
 
@@ -369,11 +378,13 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 
 ## 兼容性
 
-- **向后兼容**：是。未启用分账的店铺行为不变；已启用分账但无计费规则的店铺 fallback 到原有 `commission_rate` 逻辑；新增表不影响现有查询。已配置规则但规则不完整（无启用角色、启用角色比例和 ≠100、无唯一启用承担方、承担方未启用、收款人缺失/禁用）时，支付时拒绝并提示配置缺失，不得静默 fallback。禁用某角色后，历史已创建的分账记录金额不受影响。
+- **向后兼容**：**否**。本次需求变更从 `ProfitSharingOrderRespVO` 中移除 `commissionAmount`、`shopAmount`；admin 分账结算记录列表需从 `items` 汇总展示平台/店铺金额。数据库层面通过迁移脚本 `sql/upgrade-adapay-profit-sharing-dynamic-role.sql` 将历史数据从主表迁移到明细表并删除旧字段。
+- **未启用分账的店铺**：行为不变。
+- **已启用分账但无计费规则的店铺**：继续 fallback 到原有 `commission_rate` 逻辑，但创建时写入平台、店铺两条明细记录。
 - **前端同步变更**：
-  - `admin/` 需新增「店铺分账计费规则」页面（菜单挂于门店管理下）；
-  - 分账收款人管理和分账订单查询页面保持原有功能；
-  - 店铺编辑页新增「分账计费规则」配置入口；
-  - 分账结算记录详情页展示 `calculationType`、`feeBearerRole` 与分账明细 `items`；
+  - `admin/` 分账结算记录列表页不再直接展示 `commissionAmount`/`shopAmount`，改为从 `items` 按角色汇总或仅展示 `payPrice`；
+  - 分账结算记录详情页继续展示 `items` 明细；
+  - 分账收款人管理和店铺分账计费规则页面保持原有功能。
+  - 分账结算记录详情页继续展示 `calculationType`、`feeBearerRole` 与分账明细 `items`；
   - 银行下拉继续调用后端 API；分账收款人表单的结算账户区域增加「开户省份」「开户城市」Adapay 级联选择。
 - **`miniapp/` 无变更**，C 端用户无感知。

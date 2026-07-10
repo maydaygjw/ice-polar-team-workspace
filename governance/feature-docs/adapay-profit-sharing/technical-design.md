@@ -4,7 +4,7 @@
 
 | 模块 | 变更类型 | 说明 |
 |------|----------|------|
-| `yshop-module-pay-biz` | 修改 | 新增分账收款人 CRUD、分账订单 Service、Adapay 分账 SDK 封装（Member/结算账户创建、结算账户更换、`Payment.create` delay、`PaymentConfirm.create`）、日终结算 Job、分账失败回退、银行字典表与列表 API、**省市字典表与级联列表 API** |
+| `yshop-module-pay-biz` | 修改 | 新增分账收款人 CRUD、分账订单 Service、Adapay 分账 SDK 封装（Member/结算账户创建、结算账户更换、`Payment.create` delay、`PaymentConfirm.create`）、日终结算 Job、分账失败回退、银行字典表与列表 API、省市字典表与级联列表 API、**分账订单按角色明细化** |
 | `yshop-module-pay-api` | 修改 | 新增分账 DTO、Service 接口、ErrorCode、**银行列表 DTO** |
 | `yshop-module-store-biz` | 修改 | 店铺绑定/解绑分账收款人；查询时返回分账启用状态 |
 | `yshop-module-store-api` | 修改 | 新增店铺绑定分账收款人 DTO |
@@ -21,7 +21,7 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 ## 架构决策
 
 1. **延迟分账**：支付时 `pay_mode=delay`，资金冻结在平台账户，日终统一执行分账确认。避免实时分账带来的并发和部分退款复杂性。
-2. **分账金额固化**：`yshop_adapay_profit_sharing_order` 创建时即计算并固化 `commission_amount`、`shop_amount`，不受后续 `commission_rate` 变更影响。
+2. **分账明细固化**：创建 `yshop_adapay_profit_sharing_order` 时同步写入 `yshop_adapay_profit_sharing_order_item` 明细记录，每个启用角色一条。分账金额、收款人、手续费承担方在创建时固化，不受后续 `commission_rate` 或计费规则变更影响。
 3. **MemberId 编码**：`member_id` 不依赖 Adapay 返回值，按本地规则 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0 for 平台}` 生成。天然保证同店铺同身份证号不可重复创建收款人。
 4. **平台级收款人角色唯一**：同租户同角色只有一个启用中的平台级收款人。通过业务层校验实现（创建时将同角色其他记录置为 `status=0`），不用数据库唯一索引。
 5. **店铺级收款人无角色**：店铺级收款人默认归属于指定店铺，无需分账角色。店铺只能选择绑定该店铺的收款人。
@@ -31,12 +31,13 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 9. **禁用分账允许解绑收款人**：店铺关闭分账启用开关时，`profit_sharing_recipient_id` 与 `profit_sharing_enabled` 同步清空，店铺可回到无分账收款人状态。
 10. **Member 与结算账户同步创建**：创建收款人时串行调用 Adapay 创建 Member → 绑定结算账户，任一步失败直接抛错不入库，避免后续分账因缺少结算账户失败。
 11. **Job 幂等**：通过 `sharing_status` 状态机保证，同一订单不会重复分账。
-12. **分账前金额校验**：执行分账前校验 `platform_amount + shop_amount == pay_price`，不一致时标记失败不分账。
+12. **分账前金额校验**：执行分账前校验 `sum(item.amount) == pay_price`，不一致时标记失败不分账。
 13. **更换失败保持原账户**：更换结算账户调用 Adapay 失败时，本地收款人基础信息和原结算账户绑定保持不变，避免出现本地显示已更新但远程仍为旧账户的不一致状态。
 14. **Adapay Member 已存在时复用并清理旧结算账户**：创建收款人时若 Adapay 返回 `member_id_exists`，不再强制创建 Member，而是复用该 MemberId；通过 Adapay `Member.query` / `CorpMember.query` 获取其下结算账户列表并逐条删除，再绑定新的结算账户。Adapay 不支持强制删除 Member，因此通过清理结算账户实现“重置”效果。
 15. **银行列表后端化 + 主要银行默认加载**：Adapay 支持银行列表（约 5,260 条）由前端静态 JSON 改为后端数据库表 `yshop_pay_bank` 维护。表新增 `is_primary` 字段标记主要银行（六大行 + 主流股份制/城商行，约数十条）。前端银行选择器默认仅加载主要银行；用户输入关键字时远程搜索全部银行（防抖 300ms）。创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。数据通过迁移脚本从 `bank-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
 16. **Adapay 省市级联后端化**：Adapay 自定义四位省市编码（34 个省份、378 个城市）由后端数据库表 `yshop_pay_adapay_region` 维护，字段 `region_type` 区分省份/城市，`parent_code` 指向城市所属省份。创建/更换结算账户时，`adapay_prov_code`/`adapay_area_code` 必填；后端校验编码存在、启用且城市归属省份匹配后，随 `account_info` 一并传给 Adapay。编辑收款人未更换结算账户时不传递、不更新省市编码。数据通过迁移脚本从 `region-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
 17. **企业 Member 信息按 Adapay `/v1/corp_members` 补齐**：字段包括 `name`/`social_credit_code`/`social_credit_code_expires`/`business_scope`/`legal_person`/`legal_cert_id`/`legal_cert_id_expires`/`legal_mp`/`address`/`prov_code`/`area_code`。附件为 zip 压缩包，内含三证合一证件照、法人身份证正面照、法人身份证反面照、开户银行许可证照；后端下载四张图片后打包 zip，并将中文文件名按 UTF-8 URLEncode 编码，单包最大 9MB。法人身份证正反面调用阿里云 OCR 识别，自动回填 `legal_person`/`legal_cert_id`/`legal_cert_id_expires`；识别失败允许手动填写。
+18. **分账角色动态扩展**：`yshop_adapay_profit_sharing_order` 不保留任何角色相关字段，所有角色金额、收款人、手续费承担标记均存入 `yshop_adapay_profit_sharing_order_item`。新增角色时只需扩展 `ProfitSharingRoleEnum` 并确保存在对应收款人，无需修改分账订单主表结构或迁移脚本。
 
 > 无新架构范式，复用现有模块分层、多租户拦截器、Job 调度模式。不新增 ADR。
 
@@ -256,12 +257,16 @@ yshop-module-store-biz   ──→ yshop-module-pay-api (ProfitSharingRuleApi)
 
 #### 修改表：`yshop_adapay_profit_sharing_order`
 
-新增字段：
+移除字段（角色信息全部下沉到明细表）：
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `calculation_type` | TINYINT NOT NULL DEFAULT 2 | 计算方式：`1=计费规则`、`2=佣金比例回退` |
-| `fee_bearer_role` | TINYINT NULL | 手续费承担角色（`calculation_type=1` 时必填） |
+| 字段 | 说明 |
+|------|------|
+| `commission_amount` | 平台抽成金额 |
+| `shop_amount` | 店铺分账金额 |
+| `platform_recipient_id` | 平台角色收款人 ID |
+| `shop_recipient_id` | 店铺角色收款人 ID |
+
+保留字段：`id`, `tenant_id`, `order_id`, `shop_id`, `pay_price`, `sharing_status`, `adapay_payment_id`, `adapay_confirm_id`, `sharing_time`, `error_msg`, `fallback_revenue`, `calculation_type`, `fee_bearer_role`, `create_time`, `update_time`。
 
 #### 新建表：`yshop_adapay_profit_sharing_order_item`
 
@@ -291,13 +296,13 @@ yshop-module-store-biz   ──→ yshop-module-pay-api (ProfitSharingRuleApi)
           否 → 结束
           是 → 校验店铺收款人
               → 查询 yshop_adapay_profit_sharing_rule
-                  ├─ 无任何规则记录 → fallback: platform_amount=commission_amount, shop_amount=pay_price-commission_amount, calculation_type=2
+                  ├─ 无任何规则记录 → fallback: 生成平台、店铺两条 item（platform_amount=commission_amount, shop_amount=pay_price-commission_amount, fee_bearer=平台），calculation_type=2
                   ├─ 规则存在但不完整 → 抛错，拒绝支付
                   └─ 规则完整 → 按启用角色 percentage 计算各角色金额，确定 fee_bearer_role，映射 recipient，calculation_type=1
               → 调用 ProfitSharingOrderApi.createSharingOrder(dto)
                   → 校验金额和 = pay_price
                   → 写入 yshop_adapay_profit_sharing_order
-                  → 若 calculation_type=1，写入 yshop_adapay_profit_sharing_order_item
+                  → 写入 yshop_adapay_profit_sharing_order_item（每个启用角色一条）
                   → 写操作日志
 ```
 
@@ -309,7 +314,7 @@ Quartz 每日 00:05 触发 ProfitSharingSettlementJob
   → 分页查询 sharing_status=0 且关联 store_order.status=1、refund_status=0、create_time<今日零点的记录
   → 对每笔分账记录：
       1. 更新 sharing_status=1（分账中）
-      2. 加载分账明细（或 fallback 的平台/店铺收款人）
+      2. 加载分账明细 yshop_adapay_profit_sharing_order_item
       3. 校验收款人仍有效、金额和 = pay_price
       4. 组装 div_members（fee_flag 取自 item.fee_flag）
       5. 调用 PaymentConfirm.create
@@ -327,7 +332,9 @@ Quartz 每日 00:05 触发 ProfitSharingSettlementJob
 executeSharing 返回失败
   → fallbackToRevenue(order)
       → 确认 sharing_status=3 且 fallback_revenue=0
-      → 创建店铺收入（type=1）和平台抽成（type=3）的 StoreRevenue 记录
+      → 遍历 yshop_adapay_profit_sharing_order_item：
+           - 店铺角色 → 创建店铺收入（type=1）
+           - 其他角色 → 创建平台抽成（type=3）
       → sharing_status=4, fallback_revenue=1
       → 调用 OrderApi.markOrderSettled(orderId) → yshop_store_order.status=2
       → 写 ROLLBACK 日志
