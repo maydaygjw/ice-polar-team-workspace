@@ -1,5 +1,5 @@
 feature: adapay-profit-sharing
-status: review
+status: done
 risk: high
 targets: [backend, admin]
 contract: true
