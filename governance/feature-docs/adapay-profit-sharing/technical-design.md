@@ -4,7 +4,7 @@
 
 | 模块 | 变更类型 | 说明 |
 |------|----------|------|
-| `yshop-module-pay-biz` | 修改 | 新增分账收款人 CRUD、分账订单 Service、Adapay 分账 SDK 封装（Member/结算账户创建、结算账户更换、`Payment.create` delay、`PaymentConfirm.create`）、日终结算 Job、分账失败回退、**银行字典表与列表 API** |
+| `yshop-module-pay-biz` | 修改 | 新增分账收款人 CRUD、分账订单 Service、Adapay 分账 SDK 封装（Member/结算账户创建、结算账户更换、`Payment.create` delay、`PaymentConfirm.create`）、日终结算 Job、分账失败回退、银行字典表与列表 API、**省市字典表与级联列表 API** |
 | `yshop-module-pay-api` | 修改 | 新增分账 DTO、Service 接口、ErrorCode、**银行列表 DTO** |
 | `yshop-module-store-biz` | 修改 | 店铺绑定/解绑分账收款人；查询时返回分账启用状态 |
 | `yshop-module-store-api` | 修改 | 新增店铺绑定分账收款人 DTO |
@@ -35,6 +35,8 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 13. **更换失败保持原账户**：更换结算账户调用 Adapay 失败时，本地收款人基础信息和原结算账户绑定保持不变，避免出现本地显示已更新但远程仍为旧账户的不一致状态。
 14. **Adapay Member 已存在时复用并清理旧结算账户**：创建收款人时若 Adapay 返回 `member_id_exists`，不再强制创建 Member，而是复用该 MemberId；通过 Adapay `Member.query` / `CorpMember.query` 获取其下结算账户列表并逐条删除，再绑定新的结算账户。Adapay 不支持强制删除 Member，因此通过清理结算账户实现“重置”效果。
 15. **银行列表后端化 + 主要银行默认加载**：Adapay 支持银行列表（约 5,260 条）由前端静态 JSON 改为后端数据库表 `yshop_pay_bank` 维护。表新增 `is_primary` 字段标记主要银行（六大行 + 主流股份制/城商行，约数十条）。前端银行选择器默认仅加载主要银行；用户输入关键字时远程搜索全部银行（防抖 300ms）。创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。数据通过迁移脚本从 `bank-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
+16. **Adapay 省市级联后端化**：Adapay 自定义四位省市编码（34 个省份、378 个城市）由后端数据库表 `yshop_pay_adapay_region` 维护，字段 `region_type` 区分省份/城市，`parent_code` 指向城市所属省份。创建/更换结算账户时，`adapay_prov_code`/`adapay_area_code` 必填；后端校验编码存在、启用且城市归属省份匹配后，随 `account_info` 一并传给 Adapay。编辑收款人未更换结算账户时不传递、不更新省市编码。数据通过迁移脚本从 `region-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
+17. **企业 Member 信息按 Adapay `/v1/corp_members` 补齐**：字段包括 `name`/`social_credit_code`/`social_credit_code_expires`/`business_scope`/`legal_person`/`legal_cert_id`/`legal_cert_id_expires`/`legal_mp`/`address`/`prov_code`/`area_code`。附件为 zip 压缩包，内含三证合一证件照、法人身份证正面照、法人身份证反面照、开户银行许可证照；后端下载四张图片后打包 zip，并将中文文件名按 UTF-8 URLEncode 编码，单包最大 9MB。法人身份证正反面调用阿里云 OCR 识别，自动回填 `legal_person`/`legal_cert_id`/`legal_cert_id_expires`；识别失败允许手动填写。
 
 > 无新架构范式，复用现有模块分层、多租户拦截器、Job 调度模式。不新增 ADR。
 
@@ -64,9 +66,11 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 
 **失败回退**：`status=3` → 写入 `RevenueJob` 店铺收入（type=1）和平台抽成（type=3）→ 标记 `fallback_revenue=1`
 
-**编辑收款人**：管理员打开编辑弹窗 → 后台返回收款人基础信息与结算账户脱敏摘要 → 未选择更换时仅更新基础信息 → 选择更换时提交完整新银行卡 → Adapay 绑定成功后本地更新脱敏摘要与结算账户标识
+**编辑收款人**：管理员打开编辑弹窗 → 后台返回收款人基础信息与结算账户脱敏摘要（含省市编码摘要） → 未选择更换时仅更新基础信息 → 选择更换时提交完整新银行卡、开户省份、开户城市 → Adapay 绑定成功后本地更新脱敏摘要与结算账户标识
 
 **银行列表加载**：前端打开收款人表单 → 调用 `GET /admin-api/pay/bank/list`（无 keyword）→ 后端返回启用中的主要银行列表（`is_primary=1`，约数十条）→ 前端渲染 `el-select` 下拉；用户输入关键字 → 防抖 300ms → 调用 `GET /admin-api/pay/bank/list?keyword=xxx` → 后端按银行名称/编码模糊搜索全部启用银行并返回
+
+**省市级联加载**：前端打开收款人表单 → 调用 `GET /admin-api/pay/adapay-region/province-list` 获取全部省份 → 选择省份后调用 `GET /admin-api/pay/adapay-region/city-list?provinceCode=xxx` 获取城市列表 → 创建/更换结算账户时随结算账户信息一并提交 `adapayProvCode`/`adapayAreaCode`
 
 ## 风险评估
 
@@ -82,6 +86,7 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 | 企业 Member 附件存储 | 低 | 复用现有文件存储接口 |
 | 银行列表数据初始化失败 | 中 | 迁移脚本包含回滚；初始化后校验记录数与 `bank-list.json` 一致 |
 | 银行列表查询性能 | 低 | 默认仅加载主要银行（数十条）；关键字搜索走数据库索引 `idx_bank_code` + `idx_bank_name`，响应可控 |
+| 省市级联数据准确性 | 低 | 采用 Adapay 官方四位编码一次性初始化；城市查询通过 `parent_code` 索引过滤，保证归属关系 |
 
 ## 分支计划
 
@@ -91,6 +96,95 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 | `admin/` | `feat/adapay-profit-sharing` |
 
 > `miniapp/` 无变更，C 端用户无感知。
+
+## 省市编码变更设计
+
+> 本节记录本次新增需求：Adapay 结算账户补充省市编码。
+
+### 模块影响
+
+| 模块 | 变更类型 | 说明 |
+|------|----------|------|
+| `yshop-module-pay-biz` | 修改 | 新增 Adapay 省市字典表 DO/Mapper/Service/Controller；`ProfitRecipientServiceImpl` 创建/更换结算账户时校验并传入 `adapay_prov_code`/`adapay_area_code`；`ProfitRecipientDO` 新增 Adapay 省市快照字段；企业 Member 信息按 `/v1/corp_members` 补齐字段；附件打包为 zip 并 URLEncode 中文文件名；身份证 OCR 识别回填 |
+| `yshop-module-pay-api` | 修改 | 新增省市级联 DTO、错误码常量 |
+| `admin/` | 修改 | 分账收款人表单新增「开户省份」「开户城市」Adapay 级联选择；企业 Member 表单增加统一社会信用代码/有效期/经营范围/法人信息/企业地址/身份证正反面附件；身份证 OCR 自动识别回填；未更换结算账户时不展示/不校验 |
+| `yshop-module-mall` (sql) | 修改 | 新增迁移脚本 `sql/upgrade-adapay-profit-sharing-region.sql`；扩展 `yshop_adapay_profit_recipient` 企业 Member 字段 |
+
+### 架构决策
+
+1. **单表存储省市数据**：`yshop_pay_region` 统一存放省份与城市，`region_type` 区分层级，`parent_code` 表示城市所属省份编码。省份 34 条、城市 378 条，单表即可满足级联查询，无需分表。
+2. **一次性初始化**：数据从 `governance/feature-docs/adapay-profit-sharing/region-list.json` 经迁移脚本写入；本期为只读字典表，不开发后台管理页面。
+3. **级联 API 分离**：`province-list` 返回全部省份；`city-list` 按 `provinceCode` 返回城市。数据量小，无需缓存；若后续并发高，可加 `@Cacheable`。
+4. **结算账户省市必填时机**：创建收款人时 `settleAccount` 必填，其 `provCode`/`areaCode` 必填；更新收款人时仅 `replaceSettleAccount=true` 才需填写。
+5. **后端强校验**：`provCode` 必须存在且 `region_type=1`；`areaCode` 必须存在且 `region_type=2`、`parent_code=provCode`；任一不满足抛 `REGION_*` 错误码。
+6. **Adapay 传参**：在 `account_info` 中放入 `prov_code` 与 `area_code`（四位字符串），与 `bank_code` 等字段同级。
+7. **无新 ADR**：复用现有字典表模式与模块分层。
+
+### 数据模型
+
+#### 新建表：`yshop_pay_adapay_region`
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | BIGINT PK AUTO_INCREMENT | |
+| `region_code` | VARCHAR(16) NOT NULL | 地区编码，Adapay 自定义四位 |
+| `region_name` | VARCHAR(128) NOT NULL | 地区名称 |
+| `region_type` | TINYINT NOT NULL | 1=省份，2=城市 |
+| `parent_code` | VARCHAR(16) NULL | 省份为 NULL，城市为所属省份编码 |
+| `status` | TINYINT NOT NULL DEFAULT 1 | 0=禁用，1=启用 |
+| `create_time` / `update_time` | DATETIME NOT NULL | BaseDO 审计字段 |
+| `deleted` | TINYINT NOT NULL DEFAULT 0 | 逻辑删除 |
+
+索引：
+- `uk_region_code` (`region_code`) 唯一
+- `idx_region_type_status` (`region_type`, `status`)
+- `idx_parent_code_status` (`parent_code`, `status`)
+
+#### 修改表：`yshop_adapay_profit_recipient`
+
+新增字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `settle_account_adapay_prov_code` | VARCHAR(16) NULL | 开户省份编码（Adapay 自定义四位编码） |
+| `settle_account_adapay_area_code` | VARCHAR(16) NULL | 开户城市编码（Adapay 自定义四位编码） |
+| `settle_account_adapay_prov_name` | VARCHAR(128) NULL | 开户省份名称（展示用） |
+| `settle_account_adapay_area_name` | VARCHAR(128) NULL | 开户城市名称（展示用） |
+
+### 流程设计
+
+**创建收款人时省市校验与传参**
+
+```
+validateSettleAccount(settleAccount)
+  → bankService.validateBankCode(bankCode)
+  → adapayRegionService.validateAdapayProvinceCode(adapayProvCode)
+  → adapayRegionService.validateAdapayCityCode(adapayProvCode, adapayAreaCode)
+  → 任一失败抛对应 ADAPAY_REGION_* 错误码
+
+createAdapaySettleAccount(...)
+  → account_info.put("prov_code", settleAccount.getAdapayProvCode())
+  → account_info.put("area_code", settleAccount.getAdapayAreaCode())
+  → 调用 adapayPayService.createDivSettleAccount(params)
+```
+
+**编辑收款人更换结算账户时**
+
+```
+if (updateReqVO.getSettleAccount() != null) {
+    validateSettleAccount(updateReqVO.getSettleAccount())
+    ...
+    fillSettleAccountSnapshot(...) // 同步填充省市快照
+}
+```
+
+### 风险评估
+
+| 风险 | 等级 | 缓解措施 |
+|------|------|----------|
+| Adapay 省市编码变更导致数据不匹配 | 中 | 从官方 JSON 初始化；字段使用可变长度 VARCHAR，兼容未来编码长度变化 |
+| 前端选择城市后切换省份导致城市不匹配 | 低 | 切换省份时清空已选城市；后端再次校验归属关系 |
+| 旧收款人没有省市编码导致展示为空 | 低 | 摘要展示兼容空值，显示 `--` |
 
 ## 分账规则与订单状态变更设计
 

@@ -8,6 +8,15 @@
 |------|----------|------|
 | `GET /admin-api/pay/bank/list` | 新增 | 查询启用中的银行列表。无 `keyword` 时返回主要银行（`is_primary=1`）；传入 `keyword` 时按银行名称/编码模糊搜索全部启用银行。返回 `{ bankCode, bankName, isPrimary }[]` |
 
+### 省市级联列表
+
+| 端点 | 变更类型 | 说明 |
+|------|----------|------|
+| `GET /admin-api/pay/adapay-region/province-list` | 新增 | 查询 Adapay 启用中的省份列表。返回 `{ regionCode, regionName }[]`，按 `region_code` 升序 |
+| `GET /admin-api/pay/adapay-region/city-list` | 新增 | 根据 Adapay 省份编码查询启用中的城市列表。参数 `provinceCode` 必填。返回 `{ regionCode, regionName }[]`，按 `region_code` 升序 |
+
+**权限**: `pay:adapay-region:query`（或复用 `pay:profit-recipient:query`）
+
 **权限**: `pay:bank:query`（复用 `pay:profit-recipient:query` 亦可，由 backend agent 按现有权限段分配）
 
 ### 分账收款人管理
@@ -79,8 +88,10 @@
 | DTO | 用途 | 关键字段 |
 |-----|------|----------|
 | `BankRespVO` | 银行列表项 | `bankCode`, `bankName`, `isPrimary` |
-| `ProfitRecipientCreateReqVO` | 创建收款人 | `recipientType`, `role`（仅平台级必填，店铺级不传）, `shopId`, `recipientName`, `memberType`, `memberInfo`（个人/企业不同）, `settleAccount`（含 `cardNo`/`cardName`/`bankCode`，银行选项来自后端银行列表） |
-| `ProfitRecipientUpdateReqVO` | 更新收款人 | `id`, `recipientName`, `status`, `settleAccount`（可选；仅更换结算账户时传入，传入后同步调用 Adapay 更新结算账户绑定） |
+| `AdapayRegionRespVO` | Adapay 省市级联列表项 | `regionCode`, `regionName` |
+| `AdapayRegionListReqVO` | Adapay 城市列表查询 | `provinceCode` |
+| `ProfitRecipientCreateReqVO` | 创建收款人 | `recipientType`, `role`（仅平台级必填，店铺级不传）, `shopId`, `recipientName`, `memberType`, `memberInfo`（个人/企业不同；企业含 `socialCreditCode`/`socialCreditCodeExpires`/`businessScope`/`legalPerson`/`legalCertId`/`legalCertIdExpires`/`legalMp`/`address`/`licensePhotoUrl`/`idCardFrontUrl`/`idCardBackUrl`/`bankLicensePhotoUrl`，身份证支持 OCR 自动识别）, `settleAccount`（含 `cardNo`/`cardName`/`bankCode`/`adapayProvCode`/`adapayAreaCode`，银行选项来自后端银行列表，省市选项来自后端 Adapay 级联列表） |
+| `ProfitRecipientUpdateReqVO` | 更新收款人 | `id`, `recipientName`, `status`, `settleAccount`（可选；仅更换结算账户时传入，传入后同步调用 Adapay 更新结算账户绑定；须含 `adapayProvCode`/`adapayAreaCode`） |
 | `ProfitRecipientRespVO` | 收款人响应 | `id`, `recipientType`, `role`（平台级有值，店铺级为 null）, `shopId`, `recipientName`, `memberType`, `memberId`（按编码规则生成）, `settleAccountBound`, `settleAccountId`, `settleAccountSummary`, `status` |
 | `ProfitRecipientPageReqVO` | 收款人分页查询 | `recipientType`, `role`（仅平台级查询时可用）, `shopId`, `status`, `recipientName` |
 | `ShopBindProfitRecipientReqVO` | 店铺绑定 | `shopId`, `recipientId`, `enabled`；`recipientId` 必须为 `shopId` 对应的店铺级收款人 |
@@ -99,9 +110,9 @@
 - `recipientType`: `[1, 2]`；`role`: `[1, 2, 3]`，`recipientType=1`（平台级）时必填，`recipientType=2`（店铺级）时不传/忽略
 - `memberType`: `[1, 2]`
 - `shopId`: `recipientType=2` 时必填，`recipientType=1` 时必须为 null
-- `memberInfo`: 个人需 `phone`/`realName`/`idCard`；企业需 `corpName`/`businessLicenseNo`/`legalName`/`legalIdCard`/`attachFileUrl`
-- `settleAccount`: 创建收款人时必填；更新收款人时可选，仅表示更换结算账户。传入时需包含 `cardNo`/`cardName`/`bankCode`；`bankCode` 必须存在于 `yshop_pay_bank` 且状态启用
-- `settleAccountSummary`: 响应侧脱敏摘要，可包含 `cardNoMask`/`cardNameMask`/`bankCode`/`bankName`/`accountType`；不得返回完整旧银行卡号
+- `memberInfo`: 个人需 `phone`/`realName`/`idCard`；企业需 `socialCreditCode`/`socialCreditCodeExpires`/`businessScope`/`legalPerson`/`legalCertId`/`legalCertIdExpires`/`legalMp`/`address`/`licensePhotoUrl`/`idCardFrontUrl`/`idCardBackUrl`/`bankLicensePhotoUrl`；后端将四张图片打包为 zip 并 URLEncode 中文文件名后上传 Adapay
+- `settleAccount`: 创建收款人时必填；更新收款人时可选，仅表示更换结算账户。传入时需包含 `cardNo`/`cardName`/`bankCode`/`adapayProvCode`/`adapayAreaCode`；`bankCode` 必须存在于 `yshop_pay_bank` 且状态启用，`adapayProvCode`/`adapayAreaCode` 必须存在于 `yshop_pay_adapay_region` 且状态启用。
+- `settleAccountSummary`: 响应侧脱敏摘要，可包含 `cardNoMask`/`cardNameMask`/`bankCode`/`bankName`/`accountType`/`adapayProvCode`/`adapayAreaCode`/`adapayProvName`/`adapayAreaName`；不得返回完整旧银行卡号
 - `recipientName`: 1-64 字符
 - `member_id` 编码规则：`m_{tenantId}_{memberType}_{idCard}_{storeId}`，平台级 `storeId=0`
 
@@ -127,17 +138,12 @@
 
 ## 数据库变更
 
-- 既有迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`（分账收款人、分账订单、日志、店铺扩展字段）、`sql/upgrade-adapay-profit-sharing-bank.sql`（银行字典表）、`sql/upgrade-adapay-profit-sharing-settle-account-replacement.sql`（结算账户更换快照字段）。
-- 本次新增迁移脚本：`sql/upgrade-adapay-profit-sharing-rule.sql`
-  - 新建 `yshop_adapay_profit_sharing_rule`
-  - 新建 `yshop_adapay_profit_sharing_order_item`
-  - 扩展 `yshop_adapay_profit_sharing_order`（`calculation_type`、`fee_bearer_role`）
-  - 追加菜单与权限
+- 既有迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`（分账收款人、分账订单、日志、店铺扩展字段）、`sql/upgrade-adapay-profit-sharing-bank.sql`（银行字典表）、`sql/upgrade-adapay-profit-sharing-settle-account-replacement.sql`（结算账户更换快照字段）、`sql/upgrade-adapay-profit-sharing-rule.sql`（分账计费规则）。
+- 本次新增迁移脚本：`sql/upgrade-adapay-profit-sharing-region.sql`
+  - 新建 `yshop_pay_adapay_region`
+  - 从 Adapay 省市编码 JSON 初始化 34 个省份、378 个城市
 - **回滚方案**：
-  1. `DROP TABLE yshop_adapay_profit_sharing_order_item;`
-  2. `ALTER TABLE yshop_adapay_profit_sharing_order DROP COLUMN calculation_type, DROP COLUMN fee_bearer_role;`
-  3. `DROP TABLE yshop_adapay_profit_sharing_rule;`
-  4. 删除新增的 `system_menu` / `system_role_menu` 记录。
+  1. `DROP TABLE yshop_pay_adapay_region;`
 
 ### 新建表
 
@@ -171,6 +177,20 @@
 
 索引：`uk_bank_code` (`bank_code` 唯一)，`idx_is_primary_status` (`is_primary`, `status`)
 
+**`yshop_pay_adapay_region`** — Adapay 省市字典表
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | bigint PK AUTO_INCREMENT | |
+| `region_code` | varchar(16) NOT NULL | 地区编码，Adapay 自定义四位 |
+| `region_name` | varchar(128) NOT NULL | 地区名称 |
+| `region_type` | tinyint NOT NULL | 类型：1=省份，2=城市 |
+| `parent_code` | varchar(16) NULL | 父级编码；省份为 NULL，城市为所属省份编码 |
+| `status` | tinyint NOT NULL DEFAULT 1 | 0=禁用, 1=启用 |
+| `create_time` / `update_time` | datetime NOT NULL | |
+
+索引：`uk_region_code` (`region_code` 唯一)，`idx_region_type_status` (`region_type`, `status`)，`idx_parent_code_status` (`parent_code`, `status`)
+
 **`yshop_adapay_profit_recipient`** — 分账收款人
 
 | 字段 | 类型 | 说明 |
@@ -178,6 +198,18 @@
 | `id` | bigint PK | |
 | `tenant_id` | bigint NOT NULL | 租户隔离 |
 | `recipient_type` | tinyint NOT NULL DEFAULT 1 | 1=平台级, 2=店铺级 |
+| `member_social_credit_code` | varchar(32) NULL | 统一社会信用代码 |
+| `member_social_credit_code_expires` | varchar(8) NULL | 统一社会信用代码有效期 |
+| `member_business_scope` | varchar(200) NULL | 经营范围 |
+| `member_legal_person` | varchar(20) NULL | 法人姓名 |
+| `member_legal_cert_id` | varchar(20) NULL | 法人身份证号 |
+| `member_legal_cert_id_expires` | varchar(16) NULL | 法人身份证有效期 |
+| `member_legal_mp` | varchar(11) NULL | 法人手机号 |
+| `member_address` | varchar(256) NULL | 企业地址 |
+| `member_license_photo_url` | varchar(512) NULL | 三证合一证件照 URL |
+| `member_id_card_front_url` | varchar(512) NULL | 法人身份证正面照 URL |
+| `member_id_card_back_url` | varchar(512) NULL | 法人身份证反面照 URL |
+| `member_bank_license_photo_url` | varchar(512) NULL | 开户银行许可证照 URL |
 | `role` | tinyint NULL | 平台级必填：1=平台, 2=配送方, 3=销售方；店铺级为 NULL |
 | `shop_id` | bigint NULL | 店铺级时关联门店；平台级为 NULL |
 | `recipient_name` | varchar(64) NOT NULL | |
@@ -191,6 +223,8 @@
 | `settle_account_bank_code` | varchar(32) NULL | 银行编码 |
 | `settle_account_bank_name` | varchar(128) NULL | 银行名称 |
 | `settle_account_account_type` | tinyint NULL | 账户类型 |
+| `settle_account_adapay_prov_code` | varchar(16) NULL | 开户省份编码（Adapay 自定义四位编码） |
+| `settle_account_adapay_area_code` | varchar(16) NULL | 开户城市编码（Adapay 自定义四位编码） |
 | `member_phone_snapshot` | varchar(32) NULL | Adapay 更换结算账户所需的 Member 手机号快照，禁止用于页面明文展示 |
 | `member_cert_id_snapshot` | varchar(64) NULL | Adapay 更换结算账户所需的 Member 证件号快照，禁止用于页面明文展示 |
 | `member_cert_type_snapshot` | varchar(16) NULL | Adapay 更换结算账户所需的 Member 证件类型快照 |
@@ -305,6 +339,11 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 | `PROFIT_SHARING_AMOUNT_MISMATCH` | 分账金额校验失败 |
 | `PROFIT_SHARING_PAY_DISABLED` | 分账配置不完整，禁止支付 |
 | `BANK_NOT_EXISTS` | 银行编码不存在或已禁用 |
+| `ADAPAY_REGION_PROVINCE_NOT_EXISTS` | Adapay 省份编码不存在或已禁用 |
+| `ADAPAY_REGION_CITY_NOT_EXISTS` | Adapay 城市编码不存在、已禁用或不属于指定省份 |
+| `ADAPAY_REGION_CITY_PROVINCE_MISMATCH` | Adapay 城市编码与省份编码不匹配 |
+| `PROFIT_RECIPIENT_ID_CARD_OCR_FAILED` | 法人身份证 OCR 识别失败 |
+| `PROFIT_RECIPIENT_ATTACH_FILE_INVALID` | 企业 Member 附件不符合要求（非 zip、缺图片、超大等） |
 | `PROFIT_SHARING_RULE_INCOMPLETE` | 店铺计费规则不完整（无启用角色、启用角色比例和 ≠100、承担方不唯一或未启用等） |
 | `PROFIT_SHARING_RULE_ROLE_EXISTS` | 同一店铺同一角色已存在生效规则 |
 | `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` | 手续费承担方配置不合法（承担方角色未启用，或存在多个承担方） |
@@ -318,11 +357,15 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 
 `settleAccount.bankCode` 选项来自后端银行字典表 `yshop_pay_bank`，通过 `GET /admin-api/pay/bank/list` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/bank-list.json` 经迁移脚本 `sql/upgrade-adapay-profit-sharing-bank.sql` 导入。
 
-格式：`[{ "bankCode": "01020000", "bankName": "中国工商银行", "isPrimary": 1 }, ...]`，共约 5,260 条，其中主要银行约数十条（六大行 + 主流股份制/城商行）。
+`settleAccount.adapayProvCode`/`adapayAreaCode` 选项来自后端 Adapay 省市字典表 `yshop_pay_adapay_region`，通过 `GET /admin-api/pay/adapay-region/province-list` 与 `GET /admin-api/pay/adapay-region/city-list?provinceCode=xxx` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/region-list.json` 经迁移脚本 `sql/upgrade-adapay-profit-sharing-region.sql` 导入。
+
+格式：`[{ "regionCode": "0011", "regionName": "北京市" }, ...]`，共 34 个省份、378 个城市。
 
 **加载策略**：默认仅返回 `is_primary=1` 且 `status=1` 的银行（约数十条），避免全量数据导致前端表单卡顿。用户输入关键字时，后端对全部启用银行做 `bank_code LIKE %keyword% OR bank_name LIKE %keyword%` 模糊匹配并返回结果。
 
-> 前端银行选择器使用远程搜索模式，不再全量加载。创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。
+省市级联：省份列表一次性返回 34 条；选择省份后按 `provinceCode` 查询该省城市列表，最多约 30 条，前端即时加载无压力。
+
+> 前端银行选择器使用远程搜索模式，不再全量加载。创建/更新收款人时后端强制校验 `bankCode`/`adapayProvCode`/`adapayAreaCode` 必须存在且启用；`adapayAreaCode` 的父级必须与 `adapayProvCode` 一致。
 
 ## 兼容性
 
@@ -332,5 +375,5 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
   - 分账收款人管理和分账订单查询页面保持原有功能；
   - 店铺编辑页新增「分账计费规则」配置入口；
   - 分账结算记录详情页展示 `calculationType`、`feeBearerRole` 与分账明细 `items`；
-  - 银行下拉继续调用后端 API。
+  - 银行下拉继续调用后端 API；分账收款人表单的结算账户区域增加「开户省份」「开户城市」Adapay 级联选择。
 - **`miniapp/` 无变更**，C 端用户无感知。

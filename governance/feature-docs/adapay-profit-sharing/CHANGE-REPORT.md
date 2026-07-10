@@ -1,107 +1,93 @@
-# CHANGE-REPORT: Adapay 分账规则与订单状态变更
+# CHANGE-REPORT: Adapay 分账结算
 
 ## 1. 业务目标
 
-为店铺按角色配置分账计费规则，按规则计算各方分账金额与手续费承担方；走 Adapay 分账的订单在分账成功或回退到虚拟余额结算后，订单状态更新为待评价。
+补齐 Adapay 分账结算中企业 Member 创建与后台表单的最后缺口：
+- 企业 Member 创建时按 Adapay `/v1/corp_members` 要求提供完整字段与 zip 附件；
+- 法人身份证正反面支持 OCR 识别并自动回填姓名、身份证号、有效期；
+- 管理后台分账收款人表单补充企业 Member 全部字段与身份证 OCR 上传组件。
 
 ## 2. 影响仓库和主要文件
 
 | 仓库 | 主要文件 |
 |---|---|
-| `backend/` | `sql/upgrade-adapay-profit-sharing-rule.sql` |
-| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/dal/dataobject/profitsharingrule/ProfitSharingRuleDO.java` |
-| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitsharingrule/ProfitSharingRuleServiceImpl.java` |
-| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitsharingorder/ProfitSharingOrderServiceImpl.java` |
-| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/controller/admin/profitsharingorder/ProfitSharingOrderController.java` |
-| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/job/ProfitSharingSettlementJob.java` |
-| | `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java` |
-| | `yshop-module-mall/yshop-module-order-api/src/main/java/co/yixiang/yshop/module/order/api/OrderApi.java` |
-| | `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/api/OrderApiImpl.java` |
-| | `yshop-module-pay/yshop-module-pay-biz/pom.xml` |
-| `admin/` | `src/api/pay/profitSharingRule.ts` |
-| | `src/views/mall/store/profitSharingRule/index.vue` |
-| | `src/views/mall/store/profitSharingRule/ProfitSharingRuleForm.vue` |
-| | `src/views/mall/store/shop/ShopForm.vue` |
-| | `src/views/mall/store/profitSharingRecord/index.vue` |
-| `governance/` | `feature-docs/adapay-profit-sharing/requirements-spec.md` |
-| | `feature-docs/adapay-profit-sharing/technical-design.md` |
-| | `feature-docs/adapay-profit-sharing/contract-changes.md` |
+| `backend/` | `yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/enums/ErrorCodeConstants.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitrecipient/ProfitRecipientServiceImpl.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/convert/profitrecipient/ProfitRecipientConvert.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/controller/admin/profitrecipient/vo/ProfitRecipientMemberInfoVO.java` |
+| `admin/` | `src/api/mall/store/profitSharingReceiver/index.ts` |
+| | `src/views/mall/store/profitSharingReceiver/ProfitSharingReceiverForm.vue` |
+| `governance/` | `feature-docs/adapay-profit-sharing/meta.yaml` |
 | | `feature-docs/adapay-profit-sharing/test-notes.md` |
+| | `feature-docs/adapay-profit-sharing/review-report.md` |
 
 ## 3. 契约变化摘要
 
 ### API
 
+无新增端点。复用已有：
+
 | 端点 | 方法 | 说明 | 权限 |
 |---|---|---|---|
-| `/admin-api/pay/profit-sharing-rule/list-by-shop` | GET | 按店铺查询分账计费规则 | `pay:profit-sharing-rule:query` |
-| `/admin-api/pay/profit-sharing-rule/save-set` | POST | 保存/覆盖店铺整套规则 | `pay:profit-sharing-rule:update` |
-| `/admin-api/pay/profit-sharing-order/page` | GET | 分账订单分页 | `pay:profit-sharing:query` |
-| `/admin-api/pay/profit-sharing-order/get` | GET | 分账订单详情 | `pay:profit-sharing:query` |
-| `/admin-api/pay/profit-sharing-order/retry` | POST | 失败分账手动重试 | `pay:profit-sharing:update` |
+| `/pay/profit-recipient/create` | POST | 创建收款人 | `pay:profit-recipient:create` |
+| `/pay/profit-recipient/update` | PUT | 更新收款人 | `pay:profit-recipient:update` |
+| `/pay/profit-recipient/recognize-license` | POST | 营业执照 OCR | `pay:profit-recipient:create` |
+| `/pay/profit-recipient/recognize-id-card` | POST | 身份证 OCR | `pay:profit-recipient:create` |
 
-### 内部 API
+### DTO 变更
 
-- `ProfitSharingRuleApi.validateAndGetRules(Long shopId, BigDecimal payPrice)`
-- `ProfitSharingRuleApi.isRuleComplete(Long shopId)`
-- `OrderApi.markOrderSettled(String orderId)`
+- `ProfitRecipientMemberInfoVO` 统一企业字段命名：`socialCreditCode`、`socialCreditCodeExpires`、`businessScope`、`legalPerson`、`legalCertId`、`legalCertIdExpires`、`legalMp`、`address`、`licensePhotoUrl`、`idCardFrontUrl`、`idCardBackUrl`、`bankLicensePhotoUrl`。
+- `ProfitSharingReceiverMemberInfoVO` / `ProfitSharingReceiverSettleAccountSummaryVO`（admin TypeScript 接口）同步扩展。
 
 ### DB
 
-- 新建 `yshop_adapay_profit_sharing_rule`
-- 新建 `yshop_adapay_profit_sharing_order_item`
-- 扩展 `yshop_adapay_profit_sharing_order`（`calculation_type`, `fee_bearer_role`）
-- 追加菜单与权限（`system_menu` / `system_role_menu`）
+复用既有 `yshop_adapay_profit_recipient` 企业 Member 字段，无新增迁移脚本。
 
-### 依赖
+### 错误码
 
-- `yshop-module-pay-biz` 新增依赖 `yshop-module-order-api`
-
-### 枚举
-
-- 新增 `ProfitSharingRoleEnum`（平台/店铺/配送方/销售方）
-- 新增 `ProfitSharingCalculationTypeEnum`（计费规则/佣金比例回退）
+- `PROFIT_RECIPIENT_ATTACH_FILE_INVALID`（1008009029）：企业 Member 附件不符合要求（如超过 9MB）。
+- `PROFIT_RECIPIENT_ID_CARD_OCR_FAILED`（1008009037）：身份证 OCR 识别失败。
 
 ## 4. DB 迁移脚本名
 
-`sql/upgrade-adapay-profit-sharing-rule.sql`
+无新增。复用既有迁移脚本。
 
 ## 5. 测试结果
 
 | 验证项 | 命令 | 结果 |
 |---|---|---|
-| 后端编译 | `mvn clean compile -DskipTests` | ✅ BUILD SUCCESS |
-| 前端构建 | `pnpm run build:local` | ✅ Build successful |
-| 前端类型检查 | `pnpm run ts:check` | ❌ 失败，原因：既有类型定义文件缺失（`@intlify/unplugin-vue-i18n/types`、`@types/qrcode`、`element-plus/global`、`vite-plugin-svg-icons/client`），与本次变更无关 |
-| 单元测试 | — | ⚠️ 未发现新增测试 |
-
-> 注：构建结果为上一轮 Review 实测数据；本次修复仅调整状态校验、错误码、事件传参和展示字段，未引入新的编译依赖或契约变更。
+| 后端全量编译 | `mvn clean compile -DskipTests` | ✅ BUILD SUCCESS |
+| 后端 pay-biz 编译 | `mvn -pl yshop-module-pay/yshop-module-pay-biz -am compile -DskipTests` | ✅ BUILD SUCCESS |
+| admin 生产构建 | `pnpm run build:prod` | ✅ Build successful |
+| admin 类型检查 | `pnpm run ts:check` | ⚠️ 未执行（既有环境问题） |
+| 单元测试 | — | ⚠️ 未新增 |
 
 ## 6. 风险与注意事项
 
-1. **测试覆盖不足**：本次新增金额计算、状态机、Job 调度等关键逻辑，但仍无自动化测试覆盖，建议补充 `ProfitSharingRuleServiceImpl.validateAndGetRules`、`ProfitSharingOrderServiceImpl.executeSharing/fallbackToRevenue` 及 `ProfitSharingSettlementJob` 的单元测试。
-2. **计费规则角色启用策略已调整**：规则不必强制 4 个角色全部启用，允许只启用部分角色，但启用角色的分账比例之和必须等于 100%，且手续费承担方必须是已启用的角色之一。实现需同步调整 `ProfitSharingRuleServiceImpl.saveRuleSet` 的整单校验、`validateAndGetRules` 的金额计算逻辑，以及 admin 规则配置页的启用开关与前端校验。
-3. **订单状态更新失败需监控**：分账成功/回退后 `orderApi.markOrderSettled` 已改为 try-catch，失败仅记录日志，不会回滚分账状态。建议对这类日志增加告警，避免订单状态长期不一致。
+1. **测试覆盖不足**：企业 Member 字段校验与附件打包逻辑未补充单元测试，建议后续补充。
+2. **Adapay 企业 Member 字段敏感**：`social_credit_code`、`legal_cert_id` 等字段通过服务端直传 Adapay，不在本地长期存储完整明文（仅保存快照用于展示/更换结算账户）。
+3. **身份证 OCR 为辅助功能**：识别失败时允许手动填写，不影响正常提交。
+4. **前期功能已合并**：省市编码、银行列表、计费规则、分账订单、日终 Job 等已在前序 PR 合并，不在本次变更范围内。
 
 ## 7. 建议 PR 标题和描述
 
-**标题**: `feat(pay/order): Adapay 分账计费规则与订单状态变更`
+**标题**: `feat(pay/admin): Adapay 分账企业 Member 字段对齐与身份证 OCR`
 
 **描述**:
 
 ```
-- 新增店铺分账计费规则，按角色（平台/店铺/配送方/销售方）配置比例、启用状态与手续费承担方；启用的角色比例之和必须等于 100%
-- 支付时按规则计算各角色分账金额并固化到分账明细表；无规则时 fallback 到 commission_rate
-- 日终 Job 分账确认并更新 yshop_store_order.status = 2（待评价）
-- 分账失败时回退到 RevenueJob，并同样更新订单状态为待评价
-- 管理后台新增店铺分账计费规则配置页、分账结算记录详情展示计算方式/承担方/明细
-- 店铺编辑页新增分账计费规则入口
-- 修复：分账成功后先持久化状态再更新订单；手动重试增加状态校验；fallback 校验平台收款人启用状态；规则保存错误码统一；明细返回 recipientName；前端手续费互斥与成功提示；计费规则支持部分角色启用且启用比例和需等于 100%
+- 后端企业 Member 创建按 Adapay /v1/corp_members 要求传入完整字段
+- 企业 Member 附件改为打包四张图片（三证合一/身份证正反面/开户银行许可证）
+- zip 包内中文文件名按 UTF-8 URLEncode 编码，单包大小限制 9MB
+- 新增身份证 OCR 接口 /pay/profit-recipient/recognize-id-card
+- 管理后台收款人表单补充企业 Member 全部字段与身份证 OCR 自动回填
+- 统一 ProfitRecipientMemberInfoVO 企业字段命名
 
 关联文档：
 - governance/feature-docs/adapay-profit-sharing/requirements-spec.md
-- governance/feature-docs/adapay-profit-sharing/technical-design.md
 - governance/feature-docs/adapay-profit-sharing/contract-changes.md
+- governance/feature-docs/adapay-profit-sharing/technical-design.md
+- governance/feature-docs/adapay-profit-sharing/ui-ux-design.md
 - governance/feature-docs/adapay-profit-sharing/test-notes.md
 - governance/feature-docs/adapay-profit-sharing/review-report.md
 ```
@@ -110,5 +96,5 @@
 
 | 仓库 | PR |
 |---|---|
-| `backend` | https://gitee.com/icepolar/yshop-drink/pulls/43 |
-| `admin` | https://gitee.com/icepolar/yshop-drink-vue/pulls/21 |
+| `backend` | [#45](https://gitee.com/icepolar/yshop-drink/pulls/45) |
+| `admin` | [#23](https://gitee.com/icepolar/yshop-drink-vue/pulls/23) |

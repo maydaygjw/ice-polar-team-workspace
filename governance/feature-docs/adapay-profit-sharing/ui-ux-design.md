@@ -62,18 +62,18 @@
 | 收款人名称 | `el-input` | `required`, max 64 |
 | Member 类型 | `el-radio-group` | `required`：`1`=个人，`2`=企业 |
 | 个人实名信息 | 动态表单 | `memberType=1` 时显示：手机号、真实姓名、身份证号 |
-| 企业信息 | 动态表单 | `memberType=2` 时显示：企业名称、营业执照号、法人姓名、法人身份证号、营业执照附件 |
-| 结算银行卡 | 动态表单 | 创建时显示且必填；编辑时默认显示绑定状态/脱敏摘要，点击”更换结算账户”后显示并必填：银行卡号、开户名、银行（远程搜索 `el-select`，默认加载主要银行 `GET /pay/bank/list`，用户输入关键字时调用 `GET /pay/bank/list?keyword=xxx` 远程搜索全部银行，下拉显示 `bankCode + bankName`，绑定 `bankCode`）、账户类型 |
+| 企业信息 | 动态表单 | `memberType=2` 时显示：企业名称、统一社会信用代码、有效期、经营范围、法人姓名、法人身份证号、身份证有效期、法人手机号、企业地址、三证合一附件、法人身份证正面、法人身份证反面、开户银行许可证；身份证正反面支持 OCR 自动识别回填；附件将打包为 zip 上传 Adapay |
+| 结算银行卡 | 动态表单 | 创建时显示且必填；编辑时默认显示绑定状态/脱敏摘要，点击”更换结算账户”后显示并必填：银行卡号、开户名、银行（远程搜索 `el-select`，默认加载主要银行 `GET /pay/bank/list`，用户输入关键字时调用 `GET /pay/bank/list?keyword=xxx` 远程搜索全部银行，下拉显示 `bankCode + bankName`，绑定 `bankCode`）、开户省份（`el-select`，`GET /pay/adapay-region/province-list`）、开户城市（`el-select`，选择省份后调用 `GET /pay/adapay-region/city-list?provinceCode=xxx`）、账户类型 |
 
-> 创建收款人提交后，后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后才入库。`member_id` 由后端按 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0}` 生成，前端不传。
+> 创建收款人提交后，后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后才入库。`member_id` 由后端按 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0}` 生成，前端不传。结算账户中的 `adapayProvCode`/`adapayAreaCode` 随银行卡信息一并提交。
 >
-> 编辑模式下允许通过“更换结算账户”修改银行卡信息；未选择更换时不要求重新填写银行卡，后台不更新 Adapay 绑定。
+> 编辑模式下允许通过“更换结算账户”修改银行卡信息；未选择更换时不要求重新填写银行卡及 Adapay 省市编码，后台不更新 Adapay 绑定。
 
 编辑模式交互：
 
 - 结算账户区默认显示“已绑定/未绑定”和可用的脱敏摘要，不展示完整旧银行卡号。
-- 点击“更换结算账户”后展开银行卡表单，所有新账户必填项按创建模式校验。
-- 取消更换时清空新账户输入，提交时不传结算账户变更。
+- 点击“更换结算账户”后展开银行卡表单，所有新账户必填项按创建模式校验（含 Adapay 开户省份、开户城市）。
+- 取消更换时清空新账户输入（含 Adapay 省市），提交时不传结算账户变更。
 - 更换失败时弹窗保持打开并提示失败原因，原结算账户保持不变。
 
 #### Empty / Error States
