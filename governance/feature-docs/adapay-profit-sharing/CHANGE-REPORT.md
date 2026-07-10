@@ -105,3 +105,4 @@
 |---|---|
 | `backend` | [#46](https://gitee.com/icepolar/yshop-drink/pulls/46) |
 | `admin` | [#24](https://gitee.com/icepolar/yshop-drink-vue/pulls/24) |
+| `workspace (governance)` | [#4](https://github.com/maydaygjw/ice-polar-team-workspace/pull/4) |
