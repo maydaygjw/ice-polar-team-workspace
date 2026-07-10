@@ -11,6 +11,9 @@
 | 后端 order-biz 单元测试 | `mvn -pl yshop-module-mall/yshop-module-order-biz test` | ❌ 既有环境问题（`NoClassDefFoundError: StoreShopMapper`），与本次变更无关 |
 | admin 类型检查 | `pnpm ts:check` | ⚠️ 既有环境类型定义缺失，与本次变更无关 |
 | admin 生产构建 | `pnpm run build:prod` | ⚠️ 未执行（类型定义环境缺失） |
+| 测试环境数据库迁移 | `mysql < upgrade-adapay-profit-sharing-dynamic-role.sql` | ✅ 执行成功（已修复 creator/updater 字段差异） |
+| 测试环境后端部署 | `mvn clean package -DskipTests` + `start-yshop.sh` | ✅ 端口 8888 监听，`/doc.html` 返回 200 |
+| 测试环境 admin 部署 | `pnpm build:dev` + Nginx 替换 | ✅ `/index.html` 返回 200 |
 
 ## 变更文件
 
