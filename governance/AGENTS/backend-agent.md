@@ -14,5 +14,4 @@
 - Controller 按 `admin/*` 与 `app/*` 分端；C 端使用 `@PreAuthenticated`，管理端使用 `@PreAuthorize`
 - 新业务表和查询验证 `tenant_id`；需要时验证部门/门店数据范围
 - 升级使用 `sql/upgrade-*.sql`，不直接修改基线 SQL
-- 历史业务数据不可被新逻辑追溯改写
-- 实现对应单元/集成测试，并把验证命令和结果写入 `test-notes.md`
+

@@ -14,4 +14,3 @@
 - 表单沿用 `Dialog`、`el-form` 和 `formRef.validate()` 模式
 - 复用现有组件和权限模式
 - UI 变化遵循 `ui-ux-design.md`
-- 执行类型检查及目标仓库要求的构建/检查，结果写入 `test-notes.md`
