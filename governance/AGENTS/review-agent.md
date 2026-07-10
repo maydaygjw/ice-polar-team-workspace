@@ -10,7 +10,7 @@
 - 是否重复实现已有能力或无必要引入新模式
 - API/DB/MQ/权限/依赖变化是否完整且兼容
 - 新查询的租户隔离和数据权限
-- DB 迁移可回滚，且字段与 DO/BaseDO 一致，含 `creator`、`updater` 等审计字段
+- DB 迁移可回滚，且字段与 DO/BaseDO 完全一致，**必须包含** `creator`、`updater`、`create_time`、`update_time`、`deleted` 等审计字段
 - 每个数据字典项都有对应枚举
 - 历史数据约束未被破坏
 - 密钥、注入、XSS、越权及其他具体安全风险
