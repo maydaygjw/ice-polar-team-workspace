@@ -80,7 +80,7 @@
 ## 6. 风险与注意事项
 
 1. **测试覆盖不足**：本次新增金额计算、状态机、Job 调度等关键逻辑，但仍无自动化测试覆盖，建议补充 `ProfitSharingRuleServiceImpl.validateAndGetRules`、`ProfitSharingOrderServiceImpl.executeSharing/fallbackToRevenue` 及 `ProfitSharingSettlementJob` 的单元测试。
-2. **M-4 整单替换语义**：实现要求一次提交 4 条不同角色并拒绝重复角色，与测试计划 R-06 的“去重后整单替换”期望存在偏差。当前以代码严格校验为准，需同步更新测试计划或明确需求。
+2. **计费规则角色启用策略已调整**：规则不必强制 4 个角色全部启用，允许只启用部分角色，但启用角色的分账比例之和必须等于 100%，且手续费承担方必须是已启用的角色之一。实现需同步调整 `ProfitSharingRuleServiceImpl.saveRuleSet` 的整单校验、`validateAndGetRules` 的金额计算逻辑，以及 admin 规则配置页的启用开关与前端校验。
 3. **订单状态更新失败需监控**：分账成功/回退后 `orderApi.markOrderSettled` 已改为 try-catch，失败仅记录日志，不会回滚分账状态。建议对这类日志增加告警，避免订单状态长期不一致。
 
 ## 7. 建议 PR 标题和描述
@@ -90,13 +90,13 @@
 **描述**:
 
 ```
-- 新增店铺分账计费规则，按角色（平台/店铺/配送方/销售方）配置比例与手续费承担方
+- 新增店铺分账计费规则，按角色（平台/店铺/配送方/销售方）配置比例、启用状态与手续费承担方；启用的角色比例之和必须等于 100%
 - 支付时按规则计算各角色分账金额并固化到分账明细表；无规则时 fallback 到 commission_rate
 - 日终 Job 分账确认并更新 yshop_store_order.status = 2（待评价）
 - 分账失败时回退到 RevenueJob，并同样更新订单状态为待评价
 - 管理后台新增店铺分账计费规则配置页、分账结算记录详情展示计算方式/承担方/明细
 - 店铺编辑页新增分账计费规则入口
-- 修复：分账成功后先持久化状态再更新订单；手动重试增加状态校验；fallback 校验平台收款人启用状态；规则保存错误码统一；明细返回 recipientName；前端手续费互斥与成功提示
+- 修复：分账成功后先持久化状态再更新订单；手动重试增加状态校验；fallback 校验平台收款人启用状态；规则保存错误码统一；明细返回 recipientName；前端手续费互斥与成功提示；计费规则支持部分角色启用且启用比例和需等于 100%
 
 关联文档：
 - governance/feature-docs/adapay-profit-sharing/requirements-spec.md
@@ -105,3 +105,10 @@
 - governance/feature-docs/adapay-profit-sharing/test-notes.md
 - governance/feature-docs/adapay-profit-sharing/review-report.md
 ```
+
+## 8. PR 链接
+
+| 仓库 | PR |
+|---|---|
+| `backend` | https://gitee.com/icepolar/yshop-drink/pulls/43 |
+| `admin` | https://gitee.com/icepolar/yshop-drink-vue/pulls/21 |

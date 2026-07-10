@@ -24,13 +24,13 @@
 
 | 编号 | 用例 | 预期 |
 |------|------|------|
-| R-01 | 保存完整规则：4 角色均存在，比例和 = 100%，有且仅有一个承担方 | 保存成功，返回 4 条启用记录 |
-| R-02 | 比例和 ≠ 100% | 后端拒绝，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
-| R-03 | 缺少任一角色 | 后端拒绝，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
+| R-01 | 保存完整规则：启用角色比例和 = 100%，有且仅有一个启用角色承担手续费 | 保存成功，返回启用记录集合 |
+| R-02 | 启用角色比例和 ≠ 100% | 后端拒绝，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
+| R-03 | 禁用所有角色（无启用角色） | 后端拒绝，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
 | R-04 | 无承担方 | 后端拒绝，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
 | R-05 | 多个承担方 | 后端拒绝，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
-| R-06 | 同一角色存在两条启用记录 | 后端按整单替换处理，最终生效态唯一 |
-| R-07 | 将某角色 status 设为 0 | 规则不完整，后续支付被拒绝 |
+| R-06 | 承担方角色未启用 | 后端拒绝，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
+| R-07 | 同一角色存在两条启用记录 | 后端按整单替换处理，最终生效态唯一 |
 | R-08 | 删除店铺整套规则 | 后续支付 fallback 到 `commission_rate` |
 | R-09 | 查询 `list-by-shop?shopId=1` | 返回该店铺所有角色规则及 `feeBearer` 标记 |
 
@@ -46,20 +46,23 @@
 
 | 编号 | 用例 | 预期 |
 |------|------|------|
-| P-01 | 规则存在但角色缺失 | 支付前抛错，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
-| P-02 | 规则存在但比例和 ≠ 100 | 支付前抛错，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
+| P-01 | 规则存在但启用角色比例和 ≠ 100 | 支付前抛错，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
+| P-02 | 规则存在但无启用角色 | 支付前抛错，返回 `PROFIT_SHARING_RULE_INCOMPLETE` |
 | P-03 | 规则存在但无承担方 | 支付前抛错，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
-| P-04 | 规则完整但某角色有效收款人缺失 | 支付前抛错，返回 `PROFIT_SHARING_RECIPIENT_MISSING_FOR_ROLE` |
-| P-05 | 店铺未绑定收款人 | 支付前抛错，返回 `PROFIT_SHARING_SHOP_RECIPIENT_MISSING` |
+| P-04 | 规则存在但承担方未启用 | 支付前抛错，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
+| P-05 | 规则存在但多个承担方 | 支付前抛错，返回 `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` |
+| P-06 | 规则完整但某启用角色有效收款人缺失 | 支付前抛错，返回 `PROFIT_SHARING_RECIPIENT_MISSING_FOR_ROLE` |
+| P-07 | 店铺未绑定收款人 | 支付前抛错，返回 `PROFIT_SHARING_SHOP_RECIPIENT_MISSING` |
 
 ### 3.4 按规则计算各角色金额与手续费承担方
 
 | 编号 | 用例 | 预期 |
 |------|------|------|
-| C-01 | 4 角色比例 10/70/10/10，店铺承担手续费 | 各角色金额按 `pay_price × percentage/100` 计算，店铺角色 `fee_flag=1`，其余 `0` |
-| C-02 | 比例含 0% | 对应角色金额为 0，仍参与 `div_members` 且 `fee_flag` 按规则标记 |
-| C-03 | 金额和因四舍五入差额 1 分 | 差额吸收到最大金额角色，最终 `Σamount = pay_price` |
-| C-04 | 创建分账记录后修改规则 | 已创建记录金额不变，验证固化逻辑 |
+| C-01 | 启用角色比例 10/70/10/10，店铺承担手续费 | 各启用角色金额按 `pay_price × percentage/100` 计算，店铺角色 `fee_flag=1`，其余启用角色 `0` |
+| C-02 | 仅启用平台/店铺两角色，比例 10/90，店铺承担手续费 | 仅生成两条分账明细，金额和 = `pay_price`，店铺 `fee_flag=1` |
+| C-03 | 比例含 0% | 对应角色金额为 0，仍参与 `div_members` 且 `fee_flag` 按规则标记 |
+| C-04 | 金额和因四舍五入差额 1 分 | 差额吸收到最大启用角色金额，最终 `Σamount = pay_price` |
+| C-05 | 创建分账记录后修改规则 | 已创建记录金额不变，验证固化逻辑 |
 
 ### 3.5 分账成功/回退后订单状态更新为待评价
 
@@ -92,9 +95,9 @@
 
 | 编号 | 用例 | 预期 |
 |------|------|------|
-| A-01 | 打开规则配置页，选择店铺 | 展示 4 角色输入行，支持比例与承担方开关 |
-| A-02 | 保存时前端即时校验比例和 | 比例和 ≠ 100 时前端拦截并提示 |
-| A-03 | 保存时前端校验唯一承担方 | 未选或多选时前端拦截 |
+| A-01 | 打开规则配置页，选择店铺 | 展示 4 角色输入行，支持启用开关、比例与承担方开关 |
+| A-02 | 保存时前端即时校验启用角色比例和 | 启用角色比例和 ≠ 100 时前端拦截并提示 |
+| A-03 | 保存时前端校验唯一承担方 | 未选、多选或选中禁用角色时前端拦截 |
 | A-04 | 店铺编辑页新增「分账计费规则」入口 | 点击跳转至规则配置页并带入 `shopId` |
 | A-05 | 分账结算记录详情 | 展示 `calculationType`、`feeBearerRole` 与 `items` 明细 |
 
@@ -108,8 +111,8 @@
 | 店铺 | `shop_1`（启用分账）、`shop_2`（未启用分账） |
 | 平台级收款人 | 平台角色 `recipient_p`、配送角色 `recipient_d`、销售角色 `recipient_s`，均为启用状态 |
 | 店铺级收款人 | 归属 `shop_1` 的收款人 `recipient_shop`，已启用 |
-| 完整计费规则 | `shop_1` 下 4 角色比例 10/70/10/10，店铺承担手续费 |
-| 不完整计费规则 | `shop_1` 下仅平台/店铺两条角色记录 |
+| 完整计费规则 | `shop_1` 下启用角色比例 10/70/10/10，店铺承担手续费 |
+| 不完整计费规则 | `shop_1` 下仅启用平台/店铺两条角色记录但比例和 ≠100 |
 | 订单 | Adapay 支付成功订单，状态为待收货（`status=1`），`refund_status=0`，`pay_price=100.00` |
 | 佣金配置 | `commission_rate` 配置使 `commission_amount=10.00` |
 
@@ -119,8 +122,8 @@
 |------|--------|
 | 金额计算 | 比例和校验、四舍五入差额吸收、`Σamount = pay_price` 前置/执行前双重校验。 |
 | 订单状态一致性 | 分账记录与 `yshop_store_order.status` 必须同事务或最终一致；`markOrderSettled` 失败时状态不回滚。 |
-| 手续费承担方映射 | 仅承担方角色 `fee_flag=1`，其余 `0`；承担方必须是已配置的 4 角色之一。 |
-| 规则不完整 vs fallback | 完全无规则才 fallback；规则存在但不完整必须拒绝支付，不能静默 fallback。 |
+| 手续费承担方映射 | 仅承担方角色 `fee_flag=1`，其余 `0`；承担方必须是已启用的计费角色之一。 |
+| 规则不完整 vs fallback | 完全无规则才 fallback；规则存在但不完整（无启用角色、启用角色比例和 ≠100、无唯一启用承担方、承担方未启用、收款人缺失/禁用）必须拒绝支付，不能静默 fallback。 |
 | Job 幂等 | 依赖 `sharing_status` 状态机，需验证重复调度不重复分账。 |
 | 跨模块调用 | `pay-biz → order-api` 调用失败时的降级与告警。 |
 
@@ -132,3 +135,17 @@
 | 分账收款人 | 创建/编辑/删除/查询、结算账户更换、MemberId 编码正常；银行列表加载改为默认主要银行 + 关键字远程搜索模式，需验证新交互。 |
 | 店铺分账绑定 | 绑定/解绑店铺级收款人、启用/禁用开关逻辑不变。 |
 | 分账结算记录查询 | 列表/搜索/失败重试、详情字段扩展后既有查询条件仍可用。 |
+
+## 7. 验证结果
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| 后端 pay-biz 编译 | `mvn -pl yshop-module-pay/yshop-module-pay-biz -am compile -DskipTests` | ✅ BUILD SUCCESS |
+| 后端 order-biz 编译 | `mvn -pl yshop-module-mall/yshop-module-order-biz -am compile -DskipTests` | ✅ BUILD SUCCESS |
+| admin 生产构建 | `pnpm build:prod` | ✅ Build successful |
+| admin 类型检查 | `pnpm ts:check` | ❌ 失败，原因：既有类型定义文件缺失（`@intlify/unplugin-vue-i18n/types`、`@types/qrcode`、`element-plus/global`、`vite-plugin-svg-icons/client`），与本次变更无关 |
+| 单元测试 | — | ⚠️ 未新增；运行 `mvn test` 时 `yshop-spring-boot-starter-web` 的 `DesensitizeTest` 因中文环境断言失败，与本次变更无关 |
+
+> 后端变更文件：`ProfitSharingRuleServiceImpl.java`、`ProfitSharingRuleSaveReqVO.java`
+> 前端变更文件：`ProfitSharingRuleForm.vue`、`profitSharingRule/index.vue`
+> 工作树：`.worktrees/backend-adapay-profit-sharing`、`.worktrees/admin-adapay-profit-sharing`

@@ -56,10 +56,13 @@
 
 校验规则（后端强制）：
 - 同一店铺同一角色只能有一条生效记录；
-- 4 个角色必须全部存在且启用；
-- `percentage` 之和必须等于 100；
-- 有且仅有一个角色 `fee_bearer=1`；
+- 不必 4 个角色全部存在，但至少启用一个角色；
+- 启用角色的 `percentage` 之和必须等于 100；
+- 有且仅有一个启用角色 `fee_bearer=1`；
+- 手续费承担方角色必须已启用；
 - 各角色取值范围：`role ∈ [1,2,3,4]`，`percentage ∈ [0, 100]`，`fee_bearer ∈ [0,1]`，`status ∈ [0,1]`。
+- 单条规则 `status=0` 时，`fee_bearer` 必须同时为 0。  
+- 分账金额校验时只汇总启用角色。  
 
 ### 内部调用
 
@@ -103,8 +106,8 @@
 - `member_id` 编码规则：`m_{tenantId}_{memberType}_{idCard}_{storeId}`，平台级 `storeId=0`
 
 **字段校验要点（新增）**：
-- 计费规则：`role ∈ [1,2,3,4]`，`percentage ∈ [0, 100]`，一套规则内 4 个角色必须全存在且启用，比例和 = 100，有且仅有一个 `fee_bearer=1`。
-- 分账明细：`amount` 之和必须等于 `payPrice`。
+- 计费规则：`role ∈ [1,2,3,4]`，`percentage ∈ [0, 100]`，启用角色比例和 = 100，有且仅有一个启用角色 `fee_bearer=1`，禁用角色 `fee_bearer=0`。
+- 分账明细：`amount` 之和必须等于 `payPrice`（只汇总启用角色）。
 
 ### 枚举新增
 
@@ -302,10 +305,10 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 | `PROFIT_SHARING_AMOUNT_MISMATCH` | 分账金额校验失败 |
 | `PROFIT_SHARING_PAY_DISABLED` | 分账配置不完整，禁止支付 |
 | `BANK_NOT_EXISTS` | 银行编码不存在或已禁用 |
-| `PROFIT_SHARING_RULE_INCOMPLETE` | 店铺计费规则不完整（角色缺失、比例和 ≠100、承担方不唯一等） |
+| `PROFIT_SHARING_RULE_INCOMPLETE` | 店铺计费规则不完整（无启用角色、启用角色比例和 ≠100、承担方不唯一或未启用等） |
 | `PROFIT_SHARING_RULE_ROLE_EXISTS` | 同一店铺同一角色已存在生效规则 |
-| `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` | 手续费承担方配置不合法 |
-| `PROFIT_SHARING_RECIPIENT_MISSING_FOR_ROLE` | 某角色未配置有效收款人 |
+| `PROFIT_SHARING_RULE_FEE_BEARER_INVALID` | 手续费承担方配置不合法（承担方角色未启用，或存在多个承担方） |
+| `PROFIT_SHARING_RECIPIENT_MISSING_FOR_ROLE` | 某启用角色未配置有效收款人 |
 | `PROFIT_SHARING_ORDER_STATUS_INVALID_FOR_RETRY` | 当前分账状态不允许重试 |
 | `ORDER_SETTLE_FAILED` | 订单状态更新为待评价失败 |
 
@@ -323,7 +326,7 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 
 ## 兼容性
 
-- **向后兼容**：是。未启用分账的店铺行为不变；已启用分账但无计费规则的店铺 fallback 到原有 `commission_rate` 逻辑；新增表不影响现有查询。
+- **向后兼容**：是。未启用分账的店铺行为不变；已启用分账但无计费规则的店铺 fallback 到原有 `commission_rate` 逻辑；新增表不影响现有查询。已配置规则但规则不完整（无启用角色、启用角色比例和 ≠100、无唯一启用承担方、承担方未启用、收款人缺失/禁用）时，支付时拒绝并提示配置缺失，不得静默 fallback。禁用某角色后，历史已创建的分账记录金额不受影响。
 - **前端同步变更**：
   - `admin/` 需新增「店铺分账计费规则」页面（菜单挂于门店管理下）；
   - 分账收款人管理和分账订单查询页面保持原有功能；

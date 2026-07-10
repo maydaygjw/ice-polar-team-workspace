@@ -121,11 +121,12 @@ yshop-module-store-biz   ──→ yshop-module-pay-api (ProfitSharingRuleApi)
 
 1. **计费规则表设计**：一店铺一套规则，按角色拆分为多条记录。角色枚举：`1=平台`、`2=店铺`、`3=配送方`、`4=销售方`。每条记录配置 `percentage`（分账比例）与 `fee_bearer`（是否承担手续费）。
 2. **完整有效规则判定**：同一店铺下，同时满足以下条件视为完整有效：
-   - 4 个角色均存在且 `status=1` 的记录；
-   - 4 条记录 `percentage` 之和等于 100；
-   - 有且仅有一条记录 `fee_bearer=1`；
-   - 各角色对应的有效收款人已配置（平台/配送/销售角色取平台级收款人；店铺角色取店铺绑定的店铺级收款人）。
-3. **fallback 到 `commission_rate` 的触发条件**：仅当店铺在 `yshop_adapay_profit_sharing_rule` 中**完全未配置任何规则记录**时，创建分账记录时 fallback 到现有逻辑：`platform_amount = commission_amount`，`shop_amount = pay_price - commission_amount`。若已配置规则但规则不完整（角色缺失、比例和 ≠100、无唯一承担方、收款人缺失/禁用），支付时应拒绝并提示配置缺失，不得静默 fallback。
+   - 至少存在一个角色 `status=1`；
+   - 所有启用角色的 `percentage` 之和等于 100；
+   - 有且仅有一条启用记录 `fee_bearer=1`；
+   - 手续费承担方所在角色必须已启用；
+   - 各启用角色对应的有效收款人已配置（平台/配送/销售角色取平台级收款人；店铺角色取店铺绑定的店铺级收款人）。
+3. **fallback 到 `commission_rate` 的触发条件**：仅当店铺在 `yshop_adapay_profit_sharing_rule` 中**完全未配置任何规则记录**时，创建分账记录时 fallback 到现有逻辑：`platform_amount = commission_amount`，`shop_amount = pay_price - commission_amount`。若已配置规则但规则不完整（无启用角色、启用角色比例和 ≠100、无唯一启用承担方、承担方未启用、收款人缺失/禁用），支付时应拒绝并提示配置缺失，不得静默 fallback。
 4. **订单状态更新时机**：走 Adapay 分账的订单，在日终 Job 中：
    - `PaymentConfirm.create` 返回成功 → 分账记录置为成功，并调用 `OrderApi.markOrderSettled(orderId)` 更新 `yshop_store_order.status = 2`；
    - 分账失败并回退到 RevenueJob 后 → 分账记录置为已回退，并同样调用 `OrderApi.markOrderSettled(orderId)` 更新订单状态为 2。
@@ -187,7 +188,7 @@ yshop-module-store-biz   ──→ yshop-module-pay-api (ProfitSharingRuleApi)
 
 ### 流程设计
 
-#### 支付时创建分账记录（含规则 / fallback 分支）
+**支付时创建分账记录（含规则 / fallback 分支）**
 
 ```
 用户完成 Adapay 支付
@@ -198,7 +199,7 @@ yshop-module-store-biz   ──→ yshop-module-pay-api (ProfitSharingRuleApi)
               → 查询 yshop_adapay_profit_sharing_rule
                   ├─ 无任何规则记录 → fallback: platform_amount=commission_amount, shop_amount=pay_price-commission_amount, calculation_type=2
                   ├─ 规则存在但不完整 → 抛错，拒绝支付
-                  └─ 规则完整 → 按 percentage 计算各角色金额，确定 fee_bearer_role，映射 recipient，calculation_type=1
+                  └─ 规则完整 → 按启用角色 percentage 计算各角色金额，确定 fee_bearer_role，映射 recipient，calculation_type=1
               → 调用 ProfitSharingOrderApi.createSharingOrder(dto)
                   → 校验金额和 = pay_price
                   → 写入 yshop_adapay_profit_sharing_order
@@ -242,7 +243,7 @@ executeSharing 返回失败
 
 | 风险 | 等级 | 缓解措施 |
 |------|------|----------|
-| 计费规则比例和不为 100 导致金额错误 | 高 | 保存规则整单校验；创建分账记录时再次校验；差额吸收到最大角色金额 |
+| 计费规则比例和不为 100 导致金额错误 | 高 | 保存规则整单校验（仅启用角色计入）；创建分账记录时再次校验；差额吸收到最大启用角色金额 |
 | 订单状态更新与分账状态不一致 | 高 | 同一事务内更新分账记录并调用 OrderApi；失败时状态保持原值，Job 次日/手动重试 |
 | 规则不完整导致支付被拒绝 | 中 | 管理后台保存规则时强制校验并提示；支付错误码明确区分「规则不完整」 |
 | 手续费承担方配置错误 | 中 | 保存时强制「有且仅有一个承担方」；执行分账前复核 |
