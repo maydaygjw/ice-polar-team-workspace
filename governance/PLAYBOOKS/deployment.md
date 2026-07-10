@@ -154,14 +154,29 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
 # 1. 本地构建（在 ${ADMIN_LOCAL_PATH}/ 目录下执行）
 cd ${ADMIN_LOCAL_PATH} && ${ADMIN_BUILD_CMD}
 
-# 2. 上传构建产物到服务器
-scp -r ${ADMIN_LOCAL_PATH}/dist/* ${DEPLOY_USER}@${SERVER_HOST}:${ADMIN_REMOTE_PATH}/
+# 2. 将构建产物打包为压缩包，减少小文件 SSH 传输 overhead
+cd ${ADMIN_LOCAL_PATH}/dist
+tar czf ../dist.tar.gz .
 
-# 3. 验证文件已上传
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ls -la ${ADMIN_REMOTE_PATH}/"
+# 3. 上传压缩包到服务器临时目录
+scp ${ADMIN_LOCAL_PATH}/dist.tar.gz ${DEPLOY_USER}@${SERVER_HOST}:${ADMIN_REMOTE_PATH}/../dist.tar.gz
+
+# 4. 在服务器上解压并整体替换 Nginx 静态资源目录
+ssh ${DEPLOY_USER}@${SERVER_HOST} "
+  cd ${ADMIN_REMOTE_PATH}/.. && \
+  rm -rf ${ADMIN_REMOTE_PATH} && \
+  mkdir -p ${ADMIN_REMOTE_PATH} && \
+  tar xzf dist.tar.gz -C ${ADMIN_REMOTE_PATH} && \
+  rm -f dist.tar.gz
+"
+
+# 5. 验证文件已上传
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ls -la ${ADMIN_REMOTE_PATH}/ | head -20"
 ```
 
-> **说明**：测试环境使用 `${ADMIN_BUILD_CMD}` 构建。如需构建生产环境版本，将对应环境的 `ADMIN_BUILD_CMD` 改为 `pnpm build:prod`。
+> **说明**：
+> - 测试环境使用 `${ADMIN_BUILD_CMD}` 构建。如需构建生产环境版本，将对应环境的 `ADMIN_BUILD_CMD` 改为 `pnpm build:prod`。
+> - 使用 `tar.gz` 整体替换，避免 `scp -r` 逐个文件传输 1000+ 小文件的 SSH 握手开销；同时保证每次部署目录与本地 `dist/` 完全一致。
 
 **健康检查**
 
