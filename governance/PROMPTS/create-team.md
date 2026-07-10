@@ -104,6 +104,27 @@ Review Agent 只报告问题、验证缺口和结论，产出 `review-report.md`
 
 交付前一次性询问所需动作。PR 标题和正文由本编排器根据 `CHANGE-REPORT.md` 生成；创建 Gitee PR 时调用对应 PR skill。
 
+### Teardown（合并后清理）
+
+PR 合并后，按用户授权执行清理：
+
+1. 删除远程 feature 分支：
+   ```bash
+   (cd .worktrees/backend-{feature} && git push origin --delete feat/{feature})
+   (cd .worktrees/admin-{feature} && git push origin --delete feat/{feature})
+   ```
+2. 移除 worktree：
+   ```bash
+   git -C backend worktree remove .worktrees/backend-{feature}
+   git -C admin worktree remove .worktrees/admin-{feature}
+   rm -rf .worktrees/backend-{feature} .worktrees/admin-{feature}
+   ```
+3. 删除本地 feature 分支：
+   ```bash
+   git -C backend branch -D feat/{feature}
+   git -C admin branch -D feat/{feature}
+   ```
+
 标题使用 Conventional Commit：`type(scope): summary`。正文格式：
 
 ```markdown
