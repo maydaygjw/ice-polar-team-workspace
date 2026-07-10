@@ -1,62 +1,17 @@
-# Mini-program Agent
+# MiniApp Agent
 
-## Role
-WeChat Mini-program Expert — owns `miniapp/`
+负责原生微信小程序 `miniapp/`。
 
-## May Modify
-- `miniapp/pages/` — 小程序页面（WXML / WXSS / JS）
-- `miniapp/utils/` — 工具函数
-- `miniapp/config/` — 配置文件
-- `miniapp/app.js`, `miniapp/app.json`, `miniapp/app.wxss` — 全局配置和样式
-- `miniapp/project.config.json`, `miniapp/project.private.config.json` — 项目配置
-- `miniapp/brand-assets/` — 品牌设计资源
+## 边界
 
-## Must Not Modify
-- `backend/` (Java backend code)
-- `admin/` (Vue3 admin dashboard)
-- `icepolar-dms/` (Device Management System)
+- 可修改页面、组件、工具、配置、全局文件和品牌资源
+- 不修改 `backend/`、`admin/`、`icepolar-dms/`
 
-## Technology Stack
+## 专有约束
 
-- Native WeChat Mini Program (WXML / WXSS / JS)
-- WeChat Mini-program API
-- Custom CSS design system in `brand-assets/`
-
-## Backend Communication
-
-Communicates with `backend/` (yshop-drink) via C-end `app-api/` endpoints.
-
-- **Tenant ID**: Fixed `153` (ice-machine business)
-- **API Base URL**: Configured in `miniapp/config/config.js`
-  - Production: `https://yshop-api.holuntech.com`
-  - Local development: `http://localhost:8888`
-- **DMS URL**: `app.globalData.dmsUrl` — points to icepolar-dms for hardware commands
-
-## Code Patterns
-
-- Pages follow WeChat Mini Program standard: `pages/<page-name>/<page-name>.{js,wxml,wxss,json}`
-- Shared logic in `utils/` (e.g., `utils/request.js` for HTTP requests)
-- Global data in `app.js` `globalData`
-- Navigation via `wx.navigateTo`, `wx.redirectTo`, `wx.switchTab`
-
-## Device Module
-
-The `miniapp/` includes device management pages that interact with the ice-machine hardware:
-
-- Commands: connect, dispense ice, deice, self-clean, status query
-- Command definitions follow the yinerda DTU specification
-- Error codes mapped in `utils/` per DTU spec
-
-> `icepolar-dms` handles hardware-level commands. The mini-program does NOT call DMS directly — all device commands go through `backend/` (`yshop-module-device-biz`), which then calls DMS internally.
-
-## Git Workflow
-
-- Branch naming: `feat/<feature-name>` (base branch: `main`)
-- Never commit directly to `main`
-- Commit messages: `feat(scope): description`
-- Push branch and create PR when feature is complete
-
-## Related Agents
-
-- **backend-agent** — for `app-api/` endpoint changes
-- **devops-agent** — for WeChat Mini Program upload / CI
+- 租户固定为 `153`
+- 只调用后端 `app-api`；禁止直接调用 DMS，设备命令经后端设备模块转发
+- API 基于已冻结契约；发现不一致时报告
+- 设备命令及错误码映射遵循银尔达 DTU 规范
+- UI 变化遵循 `ui-ux-design.md` 和现有品牌规范
+- 使用微信开发者工具验证受影响流程；无法自动验证时在 `test-notes.md` 记录人工步骤
