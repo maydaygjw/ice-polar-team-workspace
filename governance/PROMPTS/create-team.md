@@ -81,9 +81,17 @@ UI 变化时先完成 `ui-ux-design.md`。仅不兼容契约、破坏性 DB、�
 (cd backend && git worktree add ../.worktrees/backend-{feature} -b feat/{feature} origin/master)
 ```
 
-按目标仓库 `AGENTS.md` 执行最小充分验证；无法执行则写入 `test-notes.md`。复杂 E2E 使用 `test-plan.md` 和 `governance/e2e/specs/features/{feature}/`。结构性设计偏差返回 Phase 2；仅无法安全假设时生成 `REPORT.md` 并暂停。
+每个受影响仓库必须完成编译/构建和目标仓库要求的测试，结果写入 `test-notes.md`：
 
-门禁：实现符合规格和契约；验证有结果；无非预期文件、密钥或私密配置。
+```bash
+(cd .worktrees/backend-{feature} && mvn test)
+(cd .worktrees/admin-{feature} && pnpm ts:check && pnpm build:prod)
+(cd .worktrees/icepolar-dms-{feature} && python -m compileall -q app && pytest -v)
+```
+
+复杂 E2E 使用 `test-plan.md` 和 `governance/e2e/specs/features/{feature}/`。结构性设计偏差返回 Phase 2；仅无法安全假设时生成 `REPORT.md` 并暂停。
+
+门禁：实现符合规格和契约；所有受影响仓库编译/构建通过；必要测试有结果；无非预期文件、密钥或私密配置。
 
 ## Phase 4: Review & Delivery
 
@@ -94,7 +102,32 @@ Review Agent 只报告问题、验证缺口和结论，产出 `review-report.md`
 - Implementation complete：规格、实现、验证、审查完成。
 - Delivery complete：用户选择的 commit、push、PR 或部署动作完成；选择保留本地变更也是合法终态。
 
-交付前一次性询问所需动作。PR 描述嵌入关键规格和验证摘要，不只列文档路径。
+交付前一次性询问所需动作。PR 标题和正文由本编排器根据 `CHANGE-REPORT.md` 生成；创建 Gitee PR 时调用对应 PR skill。
+
+标题使用 Conventional Commit：`type(scope): summary`。正文格式：
+
+```markdown
+## Summary
+- 业务行为变化
+
+## Repositories
+- `backend`: 主要变更
+
+## Contracts
+- API/DB/MQ/权限变化；无变化写 N/A
+
+## Verification
+- `command`: pass/fail
+- 未执行项及原因
+
+## Risks
+- 残余风险或 N/A
+
+## References
+- Feature/Issue/ADR
+```
+
+只保留适用章节；有 DB 迁移时增加 `## Migration`。PR 正文嵌入关键规格和验证摘要，不只列文档路径。
 
 ## 用户状态更新
 
