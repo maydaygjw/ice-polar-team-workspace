@@ -7,6 +7,7 @@
 | 分账收款人管理 | `views/mall/store/profitSharingReceiver/index.vue` | 管理分账收款人（平台级 + 店铺级） |
 | 店铺分账关联配置 | 嵌入 `views/mall/store/shop/ShopForm.vue` | 为店铺选择关联的分账收款人 |
 | 分账结算记录 | `views/mall/store/profitSharingRecord/index.vue` | 查看日终自动分账结算结果 |
+| 店铺分账计费规则 | `views/mall/store/profitSharingRule/index.vue` | 为店铺配置各角色分账比例与手续费承担方 |
 
 ---
 
@@ -62,7 +63,7 @@
 | Member 类型 | `el-radio-group` | `required`：`1`=个人，`2`=企业 |
 | 个人实名信息 | 动态表单 | `memberType=1` 时显示：手机号、真实姓名、身份证号 |
 | 企业信息 | 动态表单 | `memberType=2` 时显示：企业名称、营业执照号、法人姓名、法人身份证号、营业执照附件 |
-| 结算银行卡 | 动态表单 | 创建时显示且必填；编辑时默认显示绑定状态/脱敏摘要，点击“更换结算账户”后显示并必填：银行卡号、开户名、银行（`el-select` 从后端 `GET /pay/bank/list` 加载，显示 `bankCode + bankName`，绑定 `bankCode`）、账户类型 |
+| 结算银行卡 | 动态表单 | 创建时显示且必填；编辑时默认显示绑定状态/脱敏摘要，点击”更换结算账户”后显示并必填：银行卡号、开户名、银行（远程搜索 `el-select`，默认加载主要银行 `GET /pay/bank/list`，用户输入关键字时调用 `GET /pay/bank/list?keyword=xxx` 远程搜索全部银行，下拉显示 `bankCode + bankName`，绑定 `bankCode`）、账户类型 |
 
 > 创建收款人提交后，后端同步调用 Adapay 接口创建 Member 并绑定结算账户；成功后才入库。`member_id` 由后端按 `m_{租户Id}_{memberType}_{IdCard}_{storeId|0}` 生成，前端不传。
 >
@@ -165,6 +166,66 @@
 
 ---
 
+### Page 4: 店铺分账计费规则页
+
+#### Layout
+
+自包含配置页，不使用弹窗（整个页面就是一套规则的编辑表单）：
+
+- `ContentWrap`（店铺选择 + 操作按钮）
+- `ContentWrap`（规则编辑表单：4 角色行 × 比例 + 手续费承担方）
+- 底部固定操作栏（保存）
+
+#### Shop Selector
+
+| 字段 | 组件 | 说明 |
+|------|------|------|
+| 选择店铺 | `el-select` | 从门店列表拉取；切换店铺时重新加载该店铺的规则 |
+
+选择店铺后，自动加载该店铺已配置的计费规则并回填表单；若该店铺从未配置，表单初始化为 4 个角色的默认空值。
+
+**交互逻辑**：
+- 进入页面时未选择店铺，规则表单区显示 `el-empty` 提示 "请先选择店铺"
+- 选择店铺后，调用 `GET /admin-api/pay/profit-sharing-rule/list-by-shop?shopId=xxx`
+- 若返回空列表（店铺从未配置），表单初始化为 4 行默认值：`percentage=0`，`feeBearer=0`
+- 若返回已有规则，回填到对应角色的行
+
+#### Rule Form Fields
+
+| 字段 | 组件 | 校验规则 |
+|------|------|----------|
+| 角色名称 | 只读文本 | 固定显示：平台 / 店铺 / 配送方 / 销售方 |
+| 分账比例 (%) | `el-input-number` | `required`，`min=0`，`max=100`，精度 2 位小数；4 角色之和必须 = 100 |
+| 承担手续费 | `el-radio` | 4 个角色中有且仅有一个为 `是`；默认值=否 |
+
+手续费承担方交互：
+- 4 行共享一个 `el-radio-group`（或通过业务逻辑互斥）：选中一个角色为承担方时，其余自动置为「否」
+- 保存前前端校验：4 角色比例和 = 100，且恰好 1 个承担方
+
+#### Actions
+
+- **保存**：前端校验通过后，组装 `{ shopId, rules: [...] }` 调用 `POST /admin-api/pay/profit-sharing-rule/save-set`；后端原子性替换并整单校验
+- **重置**：重新从后端加载当前店铺的已保存规则
+
+#### Empty / Error States
+
+- **未选择店铺**：规则表单区显示 `el-empty` + 描述 "请先选择店铺以配置分账计费规则"
+- **店铺无已配置规则**：表单初始化为默认空值（比例=0，不承担手续费），提示 "该店铺尚未配置分账计费规则，请填写并保存"
+- **保存失败**：`message.error()` 显示后端返回的具体错误（如 "比例和不等于100" / "手续费承担方不唯一"）
+- **比例和 ≠ 100**：前端实时显示差额提示，保存按钮在比例和 ≠ 100 时禁用
+
+#### Validation Summary
+
+保存前前端校验（与后端校验一致）：
+
+| 校验项 | 规则 |
+|--------|------|
+| 角色完整性 | 4 个角色必须全部存在 |
+| 比例总和 | `sum(percentage)` 必须 = 100 |
+| 手续费承担方 | 有且仅有一个角色 `feeBearer=1` |
+
+---
+
 ### Component Patterns
 
 全部复用现有 Element Plus 组件，无自定义组件：
@@ -199,7 +260,7 @@
 
 #### 菜单配置
 
-后端动态菜单新增两项，挂于 **门店管理** 下：
+后端动态菜单新增三项，挂于 **门店管理** 下：
 
 ```
 门店管理
@@ -207,7 +268,8 @@
 ├── 提现管理
 ├── 店铺收支明细
 ├── 分账收款人管理      ← 新增，component: mall/store/profitSharingReceiver/index
-└── 分账结算记录        ← 新增，component: mall/store/profitSharingRecord/index
+├── 分账结算记录        ← 新增，component: mall/store/profitSharingRecord/index
+└── 店铺分账计费规则    ← 新增，component: mall/store/profitSharingRule/index
 ```
 
 > 店铺分账关联配置不单独建菜单，通过「门店列表 > 编辑」进入 `ShopForm.vue` 配置。
@@ -220,6 +282,7 @@
 |--------|----------|----------|--------|
 | 分账收款人管理 | `/profit-sharing-receiver` | `mall/store/profitSharingReceiver/index` | 门店管理 |
 | 分账结算记录 | `/profit-sharing-record` | `mall/store/profitSharingRecord/index` | 门店管理 |
+| 店铺分账计费规则 | `/profit-sharing-rule` | `mall/store/profitSharingRule/index` | 门店管理 |
 
 ---
 
@@ -235,6 +298,8 @@
 | `pay:profit-recipient:query` | 查看分账收款人 | 分账收款人管理页 |
 | `pay:profit-sharing:query` | 查看分账结算记录 | 分账结算记录页 |
 | `pay:profit-sharing:update` | 重试失败分账 | 分账结算记录页 |
+| `pay:profit-sharing-rule:query` | 查看分账计费规则 | 店铺分账计费规则页 |
+| `pay:profit-sharing-rule:update` | 编辑分账计费规则 | 店铺分账计费规则页 |
 
 > 店铺分账关联配置的编辑权限复用现有 `store:shop:update`。
 
@@ -242,7 +307,7 @@
 
 ### API Client Patterns
 
-新增两个 API 模块，复用 `withdrawal/index.ts` 和 `storeRevenue/index.ts` 模式：
+新增三个 API 模块，复用 `withdrawal/index.ts` 和 `storeRevenue/index.ts` 模式：
 
 **`admin/src/api/mall/store/profitSharingReceiver/index.ts`**
 
@@ -297,10 +362,46 @@ export const retryProfitSharingRecord = async (id: number) => { ... }
 export interface BankVO {
   bankCode: string
   bankName: string
+  isPrimary: number  // 1=主要银行, 0=非主要
 }
 
 export const getBankList = async (keyword?: string) => {
+  // 无 keyword 时返回主要银行（is_primary=1）；有 keyword 时远程搜索全部银行
   return await request.get({ url: '/pay/bank/list', params: { keyword } })
+}
+```
+
+> 银行选择器交互：默认加载主要银行列表（约数十条），用户输入关键字时触发远程搜索，防抖 300ms 后调用 `getBankList(keyword)` 模糊匹配全部银行。
+
+**`admin/src/api/mall/store/profitSharingRule/index.ts`**
+
+```typescript
+export interface ProfitSharingRuleVO {
+  id?: number
+  shopId: number
+  role: number         // 1=平台, 2=店铺, 3=配送方, 4=销售方
+  percentage: number   // 分账比例(%)
+  feeBearer: number    // 0=不承担, 1=承担手续费
+  status: number       // 0=禁用, 1=启用
+}
+
+export interface ProfitSharingRuleSaveReqVO {
+  shopId: number
+  rules: ProfitSharingRuleItemVO[]
+}
+
+export interface ProfitSharingRuleItemVO {
+  role: number
+  percentage: number
+  feeBearer: number
+}
+
+export const getProfitSharingRuleListByShop = async (shopId: number) => {
+  return await request.get({ url: '/pay/profit-sharing-rule/list-by-shop', params: { shopId } })
+}
+
+export const saveProfitSharingRuleSet = async (data: ProfitSharingRuleSaveReqVO) => {
+  return await request.post({ url: '/pay/profit-sharing-rule/save-set', data })
 }
 ```
 
@@ -316,13 +417,17 @@ admin/src/
 │   │   └── ProfitSharingReceiverForm.vue
 │   ├── profitSharingRecord/
 │   │   └── index.vue
+│   ├── profitSharingRule/
+│   │   └── index.vue            ← 新增：店铺分账计费规则
 │   └── shop/
 │       └── ShopForm.vue          ← 修改：新增分账关联字段
 ├── api/mall/store/
 │   ├── profitSharingReceiver/
 │   │   └── index.ts
-│   └── profitSharingRecord/
-│       └── index.ts
+│   ├── profitSharingRecord/
+│   │   └── index.ts
+│   └── profitSharingRule/
+│       └── index.ts              ← 新增：分账计费规则 API
 ├── api/pay/
 │   └── bank/
 │       └── index.ts            ← 新增：银行列表 API

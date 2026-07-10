@@ -6,7 +6,7 @@
 
 | 端点 | 变更类型 | 说明 |
 |------|----------|------|
-| `GET /admin-api/pay/bank/list` | 新增 | 查询全部启用中的银行列表。返回 `{ bankCode, bankName }[]`；支持可选 `keyword` 按银行名称/编码过滤 |
+| `GET /admin-api/pay/bank/list` | 新增 | 查询启用中的银行列表。无 `keyword` 时返回主要银行（`is_primary=1`）；传入 `keyword` 时按银行名称/编码模糊搜索全部启用银行。返回 `{ bankCode, bankName, isPrimary }[]` |
 
 **权限**: `pay:bank:query`（复用 `pay:profit-recipient:query` 亦可，由 backend agent 按现有权限段分配）
 
@@ -75,7 +75,7 @@
 
 | DTO | 用途 | 关键字段 |
 |-----|------|----------|
-| `BankRespVO` | 银行列表项 | `bankCode`, `bankName` |
+| `BankRespVO` | 银行列表项 | `bankCode`, `bankName`, `isPrimary` |
 | `ProfitRecipientCreateReqVO` | 创建收款人 | `recipientType`, `role`（仅平台级必填，店铺级不传）, `shopId`, `recipientName`, `memberType`, `memberInfo`（个人/企业不同）, `settleAccount`（含 `cardNo`/`cardName`/`bankCode`，银行选项来自后端银行列表） |
 | `ProfitRecipientUpdateReqVO` | 更新收款人 | `id`, `recipientName`, `status`, `settleAccount`（可选；仅更换结算账户时传入，传入后同步调用 Adapay 更新结算账户绑定） |
 | `ProfitRecipientRespVO` | 收款人响应 | `id`, `recipientType`, `role`（平台级有值，店铺级为 null）, `shopId`, `recipientName`, `memberType`, `memberId`（按编码规则生成）, `settleAccountBound`, `settleAccountId`, `settleAccountSummary`, `status` |
@@ -162,10 +162,11 @@
 | `id` | bigint PK | |
 | `bank_code` | varchar(16) NOT NULL | 银行编码，唯一 |
 | `bank_name` | varchar(128) NOT NULL | 银行名称 |
+| `is_primary` | tinyint NOT NULL DEFAULT 0 | 是否主要银行：0=否, 1=是。主要银行默认加载，非主要银行通过关键字搜索 |
 | `status` | tinyint NOT NULL DEFAULT 1 | 0=禁用, 1=启用 |
 | `create_time` / `update_time` | datetime NOT NULL | |
 
-索引：`uk_bank_code` (`bank_code` 唯一)
+索引：`uk_bank_code` (`bank_code` 唯一)，`idx_is_primary_status` (`is_primary`, `status`)
 
 **`yshop_adapay_profit_recipient`** — 分账收款人
 
@@ -314,9 +315,11 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 
 `settleAccount.bankCode` 选项来自后端银行字典表 `yshop_pay_bank`，通过 `GET /admin-api/pay/bank/list` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/bank-list.json` 经迁移脚本 `sql/upgrade-adapay-profit-sharing-bank.sql` 导入。
 
-格式：`[{ "bankCode": "01020000", "bankName": "中国工商银行" }, ...]`，共约 5260 条。
+格式：`[{ "bankCode": "01020000", "bankName": "中国工商银行", "isPrimary": 1 }, ...]`，共约 5,260 条，其中主要银行约数十条（六大行 + 主流股份制/城商行）。
 
-> 前端 `el-select` 通过 API 加载银行列表，不再依赖 `public/bank-list.json` 静态文件；创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。
+**加载策略**：默认仅返回 `is_primary=1` 且 `status=1` 的银行（约数十条），避免全量数据导致前端表单卡顿。用户输入关键字时，后端对全部启用银行做 `bank_code LIKE %keyword% OR bank_name LIKE %keyword%` 模糊匹配并返回结果。
+
+> 前端银行选择器使用远程搜索模式，不再全量加载。创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。
 
 ## 兼容性
 

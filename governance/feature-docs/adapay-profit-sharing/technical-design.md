@@ -34,7 +34,7 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 12. **分账前金额校验**：执行分账前校验 `platform_amount + shop_amount == pay_price`，不一致时标记失败不分账。
 13. **更换失败保持原账户**：更换结算账户调用 Adapay 失败时，本地收款人基础信息和原结算账户绑定保持不变，避免出现本地显示已更新但远程仍为旧账户的不一致状态。
 14. **Adapay Member 已存在时复用并清理旧结算账户**：创建收款人时若 Adapay 返回 `member_id_exists`，不再强制创建 Member，而是复用该 MemberId；通过 Adapay `Member.query` / `CorpMember.query` 获取其下结算账户列表并逐条删除，再绑定新的结算账户。Adapay 不支持强制删除 Member，因此通过清理结算账户实现“重置”效果。
-15. **银行列表后端化**：Adapay 支持银行列表（约 5260 条）由前端静态 JSON 改为后端数据库表 `yshop_pay_bank` 维护。前端通过 API 动态获取，创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。数据通过迁移脚本从 `bank-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
+15. **银行列表后端化 + 主要银行默认加载**：Adapay 支持银行列表（约 5,260 条）由前端静态 JSON 改为后端数据库表 `yshop_pay_bank` 维护。表新增 `is_primary` 字段标记主要银行（六大行 + 主流股份制/城商行，约数十条）。前端银行选择器默认仅加载主要银行；用户输入关键字时远程搜索全部银行（防抖 300ms）。创建/更新收款人时后端强制校验 `bankCode` 必须存在且启用。数据通过迁移脚本从 `bank-list.json` 初始化；本期为只读字典表，不单独开发后台管理页面。
 
 > 无新架构范式，复用现有模块分层、多租户拦截器、Job 调度模式。不新增 ADR。
 
@@ -66,7 +66,7 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 
 **编辑收款人**：管理员打开编辑弹窗 → 后台返回收款人基础信息与结算账户脱敏摘要 → 未选择更换时仅更新基础信息 → 选择更换时提交完整新银行卡 → Adapay 绑定成功后本地更新脱敏摘要与结算账户标识
 
-**银行列表加载**：前端打开收款人表单 → 调用 `GET /admin-api/pay/bank/list` → 后端从缓存/数据库返回启用中的银行列表 → 前端渲染 `el-select` 下拉
+**银行列表加载**：前端打开收款人表单 → 调用 `GET /admin-api/pay/bank/list`（无 keyword）→ 后端返回启用中的主要银行列表（`is_primary=1`，约数十条）→ 前端渲染 `el-select` 下拉；用户输入关键字 → 防抖 300ms → 调用 `GET /admin-api/pay/bank/list?keyword=xxx` → 后端按银行名称/编码模糊搜索全部启用银行并返回
 
 ## 风险评估
 
@@ -81,7 +81,7 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 | 日终 Job 超时 | 低 | 分页处理，每批 100；支持幂等重跑 |
 | 企业 Member 附件存储 | 低 | 复用现有文件存储接口 |
 | 银行列表数据初始化失败 | 中 | 迁移脚本包含回滚；初始化后校验记录数与 `bank-list.json` 一致 |
-| 银行列表查询性能 | 低 | 启用本地缓存或 Redis 缓存；列表只读，变更极少 |
+| 银行列表查询性能 | 低 | 默认仅加载主要银行（数十条）；关键字搜索走数据库索引 `idx_bank_code` + `idx_bank_name`，响应可控 |
 
 ## 分支计划
 
