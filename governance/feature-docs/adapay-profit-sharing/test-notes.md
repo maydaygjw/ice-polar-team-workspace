@@ -1,30 +1,44 @@
-# 测试记录 — Adapay 分账结算
+# 测试记录 — Adapay 分账结算（角色明细化需求变更）
 
 ## 验证结果
 
 | 验证项 | 命令 | 结果 |
 |---|---|---|
-| 后端全量编译 | `mvn clean compile -DskipTests` | ✅ BUILD SUCCESS |
+| 后端全量编译 | `mvn compile -DskipTests` | ✅ BUILD SUCCESS |
 | 后端 pay-biz 编译 | `mvn -pl yshop-module-pay/yshop-module-pay-biz -am compile -DskipTests` | ✅ BUILD SUCCESS |
-| admin 生产构建 | `pnpm run build:prod` | ✅ Build successful |
-| admin 类型检查 | `pnpm run ts:check` | ⚠️ 未执行（既有环境类型定义缺失，与本次变更无关） |
+| 后端 order-biz 编译 | `mvn -pl yshop-module-mall/yshop-module-order-biz -am compile -DskipTests` | ✅ BUILD SUCCESS |
+| 后端 pay-biz 单元测试 | `mvn -pl yshop-module-pay/yshop-module-pay-biz test` | ✅ 10 tests passed |
+| 后端 order-biz 单元测试 | `mvn -pl yshop-module-mall/yshop-module-order-biz test` | ❌ 既有环境问题（`NoClassDefFoundError: StoreShopMapper`），与本次变更无关 |
+| admin 类型检查 | `pnpm ts:check` | ⚠️ 既有环境类型定义缺失，与本次变更无关 |
+| admin 生产构建 | `pnpm run build:prod` | ⚠️ 未执行（类型定义环境缺失） |
 
 ## 变更文件
 
 ### backend
-- `yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/enums/ErrorCodeConstants.java`
-- `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitrecipient/ProfitRecipientServiceImpl.java`
-- `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/convert/profitrecipient/ProfitRecipientConvert.java`
-- `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/controller/admin/profitrecipient/vo/ProfitRecipientMemberInfoVO.java`
+- `yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/dto/profitsharing/CreateSharingOrderDTO.java`
+- `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/dal/dataobject/profitsharingorder/ProfitSharingOrderDO.java`
+- `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/controller/admin/profitsharingorder/vo/ProfitSharingOrderRespVO.java`
+- `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitsharingorder/ProfitSharingOrderServiceImpl.java`
+- `yshop-module-pay/yshop-module-pay-biz/src/main/resources/mapper/profitsharingorder/ProfitSharingOrderMapper.xml`
+- `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java`
+- `sql/upgrade-adapay-profit-sharing-dynamic-role.sql`
 
 ### admin
-- `src/api/mall/store/profitSharingReceiver/index.ts`
-- `src/views/mall/store/profitSharingReceiver/ProfitSharingReceiverForm.vue`
+- `src/api/mall/store/profitSharingRecord/index.ts`
+- `src/views/mall/store/profitSharingRecord/index.vue`
+
+### governance
+- `feature-docs/adapay-profit-sharing/meta.yaml`
+- `feature-docs/adapay-profit-sharing/requirements-spec.md`
+- `feature-docs/adapay-profit-sharing/technical-design.md`
+- `feature-docs/adapay-profit-sharing/contract-changes.md`
+- `feature-docs/adapay-profit-sharing/test-notes.md`
+- `feature-docs/adapay-profit-sharing/CHANGE-REPORT.md`
+- `feature-docs/adapay-profit-sharing/review-report.md`
 
 ## 注意事项
 
-- 未新增单元测试；本次为企业 Member 字段对齐与前端表单扩展，建议后续补充 `ProfitRecipientServiceImpl` 企业字段校验与四图打包的单元测试。
-- admin `ts:check` 为既有环境问题，未执行；生产构建通过。
-- 企业 Member 创建时按 Adapay `/v1/corp_members` 要求传入完整字段，并将四张图片打包为 zip，中文文件名 UTF-8 URLEncode。
-- 法人身份证正反面支持 OCR 自动识别并回填法人姓名、身份证号、身份证有效期。
-- 原有省市编码、银行列表、计费规则、分账订单、日终 Job 等功能已在前期实现并合并到 master，本次未改动。
+- 分账订单主表 `yshop_adapay_profit_sharing_order` 已移除 `commission_amount`、`shop_amount`、`platform_recipient_id`、`shop_recipient_id`，角色信息全部下沉到 `yshop_adapay_profit_sharing_order_item`。
+- 佣金比例回退模式下，创建分账记录时也写入平台、店铺两条明细，保证所有分账执行/回退逻辑统一走明细表。
+- 新增迁移脚本 `sql/upgrade-adapay-profit-sharing-dynamic-role.sql` 会补录历史 fallback 记录的明细并删除主表固定字段。
+- admin 分账结算记录列表/详情不再展示固定的平台抽成/店铺分账金额，改由详情内「分账明细」子表展示。

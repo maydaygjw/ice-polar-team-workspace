@@ -1,25 +1,32 @@
-# CHANGE-REPORT: Adapay 分账结算
+# CHANGE-REPORT: Adapay 分账结算 — 分账角色明细化
 
 ## 1. 业务目标
 
-补齐 Adapay 分账结算中企业 Member 创建与后台表单的最后缺口：
-- 企业 Member 创建时按 Adapay `/v1/corp_members` 要求提供完整字段与 zip 附件；
-- 法人身份证正反面支持 OCR 识别并自动回填姓名、身份证号、有效期；
-- 管理后台分账收款人表单补充企业 Member 全部字段与身份证 OCR 上传组件。
+将分账订单从「主表硬编码平台/店铺字段」重构为「每个角色一条明细记录」，支持后续动态扩展角色：
+- `yshop_adapay_profit_sharing_order` 不再保留 `commission_amount`、`shop_amount`、`platform_recipient_id`、`shop_recipient_id`；
+- 所有角色金额、收款人、手续费承担标记统一存入 `yshop_adapay_profit_sharing_order_item`；
+- 佣金比例回退模式同样写入平台、店铺两条明细，保持执行与回退逻辑一致。
 
 ## 2. 影响仓库和主要文件
 
 | 仓库 | 主要文件 |
 |---|---|
-| `backend/` | `yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/enums/ErrorCodeConstants.java` |
-| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitrecipient/ProfitRecipientServiceImpl.java` |
-| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/convert/profitrecipient/ProfitRecipientConvert.java` |
-| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/controller/admin/profitrecipient/vo/ProfitRecipientMemberInfoVO.java` |
-| `admin/` | `src/api/mall/store/profitSharingReceiver/index.ts` |
-| | `src/views/mall/store/profitSharingReceiver/ProfitSharingReceiverForm.vue` |
+| `backend/` | `yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/dto/profitsharing/CreateSharingOrderDTO.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/dal/dataobject/profitsharingorder/ProfitSharingOrderDO.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/controller/admin/profitsharingorder/vo/ProfitSharingOrderRespVO.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitsharingorder/ProfitSharingOrderServiceImpl.java` |
+| | `yshop-module-pay/yshop-module-pay-biz/src/main/resources/mapper/profitsharingorder/ProfitSharingOrderMapper.xml` |
+| | `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java` |
+| | `sql/upgrade-adapay-profit-sharing-dynamic-role.sql` |
+| `admin/` | `src/api/mall/store/profitSharingRecord/index.ts` |
+| | `src/views/mall/store/profitSharingRecord/index.vue` |
 | `governance/` | `feature-docs/adapay-profit-sharing/meta.yaml` |
+| | `feature-docs/adapay-profit-sharing/requirements-spec.md` |
+| | `feature-docs/adapay-profit-sharing/technical-design.md` |
+| | `feature-docs/adapay-profit-sharing/contract-changes.md` |
 | | `feature-docs/adapay-profit-sharing/test-notes.md` |
 | | `feature-docs/adapay-profit-sharing/review-report.md` |
+| | `feature-docs/adapay-profit-sharing/CHANGE-REPORT.md` |
 
 ## 3. 契约变化摘要
 
@@ -29,65 +36,65 @@
 
 | 端点 | 方法 | 说明 | 权限 |
 |---|---|---|---|
-| `/pay/profit-recipient/create` | POST | 创建收款人 | `pay:profit-recipient:create` |
-| `/pay/profit-recipient/update` | PUT | 更新收款人 | `pay:profit-recipient:update` |
-| `/pay/profit-recipient/recognize-license` | POST | 营业执照 OCR | `pay:profit-recipient:create` |
-| `/pay/profit-recipient/recognize-id-card` | POST | 身份证 OCR | `pay:profit-recipient:create` |
+| `/pay/profit-sharing-order/page` | GET | 分账订单分页 | `pay:profit-sharing:query` |
+| `/pay/profit-sharing-order/get` | GET | 分账订单详情 | `pay:profit-sharing:query` |
+| `/pay/profit-sharing-order/retry` | POST | 失败分账重试 | `pay:profit-sharing:update` |
 
 ### DTO 变更
 
-- `ProfitRecipientMemberInfoVO` 统一企业字段命名：`socialCreditCode`、`socialCreditCodeExpires`、`businessScope`、`legalPerson`、`legalCertId`、`legalCertIdExpires`、`legalMp`、`address`、`licensePhotoUrl`、`idCardFrontUrl`、`idCardBackUrl`、`bankLicensePhotoUrl`。
-- `ProfitSharingReceiverMemberInfoVO` / `ProfitSharingReceiverSettleAccountSummaryVO`（admin TypeScript 接口）同步扩展。
+- `CreateSharingOrderDTO` 移除 `commissionAmount`、`platformRecipientId`、`shopRecipientId`；`items` 改为必填。
+- `ProfitSharingOrderRespVO` 移除 `commissionAmount`、`shopAmount`、`platformRecipientName`、`shopRecipientName`；详情通过 `items` 展示。
 
 ### DB
 
-复用既有 `yshop_adapay_profit_recipient` 企业 Member 字段，无新增迁移脚本。
+- 新增迁移脚本 `sql/upgrade-adapay-profit-sharing-dynamic-role.sql`：
+  - 将历史 `calculation_type=2` 记录的固定字段数据补录到 `yshop_adapay_profit_sharing_order_item`；
+  - 删除 `yshop_adapay_profit_sharing_order` 的 `commission_amount`、`shop_amount`、`platform_recipient_id`、`shop_recipient_id`。
 
 ### 错误码
 
-- `PROFIT_RECIPIENT_ATTACH_FILE_INVALID`（1008009029）：企业 Member 附件不符合要求（如超过 9MB）。
-- `PROFIT_RECIPIENT_ID_CARD_OCR_FAILED`（1008009037）：身份证 OCR 识别失败。
+无新增。
 
 ## 4. DB 迁移脚本名
 
-无新增。复用既有迁移脚本。
+`sql/upgrade-adapay-profit-sharing-dynamic-role.sql`
 
 ## 5. 测试结果
 
 | 验证项 | 命令 | 结果 |
 |---|---|---|
-| 后端全量编译 | `mvn clean compile -DskipTests` | ✅ BUILD SUCCESS |
+| 后端全量编译 | `mvn compile -DskipTests` | ✅ BUILD SUCCESS |
 | 后端 pay-biz 编译 | `mvn -pl yshop-module-pay/yshop-module-pay-biz -am compile -DskipTests` | ✅ BUILD SUCCESS |
-| admin 生产构建 | `pnpm run build:prod` | ✅ Build successful |
-| admin 类型检查 | `pnpm run ts:check` | ⚠️ 未执行（既有环境问题） |
-| 单元测试 | — | ⚠️ 未新增 |
+| 后端 order-biz 编译 | `mvn -pl yshop-module-mall/yshop-module-order-biz -am compile -DskipTests` | ✅ BUILD SUCCESS |
+| 后端 pay-biz 单元测试 | `mvn -pl yshop-module-pay/yshop-module-pay-biz test` | ✅ 10 tests passed |
+| 后端 order-biz 单元测试 | `mvn -pl yshop-module-mall/yshop-module-order-biz test` | ❌ 既有环境问题（`NoClassDefFoundError: StoreShopMapper`），与本次变更无关 |
+| admin 类型检查 | `pnpm ts:check` | ⚠️ 既有环境类型定义缺失，与本次变更无关 |
 
 ## 6. 风险与注意事项
 
-1. **测试覆盖不足**：企业 Member 字段校验与附件打包逻辑未补充单元测试，建议后续补充。
-2. **Adapay 企业 Member 字段敏感**：`social_credit_code`、`legal_cert_id` 等字段通过服务端直传 Adapay，不在本地长期存储完整明文（仅保存快照用于展示/更换结算账户）。
-3. **身份证 OCR 为辅助功能**：识别失败时允许手动填写，不影响正常提交。
-4. **前期功能已合并**：省市编码、银行列表、计费规则、分账订单、日终 Job 等已在前序 PR 合并，不在本次变更范围内。
+1. **不兼容变更**：`ProfitSharingOrderRespVO` 移除 `commissionAmount`/`shopAmount`，admin 列表/详情同步调整；调用方若依赖该字段需升级。
+2. **数据迁移**：上线前必须通过 `upgrade-adapay-profit-sharing-dynamic-role.sql` 迁移历史数据；若 production 已有大量 fallback 模式记录，需评估迁移耗时。
+3. **测试覆盖不足**：未新增针对动态角色的单元测试，建议后续补充 `createSharingOrder`、`buildDivMembers`、`fallbackToRevenue` 的单元测试。
+4. **order-biz 测试环境**：`CommissionServiceImplTest` 因 `StoreShopMapper` 类找不到失败，为既有环境问题，不影响本次变更。
 
 ## 7. 建议 PR 标题和描述
 
-**标题**: `feat(pay/admin): Adapay 分账企业 Member 字段对齐与身份证 OCR`
+**标题**: `refactor(pay/admin): Adapay 分账订单角色明细化，支持动态扩展角色`
 
 **描述**:
 
 ```
-- 后端企业 Member 创建按 Adapay /v1/corp_members 要求传入完整字段
-- 企业 Member 附件改为打包四张图片（三证合一/身份证正反面/开户银行许可证）
-- zip 包内中文文件名按 UTF-8 URLEncode 编码，单包大小限制 9MB
-- 新增身份证 OCR 接口 /pay/profit-recipient/recognize-id-card
-- 管理后台收款人表单补充企业 Member 全部字段与身份证 OCR 自动回填
-- 统一 ProfitRecipientMemberInfoVO 企业字段命名
+- yshop_adapay_profit_sharing_order 移除 commission_amount/shop_amount/platform_recipient_id/shop_recipient_id
+- 所有角色金额、收款人、手续费承担标记下沉到 yshop_adapay_profit_sharing_order_item
+- 佣金比例回退模式同样写入平台、店铺两条明细
+- 统一分账执行(buildDivMembers)与回退(fallbackToRevenue)逻辑，全部基于明细表
+- admin 分账结算记录列表/详情移除固定平台/店铺金额列，改由明细子表展示
+- 新增迁移脚本 upgrade-adapay-profit-sharing-dynamic-role.sql
 
 关联文档：
 - governance/feature-docs/adapay-profit-sharing/requirements-spec.md
-- governance/feature-docs/adapay-profit-sharing/contract-changes.md
 - governance/feature-docs/adapay-profit-sharing/technical-design.md
-- governance/feature-docs/adapay-profit-sharing/ui-ux-design.md
+- governance/feature-docs/adapay-profit-sharing/contract-changes.md
 - governance/feature-docs/adapay-profit-sharing/test-notes.md
 - governance/feature-docs/adapay-profit-sharing/review-report.md
 ```
@@ -96,5 +103,6 @@
 
 | 仓库 | PR |
 |---|---|
-| `backend` | [#45](https://gitee.com/icepolar/yshop-drink/pulls/45) |
-| `admin` | [#23](https://gitee.com/icepolar/yshop-drink-vue/pulls/23) |
+| `backend` | [#46](https://gitee.com/icepolar/yshop-drink/pulls/46) |
+| `admin` | [#24](https://gitee.com/icepolar/yshop-drink-vue/pulls/24) |
+| `workspace (governance)` | [#4](https://github.com/maydaygjw/ice-polar-team-workspace/pull/4) |
