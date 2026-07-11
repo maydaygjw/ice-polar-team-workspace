@@ -1,0 +1,8 @@
+feature: site-order-status-remap
+status: design
+risk: high
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: false
+blocked: false
