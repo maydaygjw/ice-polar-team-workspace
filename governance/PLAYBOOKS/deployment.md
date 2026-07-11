@@ -86,16 +86,21 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "
 #    会立刻拉起新进程，导致后续启动时的端口冲突。
 bash governance/SCRIPTS/stop-yshop.sh
 
-# 4. 打包
-ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && mvn clean package -DskipTests"
+# 4. 对比远端 commit 与 JAR 内嵌 commit，决定是否需要重新打包
+if ssh ${DEPLOY_USER}@${SERVER_HOST} "bash -s" < governance/SCRIPTS/check-jar-up-to-date.sh ${YSHOP_CODE_PATH} ${YSHOP_START_PATH} ${YSHOP_JAR}; then
+  echo "JAR is up-to-date, skipping build."
+else
+  # 5. 增量打包（不 clean，只编译变更模块及其上游依赖）
+  ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && mvn -pl yshop-server -am package -DskipTests"
+fi
 
-# 5. 启动服务；测试环境会在脚本内注入 ADAPAY_DEBUG=true
+# 6. 启动服务；测试环境会在脚本内注入 ADAPAY_DEBUG=true
 bash governance/SCRIPTS/start-yshop.sh
 
-# 6. 验证服务是否启动（用 [j]ava 前缀排除 grep/SSH shell 自身的误匹配）
+# 7. 验证服务是否启动（用 [j]ava 前缀排除 grep/SSH shell 自身的误匹配）
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[j]ava -jar target/${YSHOP_JAR}'"
 
-# 7. 等待 Spring Boot 启动完成并验证端口（最多等 120s）
+# 8. 等待 Spring Boot 启动完成并验证端口（最多等 120s）
 ssh ${DEPLOY_USER}@${SERVER_HOST} "
   for i in \$(seq 1 120); do
     if ss -tlnp | grep -q ${YSHOP_PORT}; then
@@ -119,6 +124,9 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
 **健康检查**
 
 ```bash
+# 检查当前 JAR 对应的 git commit id
+ssh ${DEPLOY_USER}@${SERVER_HOST} "unzip -p ${YSHOP_START_PATH}/target/${YSHOP_JAR} BOOT-INF/classes/git.properties 2>/dev/null | grep '^git.commit.id'"
+
 # 检查进程存活（用 [j]ava 前缀排除 grep/SSH shell 自身的误匹配）
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[j]ava -jar target/${YSHOP_JAR}'"
 
@@ -264,5 +272,6 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "tail -n 50 ${DMS_CODE_PATH}/scripts/simulator
 1. **测试优先** — 任何变更必须先部署到测试环境验证通过
 2. **禁止高峰期部署** — 生产环境部署需避开业务高峰时段
 3. **保留回滚能力** — 部署前备份当前运行的 JAR/构建产物
-4. **部署后验证** — 检查进程、日志、端口、关键 API 响应
+4. **部署后验证** — 检查进程、日志、端口、git commit id、关键 API 响应
 5. **凭证管理** — 禁止在脚本中硬编码密码或密钥，使用 SSH key 或环境变量注入
+6. **增量编译** — 对比 JAR 内嵌的 git commit id 与远端 HEAD，相同则跳过打包；不同时用 `mvn -pl yshop-server -am package`（不加 `clean`）增量编译
