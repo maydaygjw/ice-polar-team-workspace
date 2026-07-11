@@ -2,7 +2,7 @@
 
 ## 范围
 
-覆盖 Adapay 支付主流程、待支付订单重复调用支付接口时 `outPayNo` 递增、`pay_out_order_no` 当前有效记录唯一、回调幂等、管理后台展示，以及 Adapay 已支付订单全额退款、未支付订单支付撤销（关闭）、退款/关闭回调幂等。
+覆盖 Adapay 支付主流程、待支付订单重复调用支付接口时 `outPayNo` 递增、`pay_out_order_no` 当前有效记录唯一、回调幂等、管理后台展示，以及 Adapay 已支付订单全额退款、未支付订单取消（本地状态更新，不调用 Adapay 关闭）、退款/关闭回调幂等。
 
 ## 环境前置条件
 
@@ -28,7 +28,7 @@
 | ADAPAY-E2E-006 | 渠道锁定：Adapay 订单不可切换为微信/支付宝 | `test/e2e/adapay/adapay_channel_lock.spec.js` | 待实现 |
 | ADAPAY-E2E-007 | Adapay 已支付订单全额退款成功 | `test/e2e/adapay/adapay_refund_full.spec.js` | 待实现 |
 | ADAPAY-E2E-008 | 已分账确认订单退款被拒绝 | `test/e2e/adapay/adapay_refund_after_sharing.spec.js` | 待实现 |
-| ADAPAY-E2E-009 | 未支付 Adapay 订单关闭/撤销 | `test/e2e/adapay/adapay_close_unpaid.spec.js` | 待实现 |
+| ADAPAY-E2E-009 | 未支付 Adapay 订单取消（本地状态更新，不调用 Adapay 关闭） | `test/e2e/adapay/adapay_cancel_unpaid.spec.js` | 待实现 |
 | ADAPAY-E2E-010 | 退款/关闭回调幂等 | `test/e2e/adapay/adapay_refund_close_notify_idempotency.spec.js` | 待实现 |
 
 ## 断言方式
@@ -108,16 +108,16 @@
 3. 查询订单日志表 `yshop_store_order_status`，断言：
    - 不存在该订单的退款成功记录；`refund_status` 保持原状。
 
-### ADAPAY-E2E-009 未支付订单关闭/撤销
+### ADAPAY-E2E-009 未支付 Adapay 订单取消
 
 1. 对订单调用 `POST /app-api/order/pay`（`paytype=adapay`），生成 `outPayNo`，不完成支付。
 2. 调用 `POST /app-api/order/cancel`（或站点取消/超时 Job 触发），断言：
    - HTTP 状态码 200。
-3. 查询 `pay_out_order_no`，断言：
-   - 对应 `outPayNo` 的 `status = 2`。
-4. 模拟 Adapay `CLOSED` 回调，断言：
+   - 订单本地状态更新为已取消/已退款，库存、优惠券回退。
+3. 不调用 Adapay 关闭接口；Adapay 侧支付单保持原状，由 Adapay 超时自动关闭。
+4. 模拟 Adapay `CLOSED` 回调（若后续收到），断言：
    - 回调返回 HTTP 200。
-   - 记录状态仍为 `status = 2`，无异常。
+   - 对应 `pay_out_order_no` 记录 `status = 2`，无异常。
 
 ### ADAPAY-E2E-010 退款/关闭回调幂等
 
@@ -141,4 +141,4 @@
 - Adapay 沙箱回调可能延迟或需要手动触发，建议用 mock 回调替代真实网关。
 - 若本地无法接收回调，需提前配置代理或直接用后端接口模拟回调。
 - 管理后台用例依赖前端已合并 Adapay 展示文案。
-- 退款/关闭用例依赖 Adapay 沙箱支持退款与关闭接口，或需要可 mock 的网关；已分账订单退款拒绝用例依赖 `profit_sharing_order` 数据。
+- 退款/关闭用例依赖 Adapay 沙箱支持退款接口，或需要可 mock 的网关；已分账订单退款拒绝用例依赖 `profit_sharing_order` 数据。未支付订单取消用例不调用 Adapay 关闭接口。

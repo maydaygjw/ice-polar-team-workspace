@@ -27,7 +27,7 @@
 9. **复用现有退款模型**：不新增退款记录表和退款状态枚举。Adapay 退款生成临时 `outRefundNo`（雪花 ID，与微信/支付宝退款单号生成方式一致）调用 Adapay 退款接口；`outRefundNo` 不持久化到独立表。退款结果与现有微信/支付宝一致，通过订单 `refund_status`（`OrderInfoEnum.REFUND_STATUS_*`）和订单日志表（`yshop_store_order_status`）表达。
 10. **分账后暂不支持退款**：退款前查询 `profit_sharing_order`，仅 `PENDING/FAILED/FALLBACK` 状态允许退款；`SUCCESS/PROCESSING` 状态直接拒绝，避免 Adapay 侧分账已确认导致退款失败。
 11. **同步更新订单退款状态**：Adapay 退款接口返回受理成功/处理中时，立即更新订单 `refund_status = 2`、`status = -2`，与微信/支付宝现有逻辑一致；异步回调仅记录到订单日志表，不重复更新订单。
-12. **未支付订单支付撤销**：用户主动取消、订单超时、重新支付前，调用 Adapay `close(...)` 关闭 Adapay 侧支付单，并将 `pay_out_order_no` 对应记录置为 `status = 2`；关闭失败记录日志告警，不阻断本地取消流程。
+12. **支付撤销仅用于退款场景**：用户主动取消、订单超时未支付时，仅更新本地订单状态，不调用 Adapay 关闭/撤销接口；支付撤销仅在管理员同意退款或直接退款时调用，用于关闭 Adapay 侧支付单并原路退回资金。重新支付前由支付入口将本地旧 `pay_out_order_no` 记录置为 `status = 2`，并生成新的 `outPayNo` 向 Adapay 发起新支付单，无需调用 Adapay 关闭旧单。
 
 ## 流程设计
 
@@ -100,11 +100,20 @@ Adapay 支付
 ### 支付撤销/关闭流程
 
 ```
-用户/系统取消 或 重新支付前
-         → 查询该 orderId 下 pay_type = adapay 且 status = 0 的 outPayNo
-         → 调用 Adapay close(outPayNo / adapayPaymentId)
-         → 将 pay_out_order_no.status 置为 2
-         → 继续原有取消/重新支付逻辑
+用户取消未支付订单 或 订单超时
+         → 仅本地更新订单状态及退款状态，回退库存、优惠券等
+         → 不调用 Adapay close
+
+管理员同意退款/直接退款
+         → 查询该 orderId 下 pay_type = adapay 且 status = 1 的 outPayNo 与 adapayPaymentId
+         → 生成 outRefundNo
+         → 调用 Adapay refund(outRefundNo, adapayPaymentId, outPayNo, refundAmount, totalAmount)
+         → 同步返回成功/处理中时，更新订单为已退款并回滚业务
+
+重新支付前
+         → 由支付入口将本地旧 `pay_out_order_no` 记录置为 `status = 2`
+         → 生成新的 outPayNo 后创建 Adapay 支付单
+         → 无需调用 Adapay 关闭旧单
 ```
 
 ### 退款/关闭回调处理流程
@@ -149,7 +158,7 @@ Adapay 退款
 | 分账状态校验遗漏导致退款失败 | 高 | 退款前强制查询 `profit_sharing_order`，`SUCCESS/PROCESSING` 状态直接拒绝 |
 | Adapay 退款/关闭状态理解偏差 | 高 | 实现前确认 `AdapayRefundResult`、`AdapayStatus` 各状态语义 |
 | 退款回调幂等处理不当 | 中 | 以订单 `refund_status = 2` 为幂等边界，重复回调仅记录订单日志，不重复更新订单或回滚业务 |
-| 关闭调用失败导致 Adapay 侧脏单 | 中 | 关闭失败记录告警日志，本地仍标记 `status = 2`，避免复用旧 outPayNo |
+| 关闭调用失败导致 Adapay 侧脏单 | 中 | 用户取消与重新支付场景不调用 Adapay 关闭；退款时调用关闭失败记录告警日志 |
 | 同一 outPayNo 重复退款 | 中 | 退款前校验订单 `refund_status`，已退款订单直接幂等返回 |
 
 ## 分支计划

@@ -24,8 +24,8 @@
 |------|----------|------|
 | `POST /admin-api/order/store-order/refund` | 复用 | 同意 Adapay 订单退款；校验分账状态为 `PENDING/FAILED/FALLBACK`，生成雪花 ID 作为 `outRefundNo` 同步调用 Adapay 退款 |
 | `POST /admin-api/order/store-order/cancelAndRefund` | 复用 | 取消 Adapay 订单并全额退款；复用 `refund` 退款链路 |
-| `POST /app-api/order/cancel` | 复用 | 用户取消未支付 Adapay 订单时，先调用 Adapay 关闭/撤销 |
-| `POST /app-api/site/order/cancel/{orderId}` | 复用 | 站点订单取消未支付 Adapay 订单时，先调用 Adapay 关闭/撤销 |
+| `POST /app-api/order/cancel` | 复用 | 用户取消未支付 Adapay 订单时，仅本地更新状态，不调用 Adapay |
+| `POST /app-api/site/order/cancel/{orderId}` | 复用 | 站点订单取消未支付 Adapay 订单时，仅本地更新状态，不调用 Adapay |
 | `POST /app-api/order/notify/payBack{detailsId}.json` | 复用 | Adapay 退款/关闭异步回调：`payBackadapay_h5{tenantId}.json` |
 
 ## DTO 变更
@@ -104,7 +104,7 @@ Adapay 回调报文状态复用 `AdapayStatus` 已有值：`PAY_SUCCESS`、`CLOS
 - **业务约束**：
   - `pay_out_order_no` 保留每次支付 attempt 的历史记录。
   - Adapay 同一 `tenant_id + order_id + pay_type` 任一时刻只能有一条当前有效待支付记录（`status = 0`）。
-  - Adapay 待支付订单每次调用 `POST /app-api/order/pay` 都必须关闭上一条 `status = 0` 记录并创建新的 `out_pay_no = orderId-{n}`，不得复用旧 `out_pay_no` 再次请求 Adapay。
+  - Adapay 待支付订单每次调用 `POST /app-api/order/pay` 都必须将本地旧 `pay_out_order_no` 记录置为 `status = 2`，并创建新的 `out_pay_no = orderId-{n}`，不得复用旧 `out_pay_no` 再次请求 Adapay；无需调用 Adapay 关闭旧支付单。
   - 成功回调以 `out_pay_no` 反查订单；重复或乱序回调必须以订单已支付状态保证幂等，不得重复履约。
   - MySQL 普通唯一索引不能直接表达 `status = 0` 的部分唯一约束时，由服务层事务保证“一条当前有效记录”，`uk_tenant_out_pay_no` 仅兜底外部单号不重复。
 
