@@ -9,6 +9,8 @@
 - 后端实现：/Users/gejunwen/code/holun-team/ice-polar-team-workspace/.worktrees/backend-adapay-payment
 - 管理后台实现：/Users/gejunwen/code/holun-team/ice-polar-team-workspace/.worktrees/admin-adapay-payment
 - 测试方案：test_plan.md
+- ADR：`adr-004-adapay-refund-and-close.md`
+- 退款/关闭相关后端实现：`StoreOrderServiceImpl.orderRefund(...)`、`AdapayPayMessageHandler`、`PayOutOrderNoService` 关闭逻辑
 
 审查日期：2026/07/09
 
@@ -138,8 +140,40 @@
 
 ---
 
-## 4. 总体结论
+## 4. 退款与支付撤销审查范围（新增）
+
+以下检查点针对本次追加的 Adapay 退款/支付撤销能力，待实现完成后逐项验证。
+
+### 4.1 需求与 Use Cases
+
+| 检查点 | 结论 | 说明 |
+|--------|------|------|
+| Adapay 已支付订单全额退款 | 待验证 | 仅支持全额退款，退款金额为订单实付金额；复用 `/admin-api/order/store-order/refund` 与 `/cancelAndRefund`。 |
+| Adapay 未支付订单支付撤销 | 待验证 | 用户取消、超时、重新支付前调用 Adapay `close(...)`，本地 `pay_out_order_no.status = 2`。 |
+| 已分账订单退款被拒绝 | 待验证 | `profit_sharing_order.sharing_status = SUCCESS/PROCESSING` 时退款接口返回 `ADAPAY_REFUND_NOT_ALLOWED_AFTER_SHARING`。 |
+| 退款/关闭回调幂等 | 待验证 | 重复回调不重复更新订单、不重复回滚库存/佣金/门店收支。 |
+
+### 4.2 技术设计与实现
+
+| 检查点 | 结论 | 说明 |
+|--------|------|------|
+| 复用现有退款模型 | 待验证 | 不新增退款记录表和退款状态枚举；退款结果通过 `OrderInfoEnum.REFUND_STATUS_*` 和 `yshop_store_order_status` 表达。 |
+| 分账状态校验 | 待验证 | 退款前查询 `profit_sharing_order`，非 `PENDING/FAILED/FALLBACK` 状态禁止退款。 |
+| 同步更新订单状态 | 待验证 | Adapay 返回 `SUCCESS/PROCESSING` 即更新订单 `refund_status = 2`、`status = -2`。 |
+| 关闭失败处理 | 待验证 | 关闭 Adapay 支付单失败时本地仍标记 `status = 2`，记录告警日志，不阻断取消流程。 |
+
+### 4.3 契约与 DB
+
+| 检查点 | 结论 | 说明 |
+|--------|------|------|
+| 回调端点复用 | 待验证 | 退款/关闭回调复用 `/app-api/order/notify/payBackadapay_h5{tenantId}.json`。 |
+
+---
+
+## 5. 总体结论
 
 复审发现 Adapay 待支付订单重复调用 `pay` 时仍会复用上一条未关闭 `outPayNo`，与最新契约中“每次支付请求生成新 `outPayNo`、同一订单同一渠道只有一条当前有效待支付记录”的规则冲突。管理后台展示、基础枚举、MQ 扩展、迁移脚本与回调反查链路已基本落地，但该支付入口偏差会直接导致 Adapay orderId 重复错误。
 
 **当前状态：不通过。需先修复 2.1 阻塞问题并补充对应测试后再复审。**
+
+退款/支付撤销相关设计已在文档中补充，实现完成后需按第 4 节检查点重新验证。

@@ -4,12 +4,12 @@
 
 | 模块 | 变更类型 | 说明 |
 |------|----------|------|
-| `yshop-module-pay-api` | 修改 | 注册 Adapay 支付平台与回调处理器；扩展支付通知 MQ 消息 |
-| `yshop-module-pay-biz` | 新增 | 新增 `outPayNo` 映射表及支付前记录逻辑 |
+| `yshop-module-pay-api` | 修改 | 注册 Adapay 支付平台与回调处理器；扩展支付通知 MQ 消息；扩展回调处理器处理退款/关闭状态 |
+| `yshop-module-pay-biz` | 新增 | 新增 `outPayNo` 映射表及支付前记录逻辑；提供 Adapay 关闭/退款底层调用封装 |
 | `yshop-module-order-api` | 修改 | 扩展支付方式枚举；扩展 `paySuccess` 服务接口 |
-| `yshop-module-order-biz` | 修改 | 增加 Adapay 支付分支与 `outPayNo` 生成、旧 attempt 关闭、回调处理链路 |
+| `yshop-module-order-biz` | 修改 | 增加 Adapay 支付分支与 `outPayNo` 生成、旧 attempt 关闭、回调处理链路；增加 Adapay 退款分支与分账状态校验；在取消/超时/重新支付时触发 Adapay 支付单关闭 |
 | `yshop-framework/yshop-common` | 修改 | 扩展支付 ID 枚举 |
-| `admin/` | 修改 | 支付配置表单与订单视图增加 Adapay 选项 |
+| `admin/` | 修改 | 支付配置表单与订单视图增加 Adapay 选项；订单退款/取消入口对 Adapay 订单生效 |
 | `miniapp/` | 复用 | 无变更 |
 
 ## 架构决策
@@ -23,6 +23,11 @@
 5. **outPayNo 持久化**：新增 `pay_out_order_no` 表记录每次支付请求使用的 `outPayNo`、对应 `orderId`、支付渠道、状态，用于回调反查订单与幂等控制。表保留历史 attempt，但同一订单同一支付渠道任一时刻只能有一条当前有效的待支付记录。
 6. **渠道锁定**：同一订单一旦通过某渠道发起支付，即锁定为该渠道，后续不允许切换为其他渠道。
 7. **C 端不直接接入**：本次仅完成后端支付接口与回调链路，C 端支付页面选择 Adapay 由后续需求独立实现。
+8. **复用现有退款入口**：Adapay 退款/取消并退款复用 `POST /admin-api/order/store-order/refund` 与 `POST /admin-api/order/store-order/cancelAndRefund`，在 `StoreOrderServiceImpl.orderRefund(...)` 中新增 `ADAPAY` 分支，保持与微信/支付宝退款体验一致。
+9. **复用现有退款模型**：不新增退款记录表和退款状态枚举。Adapay 退款生成临时 `outRefundNo`（雪花 ID，与微信/支付宝退款单号生成方式一致）调用 Adapay 退款接口；`outRefundNo` 不持久化到独立表。退款结果与现有微信/支付宝一致，通过订单 `refund_status`（`OrderInfoEnum.REFUND_STATUS_*`）和订单日志表（`yshop_store_order_status`）表达。
+10. **分账后暂不支持退款**：退款前查询 `profit_sharing_order`，仅 `PENDING/FAILED/FALLBACK` 状态允许退款；`SUCCESS/PROCESSING` 状态直接拒绝，避免 Adapay 侧分账已确认导致退款失败。
+11. **同步更新订单退款状态**：Adapay 退款接口返回受理成功/处理中时，立即更新订单 `refund_status = 2`、`status = -2`，与微信/支付宝现有逻辑一致；异步回调仅记录到订单日志表，不重复更新订单。
+12. **未支付订单支付撤销**：用户主动取消、订单超时、重新支付前，调用 Adapay `close(...)` 关闭 Adapay 侧支付单，并将 `pay_out_order_no` 对应记录置为 `status = 2`；关闭失败记录日志告警，不阻断本地取消流程。
 
 ## 流程设计
 
@@ -76,6 +81,60 @@ Adapay 支付
 - 旧 attempt 的成功回调仍可能发生；回调处理必须以订单已支付状态为最终幂等边界，避免重复履约。
 - 若数据库无法直接表达“仅一条 status=0”的部分唯一约束，必须在服务层事务内关闭旧记录并创建新记录，同时保留唯一索引 `tenant_id + out_pay_no` 兜底。
 
+### 退款流程
+
+```
+管理后台 → POST /admin-api/order/store-order/refund 或 /cancelAndRefund
+         → 校验订单 pay_type = adapay、已支付、未分账确认
+         → 查询该 orderId 下已支付的 outPayNo 与 adapayPaymentId
+         → 生成 outRefundNo（雪花 ID，与微信/支付宝一致，不持久化）
+         → 调用 Adapay refund(outRefundNo, adapayPaymentId, outPayNo, refundAmount, totalAmount)
+         → Adapay 返回 SUCCESS/PROCESSING
+         → 更新订单 refund_status = 2、status = -2
+         → 回退库存、优惠券、门店收支、佣金
+         → 记录订单日志（yshop_store_order_status）：refund_price_success
+         → Adapay 异步回调 REFUND_SUCCESS/REFUND_FAILED
+         → 记录订单日志：退款回调结果；订单已退款时幂等
+```
+
+### 支付撤销/关闭流程
+
+```
+用户/系统取消 或 重新支付前
+         → 查询该 orderId 下 pay_type = adapay 且 status = 0 的 outPayNo
+         → 调用 Adapay close(outPayNo / adapayPaymentId)
+         → 将 pay_out_order_no.status 置为 2
+         → 继续原有取消/重新支付逻辑
+```
+
+### 退款/关闭回调处理流程
+
+```
+Adapay 回调 /app-api/order/notify/payBackadapay_h5{tenantId}.json
+         → 验签
+         → 按状态分发：
+           ├─ PAY_SUCCESS   → 反查 orderId → 发送 order.pay.notice → 更新 pay_out_order_no.status = 1
+           ├─ CLOSED        → 更新 pay_out_order_no.status = 2
+           ├─ REFUND_PROCESSING → 记录订单日志：退款处理中
+           ├─ REFUND_SUCCESS    → 记录订单日志：退款成功；订单已退款时幂等
+           └─ REFUND_FAILED     → 记录订单日志：退款失败及错误信息
+         → 返回 SUCCESS
+```
+
+### 退款单号与幂等
+
+```
+Adapay 退款
+    └── outRefundNo = IdUtil.getSnowflake(0, 0).nextIdStr()（与微信/支付宝退款单号一致）
+    └── outRefundNo 仅作为调用 Adapay 的 refundNo，不持久化到独立退款表
+    └── 同一 outPayNo 只能有一条成功退款；通过订单 refund_status = 2 与订单日志兜底幂等
+```
+
+- 不新增退款记录表，退款结果通过 `OrderInfoEnum.REFUND_STATUS_*` 和 `yshop_store_order_status` 表达。
+- 退款前校验订单 `refund_status`，已退款订单直接幂等返回。
+- 同一 `outPayNo` 累计退款金额不得超过原支付金额；本次仅支持全额退款，即一笔成功退款后该 `outPayNo` 不可再次退款。
+- 退款失败记录到订单日志表，允许管理后台重新发起退款。
+
 ## 风险评估
 
 | 风险 | 等级 | 缓解措施 |
@@ -87,6 +146,11 @@ Adapay 支付
 | 回调验签失败 | 中 | 复用 eGzosN 适配层验签，沙箱环境验证 |
 | 渠道锁定与现有支付流程冲突 | 中 | 在支付入口统一判断订单已存在支付单时拒绝切换渠道 |
 | 管理后台表单字段通用导致配置困惑 | 低 | MVP 接受，后续 deferred 动态字段展示 |
+| 分账状态校验遗漏导致退款失败 | 高 | 退款前强制查询 `profit_sharing_order`，`SUCCESS/PROCESSING` 状态直接拒绝 |
+| Adapay 退款/关闭状态理解偏差 | 高 | 实现前确认 `AdapayRefundResult`、`AdapayStatus` 各状态语义 |
+| 退款回调幂等处理不当 | 中 | 以订单 `refund_status = 2` 为幂等边界，重复回调仅记录订单日志，不重复更新订单或回滚业务 |
+| 关闭调用失败导致 Adapay 侧脏单 | 中 | 关闭失败记录告警日志，本地仍标记 `status = 2`，避免复用旧 outPayNo |
+| 同一 outPayNo 重复退款 | 中 | 退款前校验订单 `refund_status`，已退款订单直接幂等返回 |
 
 ## 分支计划
 
@@ -100,8 +164,8 @@ Adapay 支付
 | 层 | 状态 | 引用 |
 |----|------|------|
 | DB schema | 变更 | 新增 `pay_out_order_no` 表 → contract-changes.md |
-| API | 复用 | 现有 `/app-api/order/pay`、回调端点、管理后台商户配置 API 接受新枚举值 → contract-changes.md |
-| 事件/MQ | 变更 | `PayNoticeMessage` 扩展字段 → contract-changes.md |
+| API | 复用 | 现有 `/app-api/order/pay`、回调端点、管理后台商户配置 API 与退款 API 接受新枚举值 → contract-changes.md |
+| 事件/MQ | 变更 | `PayNoticeMessage` 扩展字段；退款/关闭回调复用现有回调端点 → contract-changes.md |
 | 依赖 | 变更 | 新增 Adapay SDK → contract-changes.md |
-| 外部系统 | 变更 | 接入 Adapay 支付网关与回调 → contract-changes.md |
-| ADR | 需要 | adr-003-adapay-out-pay-no.md |
+| 外部系统 | 变更 | 接入 Adapay 支付网关、退款、关闭与回调 → contract-changes.md |
+| ADR | 需要 | adr-003-adapay-out-pay-no.md、adr-004-adapay-refund-and-close.md |

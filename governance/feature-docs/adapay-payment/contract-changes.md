@@ -18,6 +18,16 @@
 | `GET /admin-api/pay/merchant-details/page` | 复用 | 可按 Adapay 平台名筛选 |
 | `DELETE /admin-api/pay/merchant-details/delete` | 复用 | 删除 Adapay 配置 |
 
+### 退款/支付撤销端点 — 复用
+
+| 端点 | 变更类型 | 说明 |
+|------|----------|------|
+| `POST /admin-api/order/store-order/refund` | 复用 | 同意 Adapay 订单退款；校验分账状态为 `PENDING/FAILED/FALLBACK`，生成雪花 ID 作为 `outRefundNo` 同步调用 Adapay 退款 |
+| `POST /admin-api/order/store-order/cancelAndRefund` | 复用 | 取消 Adapay 订单并全额退款；复用 `refund` 退款链路 |
+| `POST /app-api/order/cancel` | 复用 | 用户取消未支付 Adapay 订单时，先调用 Adapay 关闭/撤销 |
+| `POST /app-api/site/order/cancel/{orderId}` | 复用 | 站点订单取消未支付 Adapay 订单时，先调用 Adapay 关闭/撤销 |
+| `POST /app-api/order/notify/payBack{detailsId}.json` | 复用 | Adapay 退款/关闭异步回调：`payBackadapay_h5{tenantId}.json` |
+
 ## DTO 变更
 
 ### 新增枚举值
@@ -26,6 +36,20 @@
 |------|--------|------|
 | `PayTypeEnum` | `ADAPAY("adapay", "Adapay支付")` | 订单 `pay_type`、MQ `payType` |
 | `PayIdEnum` | `ADAPAY_H5("adapay_h5", "Adapay支付H5")` | `merchant_details.details_id` 前缀 |
+
+### 回调消息扩展
+
+Adapay 回调报文状态复用 `AdapayStatus` 已有值：`PAY_SUCCESS`、`CLOSED`、`REFUND_PROCESSING`、`REFUND_SUCCESS`、`REFUND_FAILED`。
+
+`AdapayPayMessageHandler` 按状态分发：
+
+| 状态 | 处理 |
+|------|------|
+| `PAY_SUCCESS` | 反查 `orderId`，发送 `order.pay.notice`，更新 `pay_out_order_no.status = 1` |
+| `CLOSED` | 更新 `pay_out_order_no.status = 2` |
+| `REFUND_PROCESSING` | 记录订单日志：`yshop_store_order_status` 记退款处理中 |
+| `REFUND_SUCCESS` | 记录订单日志：退款成功；订单已退款时幂等 |
+| `REFUND_FAILED` | 记录订单日志：退款失败及错误信息 |
 
 ### MQ 消息扩展
 
@@ -88,8 +112,8 @@
 
 ## 兼容性
 
-- **向后兼容**：否。支付流程新增 `outPayNo` 持久化与反查步骤，需确保现有微信支付路径仍使用 `orderId` 作为 `outPayNo`。
-- **前端同步变更**：是。管理后台支付配置表单与订单视图需增加 Adapay 选项。
+- **向后兼容**：否。支付流程新增 `outPayNo` 持久化与反查步骤；退款流程在 `StoreOrderServiceImpl.orderRefund(...)` 中新增 `ADAPAY` 分支并增加分账状态校验。需确保现有微信支付路径仍使用 `orderId` 作为 `outPayNo`。
+- **前端同步变更**：是。管理后台支付配置表单与订单视图需增加 Adapay 选项；订单退款/取消入口对 Adapay 订单生效，无需新增独立页面。
 
 ## 错误码
 
@@ -98,3 +122,9 @@
 | `ADAPAY_PAYMENT_QUERY_FAILED` | Adapay 支付单查询失败 |
 | `ADAPAY_PAYMENT_STATUS_INVALID` | Adapay 支付单状态异常，请重新下单 |
 | `OUT_PAY_NO_GENERATE_FAILED` | 外部支付单号生成失败 |
+| `ADAPAY_REFUND_FAILED` | Adapay 退款调用失败 |
+| `ADAPAY_CLOSE_FAILED` | Adapay 支付单关闭失败 |
+| `ADAPAY_REFUND_CALLBACK_INVALID` | Adapay 退款回调单号或状态非法 |
+| `ADAPAY_REFUND_NOT_ALLOWED_AFTER_SHARING` | 该订单已分账确认，暂不支持退款 |
+| `REFUND_AMOUNT_EXCEEDED` | 累计退款金额超过支付金额 |
+| `ORDER_REFUND_NOT_ADAPAY` | 该订单非 Adapay 支付，无法使用 Adapay 退款通道 |

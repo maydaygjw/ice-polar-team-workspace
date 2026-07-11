@@ -10,6 +10,9 @@
 - 通过引入 `outPayNo` 外部支付单号映射层，解决 Adapay 不允许同一订单号重复发起支付的问题。
 - Adapay 待支付订单每次重新调用支付接口都必须生成新的 `outPayNo`，并关闭上一条当前有效待支付 attempt。
 - 同一订单一旦使用某渠道发起支付，即锁定为该渠道，不可切换为其他支付渠道。
+- 对 Adapay 已支付订单发起全额退款，资金原路返回。
+- 对 Adapay 未支付订单执行支付撤销（关闭 Adapay 侧支付单），避免脏单误履约。
+- 接收并处理 Adapay 退款/关闭异步通知，保证回调幂等。
 
 ---
 
@@ -37,6 +40,8 @@
 | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/payoutorderno/PayOutOrderNoService.java` | 新增 outPayNo 生成/查询/状态更新服务 |
 | `yshop-module-pay/yshop-module-pay-api/pom.xml` | 新增 `com.holuntech:pay-java-adapay:2.14.14-SNAPSHOT` 依赖 |
 | `sql/upgrade-2026-07-09-adapay-out-pay-no.sql` | 新增 `pay_out_order_no` 表及回滚语句 |
+| `yshop-module-order-biz/.../service/storeorder/StoreOrderServiceImpl.java` | `orderRefund(...)` 新增 `ADAPAY` 分支；`cancelOrder`/超时/重新支付前触发 Adapay 关闭 |
+| `yshop-module-pay-api/.../config/handlers/AdapayPayMessageHandler.java` | 扩展 `CLOSED/REFUND_*` 状态处理 |
 
 ### 2.2 管理后台仓库（admin-adapay-payment / feat/adapay-payment）
 
@@ -88,6 +93,21 @@ Topic `order.pay.notice` Payload 扩展：
 | `ADAPAY_PAYMENT_STATUS_INVALID` | Adapay 支付单状态异常，请重新下单 | 已定义，当前未使用 |
 | `ADAPAY_PAYMENT_DUPLICATE_ORDER` | 订单已发起支付，请刷新订单状态 | 已定义，当前未使用 |
 
+### 3.5 退款/支付撤销契约
+
+- **复用端点**：
+  - `POST /admin-api/order/store-order/refund`：同意 Adapay 订单全额退款。
+  - `POST /admin-api/order/store-order/cancelAndRefund`：取消并全额退款。
+  - `POST /app-api/order/cancel`、`POST /app-api/site/order/cancel/{orderId}`：未支付订单取消时触发 Adapay 关闭。
+  - `POST /app-api/order/notify/payBackadapay_h5{tenantId}.json`：退款/关闭异步回调复用现有回调端点。
+- **不新增枚举**：复用 `OrderInfoEnum.REFUND_STATUS_*` 表达订单退款状态。
+- **不新增表**：退款结果与现有微信/支付宝一致，通过订单 `refund_status` 与订单日志表 `yshop_store_order_status` 表达。
+- **关键约束**：
+  - 仅支持全额退款。
+  - 已分账确认（`profit_sharing_order.sharing_status = SUCCESS/PROCESSING`）订单禁止退款。
+  - 同步返回 `SUCCESS/PROCESSING` 即更新订单为已退款。
+- **新增错误码**：`ADAPAY_REFUND_FAILED`、`ADAPAY_CLOSE_FAILED`、`ADAPAY_REFUND_NOT_ALLOWED_AFTER_SHARING`、`ADAPAY_REFUND_CALLBACK_INVALID`、`ORDER_REFUND_NOT_ADAPAY`。
+
 ---
 
 ## 4. 数据库迁移
@@ -117,12 +137,15 @@ Topic `order.pay.notice` Payload 扩展：
 - 后端 `mvn clean compile -DskipTests` 通过。
 - 全量 `mvn test` 因 `yshop-spring-boot-starter-web/DesensitizeTest` 失败未通过；该失败与本次 Adapay 变更无关（断言期望 `芋***` 实际为 `y****`）。
 - 未发现针对 `PayOutOrderNoService` 或 Adapay 流程的新增单元测试。
-- E2E 测试方案已制定（`test_plan.md`），但 6 个用例当前仍为“待实现”。
+- E2E 测试方案已制定（`test_plan.md`），共 10 个用例当前仍为“待实现”。
 - 建议优先完成以下用例后再合并：
   - ADAPAY-E2E-001 主流程
   - ADAPAY-E2E-002 待支付重复 pay 时 outPayNo 递增且旧记录失效
   - ADAPAY-E2E-003 回调幂等
   - ADAPAY-E2E-006 渠道锁定
+  - ADAPAY-E2E-007 已支付订单全额退款成功
+  - ADAPAY-E2E-009 未支付订单关闭/撤销
+  - ADAPAY-E2E-010 退款/关闭回调幂等
 
 ---
 
@@ -136,7 +159,11 @@ Topic `order.pay.notice` Payload 扩展：
 | 错误码与实现不一致 | 低 | 部分错误码未使用 | 同步契约文档或移除未使用常量 |
 | 管理后台硬编码映射 | 低 | 多处 `v-if` 映射，后续渠道扩展易遗漏 | 抽成统一组件/过滤器 |
 | 失败回调未关闭 outPayNo | 低 | 非成功回调未标记 status=2 | 后续结合对账需求补充关闭逻辑 |
-
+| 分账状态校验遗漏导致错误退款 | 高 | 已分账确认订单若未拦截，Adapay 退款可能失败或资金异常 | 退款前强制查询 `profit_sharing_order`，`SUCCESS/PROCESSING` 状态直接拒绝 |
+| Adapay 退款/关闭状态理解偏差 | 高 | `AdapayRefundResult`、`AdapayStatus` 状态语义未确认前易导致错误分支 | 实现前确认 SDK 状态枚举与返回值 |
+| 退款回调幂等处理不当 | 中 | 重复或乱序回调可能导致重复回滚库存/佣金 | 以订单 `refund_status = 2` 为幂等边界，重复回调仅记录订单日志 |
+| 关闭调用失败导致 Adapay 脏单 | 中 | 本地已关闭但 Adapay 侧未关闭，可能产生晚到成功回调 | 本地关闭后回调以订单最终状态幂等；关闭失败记录告警 |
+| 同一 outPayNo 重复退款 | 中 | 并发或重复请求可能产生多笔退款 | 退款前校验订单 `refund_status`，已退款订单直接幂等返回 |
 ---
 
 ## 8. 建议 PR 标题与描述
@@ -156,25 +183,32 @@ feat(pay/order/admin): Adapay 第三方支付集成
 - 新增渠道锁定：同一订单使用微信/Adapay 任一渠道发起后，不可切换为另一渠道。
 - 扩展 PayTypeEnum / PayIdEnum / PayNoticeMessage / PayNoticeProducer 契约。
 - 管理后台：支付配置、订单列表、订单详情、收银台等视图新增 Adapay 选项与文案。
+- 新增 Adapay 全额退款：复用现有退款入口，生成独立 outRefundNo，同步更新订单状态。
+- 新增 Adapay 支付撤销（关闭）：未支付订单取消、超时、重新支付前调用 Adapay close。
+- 扩展 Adapay 回调处理器，支持 CLOSED / REFUND_PROCESSING / REFUND_SUCCESS / REFUND_FAILED 状态。
 
 ## 数据库
 - 执行 sql/upgrade-2026-07-09-adapay-out-pay-no.sql 新建 pay_out_order_no 表。
+- 退款/关闭不新增数据库表，复用订单 `refund_status` 与订单日志表。
 
 ## 已知待优化
 - [ ] 移除未使用的 Adapay 错误码常量，或恢复对应查询/复用逻辑。
 - [ ] 修复 Adapay 待支付重复 pay 复用旧 outPayNo：关闭旧当前有效记录并生成 `orderId-{n+1}`。
 - [ ] 回调非成功状态时关闭对应 outPayNo 记录。
 - [ ] paySuccess 中 System.out.println 改为日志。
+- [ ] 已分账确认订单退款由后续需求支持分账回退后放开。
 
 ## 测试
-- [ ] 完成后端单元测试与 E2E 用例（ADAPAY-E2E-001/002/003/006）。
+- [ ] 完成后端单元测试与 E2E 用例（ADAPAY-E2E-001/002/003/006/007/009/010）。
 
 ## 相关文档
 - governance/feature-docs/adapay-payment/requirements-spec.md
 - governance/feature-docs/adapay-payment/technical-design.md
 - governance/feature-docs/adapay-payment/contract-changes.md
 - governance/feature-docs/adapay-payment/review-report.md
+- governance/feature-docs/adapay-payment/CHANGE-REPORT.md
 - governance/ADR/adr-003-adapay-out-pay-no.md
+- governance/ADR/adr-004-adapay-refund-and-close.md
 ```
 
 ---
@@ -182,5 +216,7 @@ feat(pay/order/admin): Adapay 第三方支付集成
 ## 9. 审查结论
 
 变更范围与契约文档大体一致，基础支付链路、outPayNo 映射层、渠道锁定、管理后台展示、DB 迁移均已落地。但复审发现 Adapay 待支付订单重复调用 `pay` 时会复用旧 `outPayNo`，与“每次支付请求生成新 `outPayNo`、仅一条当前有效待支付记录”的契约冲突，属于合并前阻塞问题。
+
+退款/支付撤销设计已补充进需求、技术设计、契约与测试方案：实现完成后需验证全额退款、未支付关闭、分账状态拦截、回调幂等，并落地 ADAPAY-E2E-007/009/010。
 
 **当前状态：不通过，需修复阻塞问题并补充测试后再合并。**
