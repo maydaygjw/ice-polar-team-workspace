@@ -46,11 +46,11 @@
 - 新增迁移脚本 `sql/upgrade-adapay-profit-sharing-dynamic-role.sql` 会补录历史 fallback 记录的明细并删除主表固定字段。
 - admin 分账结算记录列表/详情不再展示固定的平台抽成/店铺分账金额，改由详情内「分账明细」子表展示。
 
-## 后续增强：服务订单完成时自动创建分账挂起记录
+## 后续增强：服务订单完成时直接执行 Adapay 分账
 
 ### 变更原因
 
-管理后台点击「完成服务」后，订单状态变为 `PENDING_REVIEW`（3）。此时若订单通过 Adapay 支付，需要自动创建 `profit_sharing_order` 挂起记录，供日终 `ProfitSharingSettlementJob` 执行分账。
+管理后台点击「完成服务」后，订单状态变为 `PENDING_REVIEW`（3）。此时若订单通过 Adapay 支付，系统会直接调用 Adapay `PaymentConfirm.create` 执行分账，而不是仅创建挂起记录。
 
 ### 验证结果
 
@@ -63,6 +63,7 @@
 - `backend/yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/api/OrderApiImpl.java`
 - `backend/yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderService.java`
 - `backend/yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java`
+- `backend/yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/enums/ErrorCodeConstants.java`
 - `backend/yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/StoreOrderServiceImpl.java`（顺带修复 `AdapayPayService.reverse` 方法名不存在导致的编译错误）
 
 ### 触发条件
@@ -70,10 +71,11 @@
 - `OrderApiImpl.updateOrderStatus` 被调用；
 - 新状态为 `OrderStatusEnum.STATUS_3`（3，待评价）；
 - 订单 `payType = adapay` 且 `paid = 1`；
-- 店铺已启用分账且配置完整。
+- 店铺已启用分账且配置完整；
+- 调用 `ProfitSharingOrderService.executeSharing` 直接执行分账。
 
 ### 注意事项
 
-- 实际 Adapay 分账仍由 `ProfitSharingSettlementJob` 日终触发，完成服务时只创建挂起记录；
-- 若店铺分账配置不完整或找不到 Adapay 已支付记录，完成服务操作会失败并回滚订单状态；
-- `ProfitSharingOrderServiceImpl.createSharingOrder` 已做幂等，重复完成不会产生重复分账记录。
+- 分账执行成功后，`executeSharing` 会调用 `orderApi.markOrderSettled`，订单状态会从 `3` 变为 `2`；
+- 若 Adapay 分账执行失败、店铺分账配置不完整或找不到 Adapay 已支付记录，完成服务操作会失败并回滚订单状态；
+- 新增错误码 `PROFIT_SHARING_EXECUTE_FAILED`（1008009037）用于分账执行失败场景。

@@ -107,26 +107,27 @@
 | `admin` | [#24](https://gitee.com/icepolar/yshop-drink-vue/pulls/24) |
 | `workspace (governance)` | [#4](https://github.com/maydaygjw/ice-polar-team-workspace/pull/4) |
 
-## 9. 后续增强：服务订单完成时自动创建分账挂起记录
+## 9. 后续增强：服务订单完成时直接执行 Adapay 分账
 
 ### 业务行为
 
-管理后台完成服务订单后，订单状态变为 `PENDING_REVIEW`（3）。若该订单通过 Adapay 支付，系统自动创建一条 `profit_sharing_order` 挂起记录，后续由 `ProfitSharingSettlementJob` 日终执行 Adapay 分账。
+管理后台完成服务订单后，订单状态变为 `PENDING_REVIEW`（3）。若该订单通过 Adapay 支付，系统直接调用 Adapay `PaymentConfirm.create` 执行分账；执行成功后订单状态会被 `executeSharing` 更新为 `2`（已收货/已结算）。
 
 ### 影响文件
 
 - `backend/yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/api/OrderApiImpl.java`
 - `backend/yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderService.java`
 - `backend/yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java`
+- `backend/yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/enums/ErrorCodeConstants.java`
 - `backend/yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/StoreOrderServiceImpl.java`（修复预存在的 `AdapayPayService.reverse` 方法名错误）
 
 ### 关键逻辑
 
 - `OrderApiImpl.updateOrderStatus` 增加 `@Transactional`；
-- 仅在状态变为 `3`、支付方式为 `adapay`、已支付时调用 `AppStoreOrderService.createProfitSharingOrderIfNeeded`；
+- 仅在状态变为 `3`、支付方式为 `adapay`、已支付时调用 `AppStoreOrderService.executeProfitSharingIfNeeded`；
 - 通过 `PayOutOrderNoService.findPaidByOrderIdAndPayType` 获取 `adapayPaymentId`；
-- 复用原 `AppStoreOrderServiceImpl.createProfitSharingOrder` 死代码，改造为接收 `StoreOrderDO`；
-- 分账配置不完整时抛出异常，订单状态回滚。
+- 复用原 `AppStoreOrderServiceImpl.createProfitSharingOrder` 死代码创建分账记录，并立即调用 `ProfitSharingOrderService.executeSharing`；
+- 分账执行失败时抛出 `PROFIT_SHARING_EXECUTE_FAILED`，订单状态回滚。
 
 ### 验证
 
@@ -138,4 +139,5 @@
 ### 风险
 
 - 该钩子对所有状态变为 `3` 的 Adapay 订单生效，不仅限于服务订单；当前只有服务订单完成会触发此状态变化；
-- 若 `PayOutOrderNoDO` 中未记录 `adapay_payment_id`，完成服务将失败，需确保支付回调链路正常写入。
+- 若 `PayOutOrderNoDO` 中未记录 `adapay_payment_id` 或 Adapay 接口调用失败，完成服务将失败；
+- 分账成功后订单状态会从 `3` 变为 `2`，前端/报表需兼容该状态流转。
