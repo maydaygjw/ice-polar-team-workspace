@@ -1,5 +1,5 @@
 feature: site-order-status-remap
-status: design
+status: done
 risk: high
 targets: [backend, admin]
 contract: true
