@@ -1,0 +1,8 @@
+feature: adapay-reconciliation
+status: done
+risk: low
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: false
+blocked: false
