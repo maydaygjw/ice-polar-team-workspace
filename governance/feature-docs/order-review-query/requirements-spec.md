@@ -2,13 +2,13 @@
 
 ## Scope
 
-新增 Admin 端 API，支持按订单 ID（`oid`）查询该订单下所有评价记录。
+新增 App 端 API，支持按订单 ID（`oid`）查询该订单下所有评价记录。
 
 ## Use Cases
 
 | # | 场景 | 描述 |
 |---|------|------|
-| UC-1 | 查看订单评价 | Admin 用户输入订单 ID，获取该订单下所有商品的评价内容、评分、图片和商家回复 |
+| UC-1 | 查看订单评价 | 用户查看已完成订单的评价内容、评分、图片和商家回复 |
 
 ## Business Rules
 
@@ -21,11 +21,11 @@
 
 | 属性 | 值 |
 |------|-----|
-| 模块 | Admin（管理后台） |
+| 模块 | App（小程序/C 端） |
 | 方法 | GET |
-| 路径 | `/product/store-product-reply/list-by-order` |
+| 路径 | `/app-api/order/reply/list` |
 | 参数 | `oid` (Long, required) — 订单内部 ID |
-| 权限 | `product:store-product-reply:query`（复用现有权限码） |
+| 鉴权 | `@PreAuthenticated`（登录即可） |
 | 返回 | `CommonResult<List<AppStoreProductReplyQueryVo>>` |
 
 ## Edge Cases
@@ -35,10 +35,10 @@
 
 ## Acceptance Criteria
 
-- [ ] `GET /product/store-product-reply/list-by-order?oid=xxx` 返回该订单所有有效评价
+- [ ] `GET /app-api/order/reply/list?oid=xxx` 返回该订单所有有效评价
 - [ ] 返回字段包含：productScore, serviceScore, comment, pictures, nickname, avatar, cartInfo, merchantReplyContent, merchantReplyTime
 - [ ] 无评价时返回空数组
-- [ ] 需登录且有 `product:store-product-reply:query` 权限
+- [ ] 需登录（`@PreAuthenticated`）
 - [ ] 编译通过
 
 ## Assumptions

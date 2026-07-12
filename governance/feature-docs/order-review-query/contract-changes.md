@@ -4,9 +4,9 @@
 
 | 属性 | 值 |
 |------|-----|
-| 端点 | `GET /admin-api/product/store-product-reply/list-by-order` |
+| 端点 | `GET /app-api/order/reply/list` |
 | 参数 | `oid` (Long, required) |
-| 鉴权 | `@PreAuthorize("@ss.hasPermission('product:store-product-reply:query')")` |
+| 鉴权 | `@PreAuthenticated`（登录用户即可访问） |
 | 响应 | `CommonResult<List<AppStoreProductReplyQueryVo>>` |
 
 ### 响应结构（AppStoreProductReplyQueryVo）
@@ -36,7 +36,7 @@ N/A
 
 ## 权限
 
-复用现有权限码 `product:store-product-reply:query`
+App 端：`@PreAuthenticated`（登录即可，无需额外权限码）
 
 ## 依赖
 

@@ -1,56 +1,57 @@
-# Change Report: 新增按订单 ID 查询评价接口
+# Change Report: 新增按订单 ID 查询评价接口（App API）
 
 ## Summary
 
-- Admin 端新增 `GET /product/store-product-reply/list-by-order?oid=xxx` 接口，支持按订单 ID 查询该订单下所有商品评价
+- App 端新增 `GET /app-api/order/reply/list?oid=xxx` 接口
+- 小程序/C 端用户可查看已完成订单的评价详情（评分、内容、图片、商家回复）
 
 ## Repositories
 
-- `backend`: 新增 Mapper、Service、Controller 方法
+- `backend`: AppStoreProductReplyService[Impl], AppStoreOrderService[Impl], AppOrderController, StoreProductReplyMapper
 
 ## Contracts
 
-- API: 新增端点 `GET /admin-api/product/store-product-reply/list-by-order`，参数 `oid`，返回 `List<AppStoreProductReplyQueryVo>`
+- API: `GET /app-api/order/reply/list`，参数 `oid`，返回 `List<AppStoreProductReplyQueryVo>`
 - DB: N/A
 - MQ: N/A
-- 权限: 复用 `product:store-product-reply:query`
+- 鉴权: `@PreAuthenticated`（登录即可）
 
 ## Verification
 
-- `mvn compile -pl yshop-module-mall/yshop-module-product-biz -am`: pass
-- 全量 test: skipped（预存问题，非本次变更）
+- `mvn compile`: pass
+- Tests: skipped（预存问题）
 
 ## Risks
 
-- N/A（只读接口，无数据变更，低风险）
+- N/A
 
 ## PR
 
 ### 标题
 
 ```
-feat(product): add list-by-order endpoint for store product replies
+feat(order): add GET /order/reply/list for app-side review query
 ```
 
 ### 正文
 
 ```markdown
 ## Summary
-- 新增 `GET /product/store-product-reply/list-by-order?oid={oid}` 接口
-- 按订单 ID 查询所有有效评价（含用户昵称/头像、购物车信息、商家回复）
+- 新增 `GET /app-api/order/reply/list?oid={oid}` 接口
+- 小程序端可直接查看订单评价（评分、内容、图片、商家回复）
 
 ## Repositories
-- `backend`: StoreProductReplyMapper, StoreProductReplyService[Impl], StoreProductReplyController
+- `backend`: AppStoreProductReplyService, AppStoreOrderService, AppOrderController, StoreProductReplyMapper
 
 ## Contracts
-- API: 新增 `GET /admin-api/product/store-product-reply/list-by-order`
-- 权限: 复用 `product:store-product-reply:query`
+- API: `GET /app-api/order/reply/list`
+- 鉴权: `@PreAuthenticated`
 
 ## Verification
 - `mvn compile`: pass
-- Tests: skipped（预存编译依赖问题，非本次变更引入）
 ```
 
 ## References
 
 - Feature: `governance/feature-docs/order-review-query/`
+- Gitee PR: #50
