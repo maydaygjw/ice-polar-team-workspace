@@ -90,7 +90,9 @@ module-a-biz ──→ module-b-api（接口 + DTO）
 
 ### 数据库 Schema 契约
 
-- 使用 `sql/upgrade-YYYY-MM-DD-{feature}.sql`；禁止直接修改 `sql/yixiang-drink.sql`。
+- 升级脚本必须使用 `sql/upgrade-YYYY-MM-DD-{feature}.sql` 命名；日期使用该模块/特性首次形成升级脚本的日期，`{feature}` 使用小写 kebab-case。
+- 同一模块或特性的后续增量应合并到该特性脚本，并沿用首次升级日期；完成合并后删除已被替代的旧脚本并同步文档引用。
+- 禁止直接修改 `sql/yixiang-drink.sql`；新增升级脚本必须保留在 `sql/` 下并使用上述命名格式。
 - 破坏性变更必须含回滚语句。
 - 业务表必须含租户标识；需部门过滤的表含部门标识。
 - 订单等业务 ID 使用 String(32)。

@@ -14,7 +14,7 @@ This file is the **team constitution** for the yshop AI engineering team. It is 
 ## Red Lines
 
 - Never commit secrets (DB passwords, API keys, JWT secrets) to any repository.
-- Never modify `sql/yixiang-drink.sql` directly for upgrades; always create `sql/upgrade-*.sql`.
+- Never modify `sql/yixiang-drink.sql` directly for upgrades; always create a dated script named `sql/upgrade-YYYY-MM-DD-{feature}.sql`.
 - Never change order status semantics in enums without updating all references (DO, VO, Mapper XML, frontend constants).
 - Never skip tenant isolation in new queries.
 
