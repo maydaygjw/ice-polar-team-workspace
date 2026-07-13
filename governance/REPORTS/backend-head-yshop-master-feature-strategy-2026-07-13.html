@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特性维度合并策略报告</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #f0f6fc; font-size: 28px; margin-bottom: 8px; }
+        h2 { color: #58a6ff; font-size: 20px; margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 1px solid #30363d; }
+        h3 { color: #79c0ff; font-size: 16px; margin: 20px 0 10px; }
+        .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+        .badge-danger { background: #da3633; color: #fff; }
+        .badge-warning { background: #d29922; color: #000; }
+        .badge-success { background: #238636; color: #fff; }
+        .badge-info { background: #1f6feb; color: #fff; }
+        .badge-neutral { background: #6e7681; color: #fff; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #30363d;
+            vertical-align: top;
+        }
+        th {
+            background: #21262d;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+        tr:hover { background: #1c2128; }
+        td code, th code { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; }
+        .feature-box {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .feature-box.high { border-left: 4px solid #da3633; }
+        .feature-box.medium { border-left: 4px solid #d29922; }
+        .feature-box.low { border-left: 4px solid #58a6ff; }
+        .feature-header {
+            padding: 14px 18px;
+            background: #1c2128;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .feature-title { font-size: 15px; color: #f0f6fc; font-weight: 600; }
+        .feature-body { padding: 18px; }
+        .feature-body p, .feature-body li { font-size: 13px; margin-bottom: 8px; }
+        .feature-body ul { padding-left: 20px; }
+        .strategy-box {
+            background: #0d1117;
+            border-radius: 6px;
+            padding: 14px;
+            margin-top: 12px;
+        }
+        .strategy-box h4 { color: #79c0ff; font-size: 13px; margin-bottom: 8px; }
+        .risk-high { color: #f85149; font-weight: 600; }
+        .risk-medium { color: #d29922; font-weight: 600; }
+        .risk-low { color: #58a6ff; font-weight: 600; }
+        .phase {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .phase-title { color: #79c0ff; font-weight: 600; margin-bottom: 8px; }
+        .phase ul { padding-left: 20px; }
+        .phase li { font-size: 13px; margin-bottom: 6px; }
+        code.inline {
+            background: #343942;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .summary-value { font-size: 32px; font-weight: 700; color: #f0f6fc; }
+        .summary-value.danger { color: #f85149; }
+        .summary-value.warning { color: #d29922; }
+        .summary-value.success { color: #3fb950; }
+        .summary-label { font-size: 13px; color: #8b949e; margin-top: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>特性维度合并策略报告</h1>
+    <p class="subtitle">backend/HEAD ← yshop/master | 生成日期：2026-07-13</p>
+
+    <div class="card">
+        <p><strong>总览：</strong>本次合并不是简单的代码冲突，而是两套产品方向在近 8 个月内的功能叠加。
+        当前分支以 <span class="risk-high">Adapay 支付分账、设备 DMS、站点服务订单、商圈多门店、积分</span> 为核心定制；
+        上游官方以 <span class="risk-medium">canvas 画布、套餐 combo、收银台订单、付款码 V2、优惠券 2.0、门店财务</span> 为演进方向。
+        合并策略应是<strong>以当前分支能力为基线，选择性、可开关地吸收上游新特性</strong>，而不是二选一。</p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-value danger">20</div>
+            <div class="summary-label">冲突文件数</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value warning">6</div>
+            <div class="summary-label">冲突特性域</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value">5</div>
+            <div class="summary-label">HEAD 无冲突特性（可保留）</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value">5</div>
+            <div class="summary-label">上游无冲突特性（可引入）</div>
+        </div>
+    </div>
+    
+<h2>一、特性冲突矩阵</h2>
+
+    <table>
+        <tr><th>特性域</th><th>严重级别</th><th>归属</th><th>冲突文件</th></tr>
+        <tr><td><strong>数据库 Schema 与构建配置</strong></td><td class="risk-high">HIGH</td><td>双方基础设施</td><td>sql/yixiang-drink.sql<br>yshop-module-mall/pom.xml</td></tr>
+<tr><td><strong>Adapay 第三方支付与分账</strong></td><td class="risk-high">HIGH</td><td>当前分支（HEAD）</td><td>yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/mq/message/PayNoticeMessage.java<br>yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/mq/producer/PayNoticeProducer.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/mq/consumer/PayNoticeConsumer.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderService.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/StoreOrderServiceImpl.java</td></tr>
+<tr><td><strong>设备订单与餐盒费</strong></td><td class="risk-medium">MEDIUM</td><td>当前分支（HEAD）</td><td>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/param/AppOrderParam.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/vo/message/CartMsgVo.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoService.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoServiceImpl.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java</td></tr>
+<tr><td><strong>上游套餐 / 共享菜单 / 收银台 / 付款码 V2</strong></td><td class="risk-medium">MEDIUM</td><td>上游 yshop/master</td><td>yshop-module-mall/yshop-module-order-api/src/main/java/co/yixiang/yshop/module/order/enums/OrderLogEnum.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/param/AppOrderParam.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/vo/message/CartMsgVo.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoService.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoServiceImpl.java<br>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java</td></tr>
+<tr><td><strong>门店 / 商圈 / 多门店权限 / 提现</strong></td><td class="risk-medium">MEDIUM</td><td>当前分支 + 上游混合</td><td>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/controller/admin/storeshop/StoreShopController.java<br>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/controller/app/storeshop/AppStoreController.java<br>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/AppStoreShopService.java<br>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/AppStoreShopServiceImpl.java<br>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/StoreShopServiceImpl.java<br>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storewithdrawal/StoreWithdrawalServiceImpl.java</td></tr>
+<tr><td><strong>优惠券 2.0 重构</strong></td><td class="risk-medium">MEDIUM</td><td>上游 yshop/master</td><td>yshop-module-marketing/yshop-module-coupon-biz/src/main/java/co/yixiang/yshop/module/coupon/service/coupon/AppCouponServiceImpl.java</td></tr>
+    </table>
+    
+<h2>二、各特性域合并策略</h2>
+
+        <div class="feature-box high">
+            <div class="feature-header">
+                <span class="feature-title">数据库 Schema 与构建配置</span>
+                <span class="badge badge-high">HIGH</span>
+                <span class="badge badge-neutral">双方基础设施</span>
+            </div>
+            <div class="feature-body">
+                <p><strong>冲突文件：</strong></p>
+                <p><code>sql/yixiang-drink.sql</code><br><code>yshop-module-mall/pom.xml</code></p>
+                <table>
+                    <tr><th style="width:50%">当前分支（HEAD）能力</th><th style="width:50%">上游 yshop/master 能力</th></tr>
+                    <tr><td>
+            <ul>
+                <li>Adapay 支付/分账/结算/对账相关表：yshop_pay_adapay_*, yshop_pay_out_order_no, yshop_profit_sharing_order 等</li>
+                <li>设备连接模块：yshop_device_*、DMS 订单关联</li>
+                <li>站点/服务订单：yshop_site_order、yshop_site_staff 等</li>
+                <li>积分系统：yshop_score_*</li>
+                <li>商圈多门店：yshop_business_region*</li>
+                <li>餐盒费、订单回复、商品佣金等业务字段</li>
+                <li>yshop-module-mall/pom.xml 增加 device 子模块</li>
+            </ul>
+        </td><td>
+            <ul>
+                <li>官方演进 V3.2.3 → V3.3.1，更新大量系统菜单、权限初始化</li>
+                <li>新增 canvas 画布模块相关表</li>
+                <li>新增套餐/组合商品：yshop_store_product_combo_group*、套餐字段扩展</li>
+                <li>收银台订单、付款码 V2、退款查询相关表</li>
+                <li>门店提现费率、财务菜单相关表</li>
+                <li>yshop-module-mall/pom.xml 增加 canvas 子模块</li>
+            </ul>
+        </td></tr>
+                </table>
+                <div class="strategy-box">
+                    <h4>合并策略</h4>
+                    
+            <strong>全局最高优先级，必须人工处理。</strong><br>
+            1. <code>sql/yixiang-drink.sql</code> 不能二选一。应以当前 HEAD schema 为基线，用 schema 对比工具（Beyond Compare / MySQL Workbench）识别上游新增表/字段，整理为增量 upgrade 脚本。<br>
+            2. <code>yshop-module-mall/pom.xml</code> 中 device 与 canvas 子模块<strong>同时保留</strong>，都是业务需要的。<br>
+            3. 建议合并后重新导出一个新的 baseline SQL，并命名 upgrade 脚本版本号。
+        
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="feature-box high">
+            <div class="feature-header">
+                <span class="feature-title">Adapay 第三方支付与分账</span>
+                <span class="badge badge-high">HIGH</span>
+                <span class="badge badge-neutral">当前分支（HEAD）</span>
+            </div>
+            <div class="feature-body">
+                <p><strong>冲突文件：</strong></p>
+                <p><code>yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/mq/message/PayNoticeMessage.java</code><br><code>yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/mq/producer/PayNoticeProducer.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/mq/consumer/PayNoticeConsumer.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderService.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/StoreOrderServiceImpl.java</code></p>
+                <table>
+                    <tr><th style="width:50%">当前分支（HEAD）能力</th><th style="width:50%">上游 yshop/master 能力</th></tr>
+                    <tr><td>
+            <ul>
+                <li>支付通知 MQ 增加 <code>adapayPaymentId</code>、<code>outPayNo</code> 字段</li>
+                <li>支付成功后触发 Adapay 分账挂起/确认/结算</li>
+                <li>支付单号映射表、渠道锁、重复支付单复用</li>
+                <li>服务订单完成时分账、分账角色明细化</li>
+            </ul>
+        </td><td>
+            <ul>
+                <li>退款查询依赖传统微信 <code>transactionId</code></li>
+                <li>支付通知使用 <code>transactionId</code> 而非 Adapay 参数</li>
+            </ul>
+        </td></tr>
+                </table>
+                <div class="strategy-box">
+                    <h4>合并策略</h4>
+                    
+            <strong>优先保住 Adapay 能力，同时兼容传统微信 transactionId。</strong><br>
+            1. <code>PayNoticeMessage</code> 同时保留 <code>adapayPaymentId</code>、<code>outPayNo</code>、<code>transactionId</code> 三个字段。<br>
+            2. <code>PayNoticeProducer</code> / <code>AppStoreOrderService</code> 保留当前重载体系，并新增 <code>...WithTransactionId(String transactionId)</code> 兼容入口。<br>
+            3. <code>PayNoticeConsumer</code> 继续调用 Adapay 版本的 <code>paySuccess</code>；上游 refund 逻辑若需要 transactionId，从 message 中透传。<br>
+            4. <code>StoreOrderServiceImpl</code> 的依赖注入同时保留 Adapay 相关服务与上游的 <code>RefundService</code>。
+        
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="feature-box medium">
+            <div class="feature-header">
+                <span class="feature-title">设备订单与餐盒费</span>
+                <span class="badge badge-medium">MEDIUM</span>
+                <span class="badge badge-neutral">当前分支（HEAD）</span>
+            </div>
+            <div class="feature-body">
+                <p><strong>冲突文件：</strong></p>
+                <p><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/param/AppOrderParam.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/vo/message/CartMsgVo.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoService.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoServiceImpl.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java</code></p>
+                <table>
+                    <tr><th style="width:50%">当前分支（HEAD）能力</th><th style="width:50%">上游 yshop/master 能力</th></tr>
+                    <tr><td>
+            <ul>
+                <li>AppOrderParam / CartMsgVo 增加 <code>boxFeeSelected</code>、<code>boxFee</code></li>
+                <li>购物车/下单支持按商品选择餐盒费</li>
+                <li>设备订单类型、DMS 出冰下单流程</li>
+            </ul>
+        </td><td>
+            <ul>
+                <li>套餐（combo）字段：<code>isCombo</code>、<code>comboGoods</code> / <code>comboData</code></li>
+                <li>共享菜单购物车解析</li>
+                <li>优惠券商品匹配</li>
+            </ul>
+        </td></tr>
+                </table>
+                <div class="strategy-box">
+                    <h4>合并策略</h4>
+                    
+            <strong>餐盒费与套餐是正交功能，应共存。</strong><br>
+            1. 在 AppOrderParam、CartMsgVo、StoreOrderCartInfoService 签名中同时加入 <code>boxFeeSelected</code> 与 <code>isCombo/comboGoods</code>。<br>
+            2. <code>StoreOrderCartInfoServiceImpl</code> 的价格计算分支：先判断 isCombo，再叠加餐盒费。<br>
+            3. <code>AppStoreOrderServiceImpl</code> 保留当前解析逻辑，同时引入上游的 <code>parseShareCartData</code> / <code>calculateProductPrice</code> 作为辅助方法。<br>
+            4. 下单入参保持向后兼容：未传 isCombo 时按单品处理，未传 boxFeeSelected 时默认不收取餐盒费。
+        
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="feature-box medium">
+            <div class="feature-header">
+                <span class="feature-title">上游套餐 / 共享菜单 / 收银台 / 付款码 V2</span>
+                <span class="badge badge-medium">MEDIUM</span>
+                <span class="badge badge-neutral">上游 yshop/master</span>
+            </div>
+            <div class="feature-body">
+                <p><strong>冲突文件：</strong></p>
+                <p><code>yshop-module-mall/yshop-module-order-api/src/main/java/co/yixiang/yshop/module/order/enums/OrderLogEnum.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/param/AppOrderParam.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/vo/message/CartMsgVo.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoService.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoServiceImpl.java</code><br><code>yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java</code></p>
+                <table>
+                    <tr><th style="width:50%">当前分支（HEAD）能力</th><th style="width:50%">上游 yshop/master 能力</th></tr>
+                    <tr><td>
+            <ul>
+                <li>当前分支没有原生的套餐/共享菜单能力</li>
+                <li>设备订单、扫码点单、外卖点单已有独立流程</li>
+            </ul>
+        </td><td>
+            <ul>
+                <li>订单日志枚举增加 <code>ORDER_TAKE_CASHIER</code>（收银）</li>
+                <li>AppOrderParam / CartMsgVo 增加套餐字段</li>
+                <li>共享菜单解析、付款码扫码支付 V2（WX_DEVICE + uni）</li>
+                <li>优惠券与商品匹配</li>
+            </ul>
+        </td></tr>
+                </table>
+                <div class="strategy-box">
+                    <h4>合并策略</h4>
+                    
+            <strong>选择性吸收，避免破坏现有设备/外卖流程。</strong><br>
+            1. <code>OrderLogEnum</code> 同时保留 <code>ORDER_DEVICE</code> 与 <code>ORDER_TAKE_CASHIER</code>。<br>
+            2. 套餐字段在 VO/Service 中保留，但下单入口默认不启用，前端按版本开关控制。<br>
+            3. 付款码分支：保留上游的 <code>WX_DEVICE + param.getUni()</code> 逻辑，与 Adapay 分支并列，通过 payType 路由。<br>
+            4. 共享菜单解析独立为工具方法，当前外卖/设备流程不强制使用。
+        
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="feature-box medium">
+            <div class="feature-header">
+                <span class="feature-title">门店 / 商圈 / 多门店权限 / 提现</span>
+                <span class="badge badge-medium">MEDIUM</span>
+                <span class="badge badge-neutral">当前分支 + 上游混合</span>
+            </div>
+            <div class="feature-body">
+                <p><strong>冲突文件：</strong></p>
+                <p><code>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/controller/admin/storeshop/StoreShopController.java</code><br><code>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/controller/app/storeshop/AppStoreController.java</code><br><code>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/AppStoreShopService.java</code><br><code>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/AppStoreShopServiceImpl.java</code><br><code>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/StoreShopServiceImpl.java</code><br><code>yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storewithdrawal/StoreWithdrawalServiceImpl.java</code></p>
+                <table>
+                    <tr><th style="width:50%">当前分支（HEAD）能力</th><th style="width:50%">上游 yshop/master 能力</th></tr>
+                    <tr><td>
+            <ul>
+                <li>商圈（businessRegionId）筛选与校验</li>
+                <li>门店管理员分配、多门店权限</li>
+                <li>店铺分账收款人绑定/解绑</li>
+                <li>BeanUtils / StoreShopConvert 转换风格</li>
+                <li>提现使用 <code>amount</code> 字段</li>
+            </ul>
+        </td><td>
+            <ul>
+                <li>经纬度从 <code>double</code> 改为 <code>String</code>，并带默认值/校验</li>
+                <li>管理员只能绑定一个门店的校验</li>
+                <li>BeanUtil.toBean 转换风格</li>
+                <li>提现使用 <code>realAmount</code> 字段</li>
+            </ul>
+        </td></tr>
+                </table>
+                <div class="strategy-box">
+                    <h4>合并策略</h4>
+                    
+            <strong>以 HEAD 功能为主，吸收上游合理校验。</strong><br>
+            1. App 店铺列表接口：保留 <code>businessRegionId</code>，经纬度改为 String 接收，ServiceImpl 内部校验并转 double，失败时使用上游默认值。<br>
+            2. <code>StoreShopServiceImpl</code>：保留 <code>StoreShopConvert</code>，同时合并“管理员只能绑定一个门店”校验与商圈校验。<br>
+            3. <code>StoreShopController</code> 的 import 统一为当前分支的 <code>BeanUtils</code>。<br>
+            4. 提现字段：确认 <code>StoreWithdrawalDO</code> 是否已有 <code>realAmount</code>。若已存在且业务语义为“实际到账金额”，则统一使用 <code>realAmount</code>；否则保留 <code>amount</code> 并同步 schema。
+        
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="feature-box medium">
+            <div class="feature-header">
+                <span class="feature-title">优惠券 2.0 重构</span>
+                <span class="badge badge-medium">MEDIUM</span>
+                <span class="badge badge-neutral">上游 yshop/master</span>
+            </div>
+            <div class="feature-body">
+                <p><strong>冲突文件：</strong></p>
+                <p><code>yshop-module-marketing/yshop-module-coupon-biz/src/main/java/co/yixiang/yshop/module/coupon/service/coupon/AppCouponServiceImpl.java</code></p>
+                <table>
+                    <tr><th style="width:50%">当前分支（HEAD）能力</th><th style="width:50%">上游 yshop/master 能力</th></tr>
+                    <tr><td>
+            <ul>
+                <li>在旧优惠券服务中增加了未领取优惠券的过滤：上架状态 + 有效期</li>
+            </ul>
+        </td><td>
+            <ul>
+                <li>优惠券 2.0 重构，删除了旧的 <code>AppCouponServiceImpl</code></li>
+                <li>新增 CouponApi / UserCouponDTO 等接口</li>
+            </ul>
+        </td></tr>
+                </table>
+                <div class="strategy-box">
+                    <h4>合并策略</h4>
+                    
+            <strong>先确认覆盖，再删除旧文件。</strong><br>
+            1. 检查上游新优惠券服务（CouponApi 相关实现）是否已包含 shelfStatus + validPeriod 过滤。<br>
+            2. 若已覆盖，直接删除 <code>AppCouponServiceImpl.java</code>，解决 modify/delete 冲突。<br>
+            3. 若未覆盖，将过滤逻辑移植到新服务后再删除旧文件。<br>
+            4. 运行 coupon 相关接口测试，确保领取/列表行为一致。
+        
+                </div>
+            </div>
+        </div>
+        
+<h2>三、可独立保留/引入的特性</h2>
+
+    <h3>当前分支（HEAD）无冲突特性 — 直接保留</h3>
+    <table>
+        <tr><th>特性</th><th>说明</th></tr>
+        <tr><td>站点/服务订单</td><td>新增 yshop-module-site 整套 CRUD、订单状态机、服务员工排班，与上游新增表无重叠，可整体保留。</td></tr>
+<tr><td>积分系统</td><td>yshop-module-score 规则、签到、订单积分、积分商城；仅 ScoreProductServiceImpl 有轻微修改但无冲突，可保留。</td></tr>
+<tr><td>订单回复</td><td>订单评价/回复接口，无直接冲突文件，可保留。</td></tr>
+<tr><td>商品佣金</td><td>CommissionService 及相关表，除 StoreOrderServiceImpl 依赖注入外无冲突，可保留。</td></tr>
+<tr><td>对账报表</td><td>Adapay 日终对账，无直接冲突，可保留。</td></tr>
+    </table>
+
+    <h3>上游 yshop/master 无冲突特性 — 直接引入</h3>
+    <table>
+        <tr><th>特性</th><th>说明</th></tr>
+        <tr><td>画布模块</td><td>yshop-module-canvas-api/biz 为上游新增模块，pom 已加入后无其他冲突，可直接引入。</td></tr>
+<tr><td>租户密码重置</td><td>TenantController/Service 新增密码重置接口，自动合并无冲突，可直接引入。</td></tr>
+<tr><td>首页统计</td><td>StatisticsController/Service 新增首页经营数据，无冲突，可直接引入。</td></tr>
+<tr><td>退款查询</td><td>新增 RefundService，与 Adapay 退款路径不直接冲突，可同时存在。</td></tr>
+<tr><td>微信公众号/会员</td><td>大量自动合并的优化，可按默认合并结果保留。</td></tr>
+    </table>
+    
+<h2>四、分阶段合并路线图</h2>
+
+    <div class="phase">
+        <div class="phase-title">第 1 阶段：基础设施与安全基线</div>
+        <ul>
+            <li>解决 sql/yixiang-drink.sql：以 HEAD schema 为基线，用 schema 对比工具整理上游新增表/字段为增量脚本。</li><li>解决 yshop-module-mall/pom.xml：同时保留 device 与 canvas 子模块。</li><li>确认 382 个被上游删除的文件：保留所有 HEAD 自定义模块（device、site、score、business-region、adapay 等），仅在上游明确重构替代时才删除。</li><li>编译验证：mvn clean compile -pl yshop-server -am -DskipTests</li>
+        </ul>
+    </div>
+    
+
+    <div class="phase">
+        <div class="phase-title">第 2 阶段：支付链路兼容</div>
+        <ul>
+            <li>合并 PayNoticeMessage / PayNoticeProducer：同时保留 adapayPaymentId、outPayNo、transactionId。</li><li>合并 PayNoticeConsumer / AppStoreOrderService：保留 Adapay 签名，新增 transactionId 兼容入口。</li><li>合并 StoreOrderServiceImpl 依赖注入：同时保留 Adapay 服务与 RefundService。</li><li>跑通支付回调单元测试与 Adapay 沙箱回调。</li>
+        </ul>
+    </div>
+    
+
+    <div class="phase">
+        <div class="phase-title">第 3 阶段：订单与购物车能力整合</div>
+        <ul>
+            <li>合并 AppOrderParam / CartMsgVo / StoreOrderCartInfoService：同时保留 boxFeeSelected 与 isCombo/comboGoods。</li><li>重构 AppStoreOrderServiceImpl：将套餐价格计算、共享菜单解析抽为独立方法，原设备/外卖流程不受影响。</li><li>合并 OrderLogEnum：同时保留 ORDER_DEVICE 与 ORDER_TAKE_CASHIER。</li><li>验证单品、套餐、设备订单、外卖订单四种场景下单价格正确。</li>
+        </ul>
+    </div>
+    
+
+    <div class="phase">
+        <div class="phase-title">第 4 阶段：门店与优惠券</div>
+        <ul>
+            <li>合并 AppStoreController / AppStoreShopService / StoreShopServiceImpl：保留商圈筛选，吸收 String 经纬度校验与管理员唯一绑定校验。</li><li>确认 StoreWithdrawalServiceImpl 使用 amount 还是 realAmount，同步 schema。</li><li>处理 AppCouponServiceImpl modify/delete 冲突：确认优惠券 2.0 是否覆盖过滤逻辑后决定删除或迁移。</li>
+        </ul>
+    </div>
+    
+
+    <div class="phase">
+        <div class="phase-title">第 5 阶段：回归与对账</div>
+        <ul>
+            <li>运行完整单元测试与核心接口集成测试。</li><li>重点验证：支付回调、分账结算、退款、门店列表、下单价格、优惠券领取。</li><li>更新 backend 子模块指针并提交 workspace。</li>
+        </ul>
+    </div>
+    
+
+    <h2>五、关键决策点</h2>
+    <div class="card">
+        <p><strong>1. 是否必须引入上游套餐（combo）能力？</strong><br>
+        如果业务近期不需要，可以在 VO/Service 层保留字段但不下发前端，降低合并风险；如果必须引入，需要完整测试套餐下单、购物车、价格计算链路。</p>
+        <p><strong>2. 是否保留当前 Adapay 作为默认支付通道？</strong><br>
+        报告建议保留。上游 transactionId 仅作为兼容字段存在，不影响 Adapay 主流程。</p>
+        <p><strong>3. 382 个被上游删除的文件如何处理？</strong><br>
+        绝大多数是当前分支自定义模块，必须保留。删除前逐条确认。</p>
+        <p><strong>4. 是否需要重新拆分 SQL baseline？</strong><br>
+        强烈建议。合并后将最终 schema 导出为新 baseline，并把本次上游新增的表/字段整理为 upgrade 脚本。</p>
+    </div>
+    
+</div>
+</body>
+</html>

@@ -1,0 +1,59 @@
+{
+  "skill_name": "git-merge-analysis",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我分析一下 master 和 yshop/master 能不能合并，看看有没有冲突",
+      "expected_output": "完整的合并分析报告，包含：1) 两个分支的提交差异 2) 被双方修改的文件列表 3) 用 merge-tree 检测冲突数量 4) 合并建议和具体操作步骤",
+      "files": [],
+      "expectations": [
+        "报告包含共同祖先(merge-base)信息",
+        "列出了源分支和目标分支各自的独有提交",
+        "使用 git merge-tree 检测了冲突",
+        "明确报告了冲突数量（0个或有具体数量）",
+        "列出了双方同时修改的文件",
+        "提供了具体的合并命令建议",
+        "没有实际执行合并操作",
+        "输出是结构化的 Markdown 报告"
+      ],
+      "assertions": [
+        {"name": "包含merge_base", "check": "报告中提到了共同祖先或 merge-base 的 commit hash"},
+        {"name": "列出源分支独有提交", "check": "报告列出了 yshop/master 相对于 master 的独有提交"},
+        {"name": "列出目标分支独有提交", "check": "报告列出了 master 相对于 yshop/master 的独有提交"},
+        {"name": "冲突检测结果", "check": "报告明确说明了冲突数量（0个或具体数字）"},
+        {"name": "双方修改文件", "check": "报告列出了两个分支同时修改的文件"},
+        {"name": "合并建议", "check": "报告提供了具体的合并操作步骤或建议"},
+        {"name": "未实际合并", "check": "没有执行 git merge 修改任何分支"},
+        {"name": "使用merge_tree", "check": "使用了 git merge-tree 命令来检测冲突"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我想把 origin/feature-branch 合并到本地的 develop 分支，先帮我 preview 一下",
+      "expected_output": "合并预览报告，展示 feature-branch 和 develop 的差异，检测潜在冲突，给出是否可以安全合并的结论",
+      "files": [],
+      "expectations": [
+        "正确识别 source=origin/feature-branch, target=develop",
+        "尝试 fetch origin/feature-branch",
+        "展示了 feature-branch 独有的提交列表",
+        "展示了 develop 独有的提交列表",
+        "报告了冲突检测结果",
+        "建议使用临时分支进行试合并",
+        "没有修改当前工作目录或分支"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "比较一下当前 HEAD 和 upstream/main 的差异，我想知道上游有什么新改动",
+      "expected_output": "差异分析报告，聚焦 upstream/main 相对于 HEAD 的改动，总结上游带来的主要变更",
+      "files": [],
+      "expectations": [
+        "正确识别 target=HEAD, source=upstream/main",
+        "列出了 upstream/main 相对于 HEAD 的所有独有提交",
+        "按主题归类了上游改动（如 bugfix、feature、版本更新等）",
+        "检测了合并冲突",
+        "给出了合并建议"
+      ]
+    }
+  ]
+}

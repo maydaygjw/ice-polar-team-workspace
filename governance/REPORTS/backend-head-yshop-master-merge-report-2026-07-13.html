@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Merge Analysis Report</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #f0f6fc; font-size: 28px; margin-bottom: 8px; }
+        h2 { color: #58a6ff; font-size: 20px; margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 1px solid #30363d; }
+        h3 { color: #79c0ff; font-size: 16px; margin: 20px 0 10px; }
+        .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 20px; }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-danger { background: #da3633; color: #fff; }
+        .badge-warning { background: #d29922; color: #000; }
+        .badge-success { background: #238636; color: #fff; }
+        .badge-info { background: #1f6feb; color: #fff; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #f0f6fc;
+        }
+        .summary-value.danger { color: #f85149; }
+        .summary-value.warning { color: #d29922; }
+        .summary-value.success { color: #3fb950; }
+        .summary-label { font-size: 13px; color: #8b949e; margin-top: 4px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #30363d;
+        }
+        th {
+            background: #21262d;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+        tr:hover { background: #1c2128; }
+        td code { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; }
+
+        pre {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .conflict-marker { color: #f0883e; font-weight: bold; }
+        .ours { color: #3fb950; }
+        .theirs { color: #58a6ff; }
+        .removed { color: #f85149; }
+        .added { color: #3fb950; }
+
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid #30363d;
+            background: #21262d;
+            color: #c9d1d9;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { background: #30363d; }
+        .filter-btn.active { background: #1f6feb; border-color: #1f6feb; }
+
+        .conflict-file {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .conflict-file.high { border-left: 4px solid #da3633; }
+        .conflict-file.medium { border-left: 4px solid #d29922; }
+        .conflict-file.low { border-left: 4px solid #58a6ff; }
+        .conflict-header {
+            padding: 14px 18px;
+            background: #1c2128;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .conflict-path { font-family: 'SF Mono', monospace; font-size: 13px; color: #f0f6fc; }
+        .conflict-body { padding: 18px; }
+        .analysis-box {
+            background: #0d1117;
+            border-radius: 6px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+        .analysis-box h4 {
+            color: #79c0ff;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .analysis-box p, .analysis-box ul {
+            font-size: 13px;
+            color: #c9d1d9;
+            margin-bottom: 6px;
+        }
+        .analysis-box ul { padding-left: 20px; }
+        .analysis-box li { margin-bottom: 4px; }
+
+        .steps { counter-reset: step; }
+        .step {
+            position: relative;
+            padding-left: 36px;
+            margin-bottom: 12px;
+        }
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: #1f6feb;
+            color: #fff;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        code.inline {
+            background: #343942;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+        }
+
+        .risk-high { color: #f85149; font-weight: 600; }
+        .risk-medium { color: #d29922; font-weight: 600; }
+        .risk-low { color: #58a6ff; font-weight: 600; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Git Merge Analysis Report</h1>
+    <p class="subtitle">backend/HEAD ← yshop/master | Generated: 2026-07-13</p>
+
+    <!-- Core Conclusion -->
+    <div class="card">
+        <div class="card-header">
+            <span class="badge badge-danger">20 CONFLICTS</span>
+            <span class="badge badge-warning">Manual Resolution Required</span>
+        </div>
+        <p><strong>结论：</strong>检测到 20 个冲突文件（High 2 / Medium 18 / Low 0）。其中 SQL dump 与聚合 pom 为全局高风险，订单、支付、门店、优惠券为核心业务冲突。必须进行人工合并，不能直接自动合并。</p>
+    </div>
+
+    <!-- Summary Grid -->
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-value danger">20</div>
+            <div class="summary-label">冲突文件数</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value warning">26</div>
+            <div class="summary-label">Source 独有提交 (yshop/master)</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value">306</div>
+            <div class="summary-label">Target 独有提交 (backend/HEAD (master))</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value">631</div>
+            <div class="summary-label">变更文件总数</div>
+        </div>
+    </div>
+
+    <!-- Branch Overview -->
+    <h2>Branch Overview</h2>
+    <table>
+        <tr><th>属性</th><th>Target (当前分支)</th><th>Source (上游分支)</th></tr>
+        <tr><td>分支名</td><td><code>backend/HEAD (master)</code></td><td><code>yshop/master</code></td></tr>
+        <tr><td>最新提交</td><td><code>1e65e5b5</code> !52 feat(order): add order settlement management API</td><td><code>b11c6032</code> 租户列表增加重置密码</td></tr>
+        <tr><td>提交时间</td><td>2026-07-13 05:49:27 +0000</td><td>2026-07-04 22:00:39 +0800</td></tr>
+        <tr><td>独有提交数</td><td>306 commits</td><td>26 commits</td></tr>
+        <tr><td>主要改动</td><td>当前分支基于同一基线大量定制开发：Adapay 第三方支付与分账结算、设备连接与 DMS 出冰下单、站点/服务订单、积分系统、商圈多门店权限、餐盒费、订单回复、对账报表等。</td><td>上游 yshop-drink 官方演进：V3.2.3→V3.3.1，重点包括优惠券 2.0、收银台订单、付款码扫码支付 V2、退款查询、门店提现费率、财务菜单、画布/套餐/共享菜单等。</td></tr>
+    </table>
+
+    <!-- Common Ancestor -->
+    <h2>Common Ancestor (Divergence Point)</h2>
+    <div class="card">
+        <p><strong>Commit:</strong> <code>98f02de6</code></p>
+        <p><strong>Message:</strong> om.egzosn pay 升级到v1.0.5  兼容微信v3支付回调公钥</p>
+        <p style="color:#8b949e; font-size:13px; margin-top:8px;">从此提交点之后，两个分支开始各自独立开发。</p>
+    </div>
+
+    <!-- Source Commits -->
+    <h2>Source Branch Commits (yshop/master) — 最近 10 个</h2>
+    <table>
+        <tr><th>Commit</th><th>Message</th></tr>
+        <tr><td><code>b11c6032</code></td><td>租户列表增加重置密码</td></tr>
+<tr><td><code>a62a87b0</code></td><td>v3.3.1优惠券2.0版本</td></tr>
+<tr><td><code>af5b5ec8</code></td><td>Merge branch &#x27;master&#x27; of https://git.yixiang.co/yshop-drink-senior/yshop-drink</td></tr>
+<tr><td><code>3035a188</code></td><td>首页统计更新</td></tr>
+<tr><td><code>024fa85a</code></td><td>修复单元测试报错问题</td></tr>
+<tr><td><code>0720c261</code></td><td>门店增加提现费率,增加财务菜与统计</td></tr>
+<tr><td><code>9cce7199</code></td><td>V3.3.0</td></tr>
+<tr><td><code>611100b7</code></td><td>V3.2.6</td></tr>
+<tr><td><code>6a16b65e</code></td><td>V3.2.5</td></tr>
+<tr><td><code>b7fd79ce</code></td><td>V3.2.4</td></tr>
+    </table>
+    <p style="color:#8b949e; font-size:12px; margin-top:6px;">共 26 个独有提交，此处显示前 10 个。</p>
+
+    <!-- Target Commits -->
+    <h2>Target Branch Commits (backend/HEAD (master)) — 最近 10 个</h2>
+    <table>
+        <tr><th>Commit</th><th>Message</th></tr>
+        <tr><td><code>1e65e5b5</code></td><td>!52 feat(order): add order settlement management API</td></tr>
+<tr><td><code>d84bc403</code></td><td>feat(order): add order settlement management API</td></tr>
+<tr><td><code>0888ae89</code></td><td>fix(reconciliation): use startsWith instead of contains for ZIP entry matching</td></tr>
+<tr><td><code>8d3f10cf</code></td><td>fix(reconciliation): fix empty bill download due to incorrect zip parsing</td></tr>
+<tr><td><code>1ad906bc</code></td><td>fix(reconciliation): fix amount zero and missing recipient display</td></tr>
+<tr><td><code>fbb85fd4</code></td><td>fix(reconciliation): fix 5 display/data bugs in daily reconciliation</td></tr>
+<tr><td><code>2b09986f</code></td><td>test(reconciliation): update tests for unified matchReconcile</td></tr>
+<tr><td><code>2111bf14</code></td><td>fix(reconciliation): unified Adapay reconciliation — single ZIP, three phases, no more bogus func_codes</td></tr>
+<tr><td><code>19a2a173</code></td><td>fix: add shopName to profit-sharing order for settlement records display</td></tr>
+<tr><td><code>0f9e3a94</code></td><td>refactor(reconciliation): simplify service — 1080→580 lines, extract shared helpers</td></tr>
+    </table>
+    <p style="color:#8b949e; font-size:12px; margin-top:6px;">共 306 个独有提交，此处显示前 10 个。</p>
+
+    <!-- Conflict Details -->
+    <h2>Conflict Details</h2>
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all" onclick="filterConflicts('all', this)">全部 (20)</button>
+        <button class="filter-btn" data-filter="high" onclick="filterConflicts('high', this)">High (2)</button>
+        <button class="filter-btn" data-filter="medium" onclick="filterConflicts('medium', this)">Medium (18)</button>
+        <button class="filter-btn" data-filter="low" onclick="filterConflicts('low', this)">Low (0)</button>
+    </div>
+
+    <div class="conflict-file high" data-severity="high">
+  <div class="conflict-header">
+    <span class="conflict-path">sql/yixiang-drink.sql</span>
+    <span class="badge badge-high">HIGH</span>
+  </div>
+  <div class="conflict-body">
+    <pre><span class="conflict-marker">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (ours)</span>
+<span class="ours">/*</span>
+<span class="ours"> Navicat Premium Data Transfer</span>
+<span class="ours"></span>
+<span class="ours"> Source Server         : localhost</span>
+<span class="ours"> Source Server Type    : MySQL</span>
+<span class="ours"> Source Server Version : 80027</span>
+<span class="ours"> Source Host           : localhost:3306</span>
+<span class="ours"> Source Schema         : yixiang-drink</span>
+<span class="ours"></span>
+<span class="ours"> Target Server Type    : MySQL</span>
+<span class="ours"> Target Server Version : 80027</span>
+<span class="ours"> File Encoding         : 65001</span>
+<span class="ours"></span>
+<span class="ours"> Date: 24/11/2025 15:11:37</span>
+<span class="ours">*/</span>
+<span class="ours"></span>
+<span class="ours">SET NAMES utf8mb4;</span>
+<span class="ours">SET FOREIGN_KEY_CHECKS = 0;</span>
+<span class="ours"></span>
+<span class="ours">-- ----------------------------</span>
+<span class="ours">-- Table structure for infra_api_access_log</span>
+<span class="ours">-- ----------------------------</span>
+<span class="ours">DROP TABLE IF EXISTS `infra_api_access_log`;</span>
+<span class="ours">CREATE TABLE `infra_api_access_log` (</span>
+<span class="ours">  `id` bigint NOT NULL AUTO_INCREMENT COMMENT &#x27;日志主键&#x27;,</span>
+<span class="ours">  `trace_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;链路追踪编号&#x27;,</span>
+<span class="ours">  `user_id` bigint NOT NULL DEFAULT &#x27;0&#x27; COMMENT &#x27;用户编号&#x27;,</span>
+<span class="ours">  `user_type` tinyint NOT NULL DEFAULT &#x27;0&#x27; COMMENT &#x27;用户类型&#x27;,</span>
+<span class="ours">  `application_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;应用名&#x27;,</span>
+<span class="ours">  `request_method` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;请求方法名&#x27;,</span>
+<span class="ours">  `request_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;请求地址&#x27;,</span>
+<span class="ours">  `request_params` varchar(8000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;请求参数&#x27;,</span>
+<span class="ours">  `response_body` text COLLATE utf8mb4_unicode_ci COMMENT &#x27;响应结果&#x27;,</span>
+<span class="ours">  `user_ip` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;用户 IP&#x27;,</span>
+<span class="ours">  `user_agent` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;浏览器 UA&#x27;,</span>
+<span class="ours">  `operate_module` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT &#x27;操作模块&#x27;,</span>
+<span class="ours">  `operate_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT &#x27;操作名&#x27;,</span>
+<span class="ours">  `operate_type` tinyint(1) DEFAULT &#x27;0&#x27; COMMENT &#x27;操作分类&#x27;,</span>
+<span class="ours">  `begin_time` datetime NOT NULL COMMENT &#x27;开始请求时间&#x27;,</span>
+<span class="ours">  `end_time` datetime NOT NULL COMMENT &#x27;结束请求时间&#x27;,</span>
+<span class="ours">  `duration` int NOT NULL COMMENT &#x27;执行时长&#x27;,</span>
+<span class="ours">  `result_code` int NOT NULL DEFAULT &#x27;0&#x27; COMMENT &#x27;结果码&#x27;,</span>
+<span class="ours">  `result_msg` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT &#x27;&#x27; COMMENT &#x27;结果提示&#x27;,</span>
+<span class="ours">  `creator` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT &#x27;&#x27; COMMENT &#x27;创建者&#x27;,</span>
+<span class="ours">  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT &#x27;创建时间&#x27;,</span>
+<span class="ours">  `updater` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT &#x27;&#x27; COMMENT &#x27;更新者&#x27;,</span>
+<span class="ours">  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT &#x27;更新时间&#x27;,</span>
+<span class="ours">  `deleted` bit(1) NOT NULL DEFAULT b&#x27;0&#x27; COMMENT &#x27;是否删除&#x27;,</span>
+<span class="ours">  `tenant_id` bigint NOT NULL DEFAULT &#x27;0&#x27; COMMENT &#x27;租户编号&#x27;,</span>
+<span class="ours">  PRIMARY KEY (`id`) USING BTREE</span>
+<span class="ours">) ENGINE=InnoDB AUTO_INCREMENT=39086 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=&#x27;API 访问日志表&#x27;;</span>
+<span class="ours"></span>
+<span class="ours">-- ----------------------------</span>
+<span class="ours">-- Records of infra_api_access_log</span>
+<span class="ours">-- ----------------------------</span>
+<span class="ours">BEGIN;</span>
+<span class="ours">COMMIT;</span>
+<span class="ours"></span>
+<span class="ours">-- ----------------------------</span>
+<span class="ours">-- Table structure for infra_api_error_log</span>
+<span class="ours">-- ----------------------------</span>
+<span class="ours">DROP TABLE IF EXISTS `infra_api_error_log`;</span>
+<span class="ours">CREATE TABLE `infra_api_error_log` (</span>
+<span class="ours">  `id` int NOT NULL AUTO_INCREMENT COMMENT &#x27;编号&#x27;,</span>
+<span class="ours">  `trace_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;链路追踪编号\n     *\n     * 一般来说，通过链路追踪编号，可以将访问日志，错误日志，链路追踪日志，logger 打印日志等，结合在一起，从而进行排错。&#x27;,</span>
+<span class="ours">  `user_id` int NOT NULL DEFAULT &#x27;0&#x27; COMMENT &#x27;用户编号&#x27;,</span>
+<span class="ours">  `user_type` tinyint NOT NULL DEFAULT &#x27;0&#x27; COMMENT &#x27;用户类型&#x27;,</span>
+<span class="ours">  `application_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;应用名\n     *\n     * 目前读取 spring.application.name&#x27;,</span>
+<span class="ours">  `request_method` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;请求方法名&#x27;,</span>
+<span class="ours">  `request_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;请求地址&#x27;,</span>
+<span class="ours">  `request_params` varchar(8000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;请求参数&#x27;,</span>
+<span class="ours">  `user_ip` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;用户 IP&#x27;,</span>
+<span class="ours">  `user_agent` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;浏览器 UA&#x27;,</span>
+<span class="ours">  `exception_time` datetime NOT NULL COMMENT &#x27;异常发生时间&#x27;,</span>
+<span class="ours">  `exception_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;异常名\n     *\n     * {@link Throwable#getClass()} 的类全名&#x27;,</span>
+<span class="ours">  `exception_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常导致的消息\n     *\n     * {@link cn.iocoder.common.framework.util.ExceptionUtil#getMessage(Throwable)}&#x27;,</span>
+<span class="ours">  `exception_root_cause_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常导致的根消息\n     *\n     * {@link cn.iocoder.common.framework.util.ExceptionUtil#getRootCauseMessage(Throwable)}&#x27;,</span>
+<span class="ours">  `exception_stack_trace` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常的栈轨迹\n     *\n     * {@link cn.iocoder.common.framework.util.ExceptionUtil#getServiceException(Exception)}&#x27;,</span>
+<span class="ours">  `exception_class_name` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常发生的类全名\n     *\n     * {@link StackTraceElement#getClassName()}&#x27;,</span>
+<span class="ours">  `exception_file_name` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常发生的类文件\n     *\n     * {@link StackTraceElement#getFileName()}&#x27;,</span>
+<span class="ours"></span>
+<span class="ours">... (truncated: 19667 more lines in HEAD side) ...</span>
+<span class="ours"></span>
+<span class="conflict-marker">=======</span>
+<span class="theirs">/*</span>
+<span class="theirs"> Navicat Premium Dump SQL</span>
+<span class="theirs"></span>
+<span class="theirs"> Source Server         : 192.168.31.39</span>
+<span class="theirs"> Source Server Type    : MySQL</span>
+<span class="theirs"> Source Server Version : 90600 (9.6.0)</span>
+<span class="theirs"> Source Host           : 192.168.31.39:3306</span>
+<span class="theirs"> Source Schema         : yixiang-drink</span>
+<span class="theirs"></span>
+<span class="theirs"> Target Server Type    : MySQL</span>
+<span class="theirs"> Target Server Version : 90600 (9.6.0)</span>
+<span class="theirs"> File Encoding         : 65001</span>
+<span class="theirs"></span>
+<span class="theirs"> Date: 25/06/2026 12:22:45</span>
+<span class="theirs">*/</span>
+<span class="theirs"></span>
+<span class="theirs">SET NAMES utf8mb4;</span>
+<span class="theirs">SET FOREIGN_KEY_CHECKS = 0;</span>
+<span class="theirs"></span>
+<span class="theirs">-- ----------------------------</span>
+<span class="theirs">-- Table structure for infra_api_access_log</span>
+<span class="theirs">-- ----------------------------</span>
+<span class="theirs">DROP TABLE IF EXISTS `infra_api_access_log`;</span>
+<span class="theirs">CREATE TABLE `infra_api_access_log`  (</span>
+<span class="theirs">  `id` bigint NOT NULL AUTO_INCREMENT COMMENT &#x27;日志主键&#x27;,</span>
+<span class="theirs">  `trace_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;链路追踪编号&#x27;,</span>
+<span class="theirs">  `user_id` bigint NOT NULL DEFAULT 0 COMMENT &#x27;用户编号&#x27;,</span>
+<span class="theirs">  `user_type` tinyint NOT NULL DEFAULT 0 COMMENT &#x27;用户类型&#x27;,</span>
+<span class="theirs">  `application_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;应用名&#x27;,</span>
+<span class="theirs">  `request_method` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;请求方法名&#x27;,</span>
+<span class="theirs">  `request_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;请求地址&#x27;,</span>
+<span class="theirs">  `request_params` varchar(8000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;请求参数&#x27;,</span>
+<span class="theirs">  `response_body` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT &#x27;响应结果&#x27;,</span>
+<span class="theirs">  `user_ip` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;用户 IP&#x27;,</span>
+<span class="theirs">  `user_agent` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;浏览器 UA&#x27;,</span>
+<span class="theirs">  `operate_module` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT &#x27;操作模块&#x27;,</span>
+<span class="theirs">  `operate_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT &#x27;操作名&#x27;,</span>
+<span class="theirs">  `operate_type` tinyint(1) NULL DEFAULT 0 COMMENT &#x27;操作分类&#x27;,</span>
+<span class="theirs">  `begin_time` datetime NOT NULL COMMENT &#x27;开始请求时间&#x27;,</span>
+<span class="theirs">  `end_time` datetime NOT NULL COMMENT &#x27;结束请求时间&#x27;,</span>
+<span class="theirs">  `duration` int NOT NULL COMMENT &#x27;执行时长&#x27;,</span>
+<span class="theirs">  `result_code` int NOT NULL DEFAULT 0 COMMENT &#x27;结果码&#x27;,</span>
+<span class="theirs">  `result_msg` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT &#x27;&#x27; COMMENT &#x27;结果提示&#x27;,</span>
+<span class="theirs">  `creator` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT &#x27;&#x27; COMMENT &#x27;创建者&#x27;,</span>
+<span class="theirs">  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT &#x27;创建时间&#x27;,</span>
+<span class="theirs">  `updater` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT &#x27;&#x27; COMMENT &#x27;更新者&#x27;,</span>
+<span class="theirs">  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT &#x27;更新时间&#x27;,</span>
+<span class="theirs">  `deleted` bit(1) NOT NULL DEFAULT b&#x27;0&#x27; COMMENT &#x27;是否删除&#x27;,</span>
+<span class="theirs">  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT &#x27;租户编号&#x27;,</span>
+<span class="theirs">  PRIMARY KEY (`id`) USING BTREE</span>
+<span class="theirs">) ENGINE = InnoDB AUTO_INCREMENT = 39086 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = &#x27;API 访问日志表&#x27; ROW_FORMAT = Dynamic;</span>
+<span class="theirs"></span>
+<span class="theirs">-- ----------------------------</span>
+<span class="theirs">-- Records of infra_api_access_log</span>
+<span class="theirs">-- ----------------------------</span>
+<span class="theirs"></span>
+<span class="theirs">-- ----------------------------</span>
+<span class="theirs">-- Table structure for infra_api_error_log</span>
+<span class="theirs">-- ----------------------------</span>
+<span class="theirs">DROP TABLE IF EXISTS `infra_api_error_log`;</span>
+<span class="theirs">CREATE TABLE `infra_api_error_log`  (</span>
+<span class="theirs">  `id` int NOT NULL AUTO_INCREMENT COMMENT &#x27;编号&#x27;,</span>
+<span class="theirs">  `trace_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;链路追踪编号\n     *\n     * 一般来说，通过链路追踪编号，可以将访问日志，错误日志，链路追踪日志，logger 打印日志等，结合在一起，从而进行排错。&#x27;,</span>
+<span class="theirs">  `user_id` int NOT NULL DEFAULT 0 COMMENT &#x27;用户编号&#x27;,</span>
+<span class="theirs">  `user_type` tinyint NOT NULL DEFAULT 0 COMMENT &#x27;用户类型&#x27;,</span>
+<span class="theirs">  `application_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;应用名\n     *\n     * 目前读取 spring.application.name&#x27;,</span>
+<span class="theirs">  `request_method` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;请求方法名&#x27;,</span>
+<span class="theirs">  `request_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;请求地址&#x27;,</span>
+<span class="theirs">  `request_params` varchar(8000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;请求参数&#x27;,</span>
+<span class="theirs">  `user_ip` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;用户 IP&#x27;,</span>
+<span class="theirs">  `user_agent` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;浏览器 UA&#x27;,</span>
+<span class="theirs">  `exception_time` datetime NOT NULL COMMENT &#x27;异常发生时间&#x27;,</span>
+<span class="theirs">  `exception_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT &#x27;&#x27; COMMENT &#x27;异常名\n     *\n     * {@link Throwable#getClass()} 的类全名&#x27;,</span>
+<span class="theirs">  `exception_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常导致的消息\n     *\n     * {@link cn.iocoder.common.framework.util.ExceptionUtil#getMessage(Throwable)}&#x27;,</span>
+<span class="theirs">  `exception_root_cause_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常导致的根消息\n     *\n     * {@link cn.iocoder.common.framework.util.ExceptionUtil#getRootCauseMessage(Throwable)}&#x27;,</span>
+<span class="theirs">  `exception_stack_trace` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常的栈轨迹\n     *\n     * {@link cn.iocoder.common.framework.util.ExceptionUtil#getServiceException(Exception)}&#x27;,</span>
+<span class="theirs">  `exception_class_name` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常发生的类全名\n     *\n     * {@link StackTraceElement#getClassName()}&#x27;,</span>
+<span class="theirs">  `exception_file_name` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常发生的类文件\n     *\n     * {@link StackTraceElement#getFileName()}&#x27;,</span>
+<span class="theirs">  `exception_method_name` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT &#x27;异常发生的方法名\n     *\n     * {@link StackTraceElement#getMethodName()}&#x27;,</span>
+<span class="theirs">  `exception_line_number` int NOT NULL COMMENT &#x27;异常发生的方法所在行\n     *\n     * {@link StackTraceElement#getLineNumber()}&#x27;,</span>
+<span class="theirs"></span>
+<span class="theirs">... (truncated: 19325 more lines in yshop/master side) ...</span>
+<span class="theirs"></span>
+<span class="conflict-marker">&gt;&gt;&gt;&gt;&gt;&gt;&gt; yshop/master (theirs)</span></pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>当前分支在此 SQL baseline 之上进行了大量 schema 扩展：Adapay 分账/对账/支付单号、设备连接与 DMS 出冰、站点/服务订单、积分系统、商圈多门店权限、餐盒费、订单回复等。相关提交如 <code>6671d71b</code>（MyISAM→InnoDB 转换、RDS 兼容）、<code>bcd685f6</code>（租户任务序列化）等都对全量 dump 有调整。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游 yshop-drink 官方从 V3.2.3 演进到 V3.3.1，持续更新系统菜单、收银台订单类型、退款查询、付款码扫码支付 V2、自动打印小票、门店提现费率/财务菜单、优惠券 2.0 等，提交包括 <code>a62a87b0</code>、<code>0720c261</code>、<code>9cce7199</code> 等。</p>
+      <p><strong>冲突产生的逻辑：</strong>两个分支自共同祖先 <code>98f02de6</code> 之后各自累积了近 8 个月的 DDL/DML 改动，导致整个 SQL dump 文件从头冲突到尾。这不是局部不兼容，而是两份完整数据库Schema的全局差异。</p>
+      <p><strong>推荐解决方案：</strong><strong>不可直接二选一。</strong>建议用 Beyond Compare / MySQL Workbench / dbdiff 对比两个 schema，策略如下：<br>1. 保留当前分支所有业务表（Adapay、device、site-order、score、business-region 等）。<br>2. 将上游新增表/字段（如 canvas、combo 套餐、付款码 V2、优惠券 2.0 相关）整理为增量迁移脚本。<br>3. 菜单/权限 SQL 以当前分支为准，按需补充上游新增菜单项。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">-- 因 SQL dump 冲突规模过大（约 4 万行），此处不给出逐行合并结果。<br>-- 推荐操作：<br>-- 1. 分别导出 HEAD 与 yshop/master 的 schema。<br>-- 2. 使用 schema 对比工具生成 diff。<br>-- 3. 以 HEAD schema 为基准，逐条应用上游新增的表/字段/索引。<br>-- 4. 将合并后的 schema 另存为新的 baseline，并编写 upgrade 脚本。</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file high" data-severity="high">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/pom.xml</span>
+    <span class="badge badge-high">HIGH</span>
+  </div>
+  <div class="conflict-body">
+    <pre><span class="conflict-marker">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (ours)</span>
+<span class="ours">        &lt;module&gt;yshop-module-device-api&lt;/module&gt;</span>
+<span class="ours">        &lt;module&gt;yshop-module-device-biz&lt;/module&gt;</span>
+<span class="conflict-marker">=======</span>
+<span class="theirs">        &lt;module&gt;yshop-module-canvas-api&lt;/module&gt;</span>
+<span class="theirs">        &lt;module&gt;yshop-module-canvas-biz&lt;/module&gt;</span>
+<span class="conflict-marker">&gt;&gt;&gt;&gt;&gt;&gt;&gt; yshop/master (theirs)</span></pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>提交 <code>3ecc81ef</code> 在 mall 聚合 pom 中增加了设备连接模块：<code>yshop-module-device-api</code>、<code>yshop-module-device-biz</code>。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>提交 <code>9cce7199</code>（V3.3.0）在同一位置增加了画布模块：<code>yshop-module-canvas-api</code>、<code>yshop-module-canvas-biz</code>。</p>
+      <p><strong>冲突产生的逻辑：</strong>两个分支在 <code>&lt;modules&gt;</code> 列表的相邻位置各自追加了不同的子模块，Git 无法自动判断应保留哪些。</p>
+      <p><strong>推荐解决方案：</strong>将两边的 module 同时保留，合并后的 modules 列表应包含 device 与 canvas 两组模块。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">        &lt;module&gt;yshop-module-device-api&lt;/module&gt;<br>        &lt;module&gt;yshop-module-device-biz&lt;/module&gt;<br>        &lt;module&gt;yshop-module-canvas-api&lt;/module&gt;<br>        &lt;module&gt;yshop-module-canvas-biz&lt;/module&gt;</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-api/src/main/java/co/yixiang/yshop/module/order/enums/OrderLogEnum.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>当前分支在 <code>c2cc3469</code> 增加了设备订单类型 <code>ORDER_DEVICE</code>；<code>9eaea888</code> 增加了 admin 拒绝退款相关日志类型。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游在 <code>d4e87979</code> 增加了收银台订单类型 <code>ORDER_TAKE_CASHIER</code>；<code>443b942e</code> 同步新 UI。</p>
+      <p><strong>冲突产生的逻辑：</strong>同一枚举类在相近位置新增不同常量，Git 把两者识别为同一区域的文本冲突。</p>
+      <p><strong>推荐解决方案：</strong>两个订单类型业务上互不冲突，应同时保留。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">	ORDER_DEVICE(&quot;device&quot;,&quot;设备订单&quot;),<br>	ORDER_TAKE_CASHIER(&quot;cashier&quot;,&quot;收银&quot;),</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/param/AppOrderParam.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>当前分支在 <code>13331b2f</code>、<code>6f3fa1c2</code> 增加了餐盒费字段 <code>boxFeeSelected</code>；<code>b8938680</code> 为站点订单详情扩充字段。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游在 <code>b7fd79ce</code>（V3.2.4）增加了套餐字段 <code>isCombo</code>、<code>comboGoods</code>。</p>
+      <p><strong>冲突产生的逻辑：</strong>同一请求参数 VO 中，双方在 <code>number</code> 与 <code>payType</code> 之间插入了各自的新字段。</p>
+      <p><strong>推荐解决方案：</strong>同时保留餐盒费与套餐两套字段，它们是正交功能。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    @Schema(description = &quot;数量&quot;, required = true)<br>    private List&lt;String&gt;  number;<br><br>    @Schema(description = &quot;是否选择餐盒费，和商品顺序一一对应；0=不选 1=选，仅 takeout/device 生效&quot;, required = true)<br>    private List&lt;Integer&gt; boxFeeSelected;<br><br>    @Schema(description = &quot;是否套餐&quot;)<br>    private List&lt;Integer&gt; isCombo;<br><br>    @Schema(description = &quot;套餐商品明细&quot;)<br>    private List&lt;List&lt;StoreProductComboGroupDetailVO&gt;&gt; comboGoods;<br><br>    @Schema(description = &quot;支付类型&quot;, required = true)<br>    private String payType;</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/controller/app/order/vo/message/CartMsgVo.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>13331b2f</code> 为外卖/设备订单增加了 <code>boxFeeSelected</code>、<code>boxFee</code>。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>b7fd79ce</code> 为套餐功能增加了 <code>isCombo</code>、<code>comboData</code>。</p>
+      <p><strong>冲突产生的逻辑：</strong>购物车消息 VO 中双方新增字段位置重叠。</p>
+      <p><strong>推荐解决方案：</strong>同时保留两套字段，并在购物车解析逻辑中分别处理。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    private Integer boxFeeSelected;<br><br>    private BigDecimal boxFee;<br><br>    private Integer isCombo;<br><br>    private List&lt;StoreProductComboGroupDetailVO&gt; comboData;</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/mq/consumer/PayNoticeConsumer.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>3bb2b7ba</code>、<code>99487ae2</code> 接入 Adapay 后，<code>paySuccess</code> 调用需要 <code>adapayPaymentId</code> 与 <code>outPayNo</code>。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>ccefd7a5</code> 增加退款查询后，使用微信支付交易号 <code>transactionId</code>。</p>
+      <p><strong>冲突产生的逻辑：</strong>支付成功消费端方法签名不同：我们需要 Adapay 参数，上游需要 transactionId。</p>
+      <p><strong>推荐解决方案：</strong>优先保留当前分支的 Adapay 参数签名。若退款查询需要 transactionId，可将其映射为 outPayNo，或在 <code>PayNoticeMessage</code> 中同时保留 <code>transactionId</code> 与 <code>outPayNo</code>。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">        appStoreOrderService.paySuccess(message.getOrderId(), message.getPayType(), message.getAdapayPaymentId(), message.getOutPayNo());</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderService.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>Adapay 集成（<code>3bb2b7ba</code>、<code>99487ae2</code>）将 <code>paySuccess</code> 扩展为带 <code>adapayPaymentId</code>/<code>outPayNo</code> 的多重重载。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游保留了传统的 <code>paySuccess(String orderId, String payType, String transactionId)</code> 签名。</p>
+      <p><strong>冲突产生的逻辑：</strong>接口签名在同一方法名上产生冲突。</p>
+      <p><strong>推荐解决方案：</strong>保留 Adapay 重载体系，同时提供兼容旧签名的重载（内部转发到带 Adapay 参数的实现，transactionId 可作为 outPayNo 传入）。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    void paySuccess(String orderId, String payType, String adapayPaymentId, String outPayNo);<br><br>    default void paySuccess(String orderId, String payType) {<br>        paySuccess(orderId, payType, null, null);<br>    }<br><br>    default void paySuccess(String orderId, String payType, String adapayPaymentId) {<br>        paySuccess(orderId, payType, adapayPaymentId, null);<br>    }<br><br>    // 兼容上游 transactionId 调用<br>    default void paySuccessWithTransactionId(String orderId, String payType, String transactionId) {<br>        paySuccess(orderId, payType, null, transactionId);<br>    }</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/StoreOrderServiceImpl.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>当前分支引入佣金（<code>2de059b8</code>）、Adapay 支付单号（<code>payOutOrderNoService</code>）、分账订单（<code>profitSharingOrderMapper</code>）等依赖。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游引入退款服务（<code>refundService</code>）。</p>
+      <p><strong>冲突产生的逻辑：</strong>同一类中的依赖注入字段发生增减冲突。</p>
+      <p><strong>推荐解决方案：</strong>合并字段声明，同时注入当前分支与上游所需服务。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    @Resource<br>    private CommissionService commissionService;<br>    @Resource<br>    private PayOutOrderNoService payOutOrderNoService;<br>    @Resource<br>    private ProfitSharingOrderMapper profitSharingOrderMapper;<br>    @Resource<br>    private RefundService refundService;</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoService.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>13331b2f</code> 增加 <code>boxFeeSelected</code> 参数以支持餐盒费。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>b7fd79ce</code> 增加 <code>isCombos</code>、<code>comboGoods</code> 以支持套餐。</p>
+      <p><strong>冲突产生的逻辑：</strong><code>saveCartInfo</code> 方法签名冲突。</p>
+      <p><strong>推荐解决方案：</strong>合并参数列表，Service 与实现同时新增对应参数。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    void saveCartInfo(Long uid, String uidType, Long oid, String orderId,<br>                      List&lt;String&gt; productIds, List&lt;String&gt; numbers, List&lt;String&gt; specs,<br>                      String orderType, List&lt;Integer&gt; boxFeeSelected,<br>                      List&lt;Integer&gt; isCombos, List&lt;List&lt;StoreProductComboGroupDetailVO&gt;&gt; comboGoods);</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeordercartinfo/StoreOrderCartInfoServiceImpl.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>13331b2f</code>、<code>6f3fa1c2</code>、<code>52117b94</code> 实现餐盒费选中逻辑与价格计算。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>b7fd79ce</code>、<code>4e5afee4</code>、<code>e8accb8c</code> 实现套餐价格计算。</p>
+      <p><strong>冲突产生的逻辑：</strong><code>saveCartInfo</code> 实现体中单品价格/餐盒费与套餐价格逻辑互相覆盖。</p>
+      <p><strong>推荐解决方案：</strong>合并计算逻辑：先判断 <code>isCombo</code>，分别按套餐或单品计算价格，再叠加餐盒费（若选中）。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">// 伪代码示意：<br>BigDecimal productPrice;<br>if (ShopCommonEnum.YES.getValue().equals(isCombos.get(i))) {<br>    productPrice = calculateComboPrice(productIds.get(i), numbers.get(i), comboGoods.get(i));<br>} else {<br>    productPrice = calculateSinglePrice(productIds.get(i), numbers.get(i), specs.get(i));<br>}<br>if (boxFeeOrder &amp;&amp; resolveBoxFeeSelected(storeProductDO, boxFeeSelected, i) &gt; 0) {<br>    boxFeePrice = boxFeePrice.add(defaultZero(storeProductDO.getBoxFee()).multiply(BigDecimal.valueOf(quantity)));<br>}<br>sumPrice = NumberUtil.add(sumPrice, productPrice.add(boxFeePrice));</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/controller/admin/storeshop/StoreShopController.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>当前分支使用项目统一的 <code>co.yixiang.yshop.framework.common.util.object.BeanUtils</code>。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游使用 <code>cn.hutool.core.bean.BeanUtil</code>。</p>
+      <p><strong>冲突产生的逻辑：</strong>仅是 import 选择不同，功能相同。</p>
+      <p><strong>推荐解决方案：</strong>统一使用当前分支的 <code>BeanUtils</code>，并检查该 import 在文件其余位置是否已被使用。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">import co.yixiang.yshop.framework.common.util.object.BeanUtils;</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/controller/app/storeshop/AppStoreController.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>cb1ec722</code> 增加按商圈 ID 筛选、<code>4911e104</code> 将 <code>kw</code> 设为可选，并使用 <code>double</code> 经纬度。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>443b942e</code>、<code>1002975c</code> 保持 <code>kw</code> 必填，并使用 <code>String</code> 经纬度，功能定位为服务菜单列表。</p>
+      <p><strong>冲突产生的逻辑：</strong>同一端点 <code>getList</code> 的参数类型、必填约束、业务语义均不同。</p>
+      <p><strong>推荐解决方案：</strong>保留商圈筛选能力，同时兼容 String 经纬度（内部转换）。<code>kw</code> 保持可选。若上游的 String 处理包含默认值/校验逻辑，可吸收到 Service 层。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    @Operation(summary = &quot;店铺列表&quot;)<br>    public CommonResult&lt;List&lt;AppStoreShopVO&gt;&gt; getList(@RequestParam(&quot;lng&quot;) String lon,<br>                                                      @RequestParam(&quot;lat&quot;) String lat,<br>                                                      @RequestParam(value = &quot;kw&quot;, required = false) String name,<br>                                                      @RequestParam(&quot;shop_id&quot;) Integer shopId,<br>                                                      @RequestParam(value = &quot;business_region_id&quot;, required = false) Long businessRegionId) {<br>        // Service 内部校验并转换 lon/lat<br>        return success(appStoreShopService.getStoreList(lon, lat, name, shopId, businessRegionId));<br>    }</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/AppStoreShopService.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>cb1ec722</code> 增加 <code>businessRegionId</code>，使用 <code>double</code> 经纬度。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>1002975c</code> 使用 <code>String</code> 经纬度。</p>
+      <p><strong>冲突产生的逻辑：</strong>方法签名差异，本质与 AppStoreController 一致。</p>
+      <p><strong>推荐解决方案：</strong>Service 接口采用 String 经纬度 + businessRegionId，兼顾两方。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    List&lt;AppStoreShopVO&gt; getStoreList(String lon, String lat, String name, Integer shopId, Long businessRegionId);</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/AppStoreShopServiceImpl.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>cb1ec722</code> 直接将 <code>businessRegionId</code> 透传给 Mapper。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>1002975c</code> 对 String 经纬度做非数字校验并设置北京默认值。</p>
+      <p><strong>冲突产生的逻辑：</strong>实现层分别处理参数校验与商圈筛选。</p>
+      <p><strong>推荐解决方案：</strong>合并两者：接收 String 经纬度，校验后转 double，同时透传 businessRegionId。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    public List&lt;AppStoreShopVO&gt; getStoreList(String lon, String lat, String name, Integer shopId, Long businessRegionId) {<br>        if (!NumberUtil.isNumber(lon) || !NumberUtil.isNumber(lat)) {<br>            lat = &quot;39.919990&quot;;<br>            lon = &quot;116.456270&quot;;<br>        }<br>        return shopMapper.getStoreList(Double.valueOf(lon), Double.valueOf(lat), name, shopId, businessRegionId);<br>    }</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storeshop/StoreShopServiceImpl.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>当前分支使用 <code>StoreShopConvert</code> 做 VO→DO 转换，并在 <code>554aa181</code> 中增加商圈校验。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游在 <code>0720c261</code> 中使用 <code>BeanUtil.toBean</code>，并增加“管理员只能绑定一个门店”的校验。</p>
+      <p><strong>冲突产生的逻辑：</strong>create/update 两个方法分别涉及转换工具和管理员/商圈校验逻辑的差异。</p>
+      <p><strong>推荐解决方案：</strong>保留 Convert 转换方式，同时合并管理员唯一绑定校验与商圈校验。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">// create 方法<br>StoreShopDO shop = StoreShopConvert.INSTANCE.convert(createReqVO);<br>Integer status = doShopStatus(shop.getStartTime(), shop.getEndTime());<br><br>// update 方法<br>// 1. 校验商圈<br>Long businessRegionId = updateReqVO.getBusinessRegionId();<br>if (businessRegionId != null) {<br>    BusinessRegionDO region = businessRegionMapper.selectById(businessRegionId);<br>    if (region == null) {<br>        throw exception(BUSINESS_REGION_NOT_EXISTS);<br>    }<br>}<br>// 2. 管理员只能绑定一个门店<br>updateReqVO.getAdminId().forEach(val -&gt; {<br>    Long count = shopMapper.selectCount(new LambdaQueryWrapper&lt;StoreShopDO&gt;()<br>            .ne(StoreShopDO::getId, updateReqVO.getId())<br>            .apply(&quot;FIND_IN_SET (&#x27;&quot; + val + &quot;&#x27;,admin_id)&quot;));<br>    if (count &gt; 0) {<br>        throw exception(new ErrorCode(1000, &quot;管理员ID：&quot; + val + &quot;已经绑定过其他门店&quot;));<br>    }<br>});<br>StoreShopDO updateObj = StoreShopConvert.INSTANCE.convert(updateReqVO);</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-store-biz/src/main/java/co/yixiang/yshop/module/store/service/storewithdrawal/StoreWithdrawalServiceImpl.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>89d6cec7</code> 使用 <code>amount</code> 字段发起微信转账。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>0720c261</code> 使用 <code>realAmount</code> 字段。</p>
+      <p><strong>冲突产生的逻辑：</strong>提现金额字段命名不同，可能代表“申请金额”与“实际到账金额”。</p>
+      <p><strong>推荐解决方案：</strong>检查 <code>StoreWithdrawalDO</code> 是否已存在 <code>realAmount</code> 字段。若已存在且业务上代表实际转账金额，则采用 <code>realAmount</code>；否则保留当前 <code>amount</code> 并同步 schema。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">                            .startTransfer(storeWithdrawalDO.getOutBillNo(), storeWithdrawalDO.getRealAmount(), userBankDO.getWxCode());</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-marketing/yshop-module-coupon-biz/src/main/java/co/yixiang/yshop/module/coupon/service/coupon/AppCouponServiceImpl.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong><code>41246a0a</code> 增加了按上架状态和有效期过滤未领取优惠券的逻辑。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong><code>a62a87b0</code> 在优惠券 2.0 重构中删除了该类。</p>
+      <p><strong>冲突产生的逻辑：</strong>上游做了较大的优惠券模块重构，旧实现被移除；但我们基于旧实现做了过滤增强。</p>
+      <p><strong>推荐解决方案：</strong>先确认优惠券 2.0 的新实现是否已经覆盖该过滤逻辑。若已覆盖，则删除本文件；若未覆盖，将过滤逻辑迁移到新的优惠券服务类中，再删除本文件。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">// 建议步骤：<br>// 1. 查看 yshop-module-marketing/yshop-module-coupon-biz 下新的优惠券服务类。<br>// 2. 若新服务已包含 shelfStatus + validPeriod 过滤，直接删除 AppCouponServiceImpl.java。<br>// 3. 若未包含，将 41246a0a 的过滤逻辑移植到新服务后删除旧文件。</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/mq/message/PayNoticeMessage.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>Adapay 集成（<code>3bb2b7ba</code>、<code>4873356a</code>）增加 <code>adapayPaymentId</code>、<code>outPayNo</code>。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>退款查询相关改动使用 <code>transactionId</code>。</p>
+      <p><strong>冲突产生的逻辑：</strong>MQ 消息体字段不同。</p>
+      <p><strong>推荐解决方案：</strong>同时保留三个字段，保持向后兼容。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    /**<br>     * Adapay 支付对象 ID<br>     */<br>    private String adapayPaymentId;<br><br>    /**<br>     * 外部支付单号<br>     */<br>    private String outPayNo;<br><br>    /**<br>     * 微信支付交易号（兼容上游）<br>     */<br>    private String transactionId;</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/module/pay/mq/producer/PayNoticeProducer.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>Adapay 集成提供多重重载以支持 <code>adapayPaymentId</code>、<code>outPayNo</code>。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游保留单方法 <code>sendPayNoticeMessage(orderId, payType, transactionId)</code>。</p>
+      <p><strong>冲突产生的逻辑：</strong>发送方法签名冲突。</p>
+      <p><strong>推荐解决方案：</strong>保留当前分支的重载体系，同时提供兼容 transactionId 的入口。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">    public void sendPayNoticeMessage(String orderId, String payType) {<br>        sendPayNoticeMessage(orderId, payType, null, null);<br>    }<br><br>    public void sendPayNoticeMessage(String orderId, String payType, String adapayPaymentId) {<br>        sendPayNoticeMessage(orderId, payType, adapayPaymentId, null);<br>    }<br><br>    public void sendPayNoticeMessage(String orderId, String payType, String adapayPaymentId, String outPayNo) {<br>        PayNoticeMessage payNoticeMessage = new PayNoticeMessage()<br>                .setOrderId(orderId)<br>                .setPayType(payType)<br>                .setAdapayPaymentId(adapayPaymentId)<br>                .setOutPayNo(outPayNo);<br>        // ... 发送逻辑<br>    }<br><br>    // 兼容上游 transactionId<br>    public void sendPayNoticeMessageWithTransactionId(String orderId, String payType, String transactionId) {<br>        sendPayNoticeMessage(orderId, payType, null, transactionId);<br>    }</pre>
+    </div>
+  </div>
+</div>
+<div class="conflict-file medium" data-severity="medium">
+  <div class="conflict-header">
+    <span class="conflict-path">yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java</span>
+    <span class="badge badge-medium">MEDIUM</span>
+  </div>
+  <div class="conflict-body">
+    <pre>&lt;em&gt;冲突块未找到&lt;/em&gt;</pre>
+    <div class="analysis-box">
+      <h4>冲突分析</h4>
+      <p><strong>当前分支 (ours) 改动原因：</strong>当前分支在该服务中叠加了 Adapay 支付/分账/撤销、服务订单分账、商品佣金、订单回复、餐盒费等大量定制逻辑。</p>
+      <p><strong>上游分支 (theirs) 改动原因：</strong>上游发展了套餐（combo）、共享菜单解析、优惠券商品、付款码 V2 等能力。</p>
+      <p><strong>冲突产生的逻辑：</strong>这是本次合并最复杂的业务类之一，双方在下单、价格计算、支付回调等核心路径上都有大量差异。</p>
+      <p><strong>推荐解决方案：</strong><strong>建议分阶段处理：</strong><br>1. 先保留当前分支整体实现以保证现有业务不崩。<br>2. 将上游的 <code>parseShareCartData</code>、<code>calculateProductPrice</code>、套餐字段解析作为独立方法/工具类引入。<br>3. 在下单流程中按参数判断是套餐订单还是普通订单，分别调用对应计算逻辑，同时保留餐盒费计算。<br>4. 付款码支付分支保留上游 <code>WX_DEVICE</code> + <code>param.getUni()</code> 的 V2 逻辑，并与 Adapay 支付分支并列。</p>
+    </div>
+    <div class="analysis-box">
+      <h4>合并结果</h4>
+      <pre class="merged-result">// 因该文件冲突区域多且横跨下单、价格、支付多个核心方法，<br>// 不适合给出单一代码片段。建议按以下顺序人工合并：<br>// 1. 依赖注入：合并 commission/profitSharing/refund/coupon 相关 service。<br>// 2. 参数解析：保留 boxFeeSelected，同时解析 isCombo/comboGoods。<br>// 3. 价格计算：引入 calculateProductPrice（支持套餐）+ 餐盒费叠加。<br>// 4. paySuccess：保留 Adapay 参数签名。<br>// 5. 共享菜单：复用 parseShareCartData。</pre>
+    </div>
+  </div>
+</div>
+
+    <!-- Risk Assessment -->
+    <h2>Risk Assessment</h2>
+    <table>
+        <tr><th>Risk Item</th><th>Severity</th><th>Description</th></tr>
+        <tr><td>Schema 冲突</td><td class="risk-high">HIGH</td><td>sql/yixiang-drink.sql 全局冲突，涉及 Adapay/设备/站点/积分/商圈等自定义表与上游官方表结构，合并错误将直接导致启动失败或数据丢失。</td></tr>
+<tr><td>构建配置冲突</td><td class="risk-high">HIGH</td><td>yshop-module-mall/pom.xml 决定子模块是否参与构建，遗漏任意一方都会导致编译失败或功能缺失。</td></tr>
+<tr><td>支付回调签名冲突</td><td class="risk-medium">MEDIUM</td><td>PayNoticeMessage / PayNoticeProducer / PayNoticeConsumer / AppStoreOrderService 的 Adapay 参数与上游 transactionId 不兼容，合并后可能导致支付回调无法处理。</td></tr>
+<tr><td>订单核心逻辑冲突</td><td class="risk-medium">MEDIUM</td><td>AppStoreOrderServiceImpl、StoreOrderServiceImpl、StoreOrderCartInfoServiceImpl 覆盖下单/价格/回调，错误合并会影响订单金额计算与库存。</td></tr>
+<tr><td>门店/商圈接口冲突</td><td class="risk-medium">MEDIUM</td><td>AppStoreController / AppStoreShopService 的经纬度类型、必填参数、商圈筛选差异，合并后可能导致 APP 店铺列表异常。</td></tr>
+<tr><td>优惠券模块重构</td><td class="risk-medium">MEDIUM</td><td>AppCouponServiceImpl 被上游删除，但我们有过滤增强逻辑，需确认是否迁移到新服务，否则优惠券列表可能不符合预期。</td></tr>
+<tr><td>大量文件删除</td><td class="risk-high">HIGH</td><td>yshop/master 相对 HEAD 删除了 382 个文件，需逐一确认这些文件是否属于我们自定义模块；若被误删将导致功能缺失。</td></tr>
+    </table>
+
+    <!-- Merge Steps -->
+    <h2>Recommended Merge Steps</h2>
+    <div class="card">
+        <div class="steps">
+            <div class="step">在 workspace 根目录确认当前子模块状态：&lt;code&gt;git -C backend status&lt;/code&gt;，确保无未提交改动。</div>
+<div class="step">在 backend 子模块创建临时合并分支：&lt;code&gt;git -C backend checkout -b merge/yshop-master-$(date +%Y%m%d) HEAD&lt;/code&gt;。</div>
+<div class="step">尝试正式合并：&lt;code&gt;git -C backend merge yshop/master --no-commit --no-ff&lt;/code&gt;。</div>
+<div class="step">按本报告 Conflict Details 顺序解决 20 个冲突；优先处理 High 级别的 &lt;code&gt;sql/yixiang-drink.sql&lt;/code&gt; 与 &lt;code&gt;yshop-module-mall/pom.xml&lt;/code&gt;。</div>
+<div class="step">对 &lt;code&gt;AppCouponServiceImpl.java&lt;/code&gt;（modify/delete）确认优惠券 2.0 新实现后决定保留或迁移。</div>
+<div class="step">执行编译：&lt;code&gt;mvn clean compile -pl yshop-server -am -DskipTests&lt;/code&gt;，修复编译错误。</div>
+<div class="step">运行单元测试/集成测试，重点验证支付回调、下单价格、门店列表、退款/提现路径。</div>
+<div class="step">确认无误后提交合并：&lt;code&gt;git -C backend commit -m &quot;merge: integrate yshop/master into backend HEAD&quot;&lt;/code&gt;。</div>
+<div class="step">更新 workspace 子模块指针：&lt;code&gt;git -C /Users/gejunwen/code/holun-team/ice-polar-team-workspace add backend &amp;&amp; git commit -m &quot;chore(backend): update submodule after merging yshop/master&quot;&lt;/code&gt;。</div>
+<div class="step">删除本地临时合并分支，保留 feature 分支供进一步回归测试。</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function filterConflicts(severity, btn) {
+    var files = document.querySelectorAll('.conflict-file');
+    var buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    files.forEach(function(file) {
+        if (severity === 'all' || file.getAttribute('data-severity') === severity) {
+            file.classList.remove('hidden');
+        } else {
+            file.classList.add('hidden');
+        }
+    });
+}
+</script>
+
+</body>
+</html>
