@@ -28,6 +28,56 @@
         }
     ],
     "paths": {
+        "/admin-api/product/store-product/ai-image/generate": {
+            "post": {
+                "tags": ["管理后台 - 商品 AI 图片"],
+                "summary": "生成商品 AI 封面图",
+                "operationId": "generateProductAiImage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/ProductAiImageGenerateReqVO"}
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {"$ref": "#/components/schemas/CommonResultProductAiImageTaskRespVO"}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin-api/product/store-product/ai-image/use": {
+            "post": {
+                "tags": ["管理后台 - 商品 AI 图片"],
+                "summary": "采用商品 AI 封面图",
+                "operationId": "useProductAiImage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/ProductAiImageUseReqVO"}
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {"$ref": "#/components/schemas/CommonResultString"}
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin-api/system/user/profile/update-avatar": {
             "put": {
                 "tags": [
@@ -34698,6 +34748,42 @@
                     "msg": {
                         "type": "string"
                     }
+                }
+            },
+            "CommonResultProductAiImageTaskRespVO": {
+                "type": "object",
+                "properties": {
+                    "code": {"type": "integer", "format": "int32"},
+                    "data": {"$ref": "#/components/schemas/ProductAiImageTaskRespVO"},
+                    "msg": {"type": "string"}
+                }
+            },
+            "ProductAiImageGenerateReqVO": {
+                "required": ["productId", "storeName"],
+                "type": "object",
+                "properties": {
+                    "productId": {"type": "integer", "format": "int64"},
+                    "storeName": {"type": "string"},
+                    "storeInfo": {"type": "string"},
+                    "description": {"type": "string"}
+                }
+            },
+            "ProductAiImageUseReqVO": {
+                "required": ["taskId", "productId"],
+                "type": "object",
+                "properties": {
+                    "taskId": {"type": "string"},
+                    "productId": {"type": "integer", "format": "int64"}
+                }
+            },
+            "ProductAiImageTaskRespVO": {
+                "type": "object",
+                "properties": {
+                    "taskId": {"type": "string"},
+                    "productId": {"type": "integer", "format": "int64"},
+                    "status": {"type": "string", "enum": ["SUCCEEDED", "FAILED"]},
+                    "imageUrl": {"type": "string"},
+                    "message": {"type": "string"}
                 }
             },
             "AppSiteOrderUpdateReqVO": {
