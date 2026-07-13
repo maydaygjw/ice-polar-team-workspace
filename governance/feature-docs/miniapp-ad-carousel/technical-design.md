@@ -17,7 +17,7 @@ Add a carousel ad banner (轮播广告图) to the miniapp scan page (`pages/scan
 
 ### Migration Script
 
-Create `sql/upgrade-miniapp-ad-carousel.sql`:
+Create `sql/upgrade-2026-06-05-miniapp-ad-carousel.sql`:
 
 ```sql
 -- Add link column for clickable ads
@@ -354,7 +354,7 @@ User taps an ad with link
 
 ## Checklist for Implementation
 
-- [ ] Create `sql/upgrade-miniapp-ad-carousel.sql` and apply to DB
+- [ ] Create `sql/upgrade-2026-06-05-miniapp-ad-carousel.sql` and apply to DB
 - [ ] Add `link` field to `ShopAdsDO`
 - [ ] Add `link` field to `ShopAdsBaseVO` and `AppShopAdsVO`
 - [ ] Update `AppAdController.getList()` query with `is_switch=1` and `weigh DESC`

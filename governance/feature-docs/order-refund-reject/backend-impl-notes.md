@@ -3,7 +3,7 @@
 ## Implemented Changes
 
 ### Database
-- `backend/sql/upgrade-order-refund-reject.sql`
+- `backend/sql/upgrade-2026-07-05-order-refund-reject.sql`
   - `refund_reason` comment updated to "退款拒绝原因（管理员填写）", default dropped.
   - Added `refund_reapply` tinyint(1) NOT NULL DEFAULT 0.
 

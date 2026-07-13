@@ -14,7 +14,7 @@
 |------|------|
 | 银行字典表是否全局共享？ | 全局共享（无 `tenant_id`） |
 | 是否需要后台管理页面？ | 只读字典表，本期不做后台 CRUD 页面 |
-| 5260 条数据如何初始化？ | 迁移脚本 `sql/upgrade-adapay-profit-sharing-bank.sql` 从 `bank-list.json` 导入 |
+| 5260 条数据如何初始化？ | 迁移脚本 `sql/upgrade-2026-07-08-adapay-profit-sharing-bank.sql` 从 `bank-list.json` 导入 |
 | 后端是否强制校验 `bankCode`？ | 强制校验，必须存在且启用 |
 
 ## 已更新文档

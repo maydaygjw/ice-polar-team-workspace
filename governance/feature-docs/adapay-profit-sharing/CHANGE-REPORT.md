@@ -17,7 +17,7 @@
 | | `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitsharingorder/ProfitSharingOrderServiceImpl.java` |
 | | `yshop-module-pay/yshop-module-pay-biz/src/main/resources/mapper/profitsharingorder/ProfitSharingOrderMapper.xml` |
 | | `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java` |
-| | `sql/upgrade-adapay-profit-sharing-dynamic-role.sql` |
+| | `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` |
 | `admin/` | `src/api/mall/store/profitSharingRecord/index.ts` |
 | | `src/views/mall/store/profitSharingRecord/index.vue` |
 | `governance/` | `feature-docs/adapay-profit-sharing/meta.yaml` |
@@ -47,7 +47,7 @@
 
 ### DB
 
-- 新增迁移脚本 `sql/upgrade-adapay-profit-sharing-dynamic-role.sql`：
+- 新增迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql`：
   - 将历史 `calculation_type=2` 记录的固定字段数据补录到 `yshop_adapay_profit_sharing_order_item`；
   - 删除 `yshop_adapay_profit_sharing_order` 的 `commission_amount`、`shop_amount`、`platform_recipient_id`、`shop_recipient_id`。
 
@@ -57,7 +57,7 @@
 
 ## 4. DB 迁移脚本名
 
-`sql/upgrade-adapay-profit-sharing-dynamic-role.sql`
+`sql/upgrade-2026-07-07-adapay-profit-sharing.sql`
 
 ## 5. 测试结果
 
@@ -73,7 +73,7 @@
 ## 6. 风险与注意事项
 
 1. **不兼容变更**：`ProfitSharingOrderRespVO` 移除 `commissionAmount`/`shopAmount`，admin 列表/详情同步调整；调用方若依赖该字段需升级。
-2. **数据迁移**：上线前必须通过 `upgrade-adapay-profit-sharing-dynamic-role.sql` 迁移历史数据；若 production 已有大量 fallback 模式记录，需评估迁移耗时。
+2. **数据迁移**：上线前必须通过 `upgrade-2026-07-07-adapay-profit-sharing.sql` 迁移历史数据；若 production 已有大量 fallback 模式记录，需评估迁移耗时。
 3. **测试覆盖不足**：未新增针对动态角色的单元测试，建议后续补充 `createSharingOrder`、`buildDivMembers`、`fallbackToRevenue` 的单元测试。
 4. **order-biz 测试环境**：`CommissionServiceImplTest` 因 `StoreShopMapper` 类找不到失败，为既有环境问题，不影响本次变更。
 
@@ -89,7 +89,7 @@
 - 佣金比例回退模式同样写入平台、店铺两条明细
 - 统一分账执行(buildDivMembers)与回退(fallbackToRevenue)逻辑，全部基于明细表
 - admin 分账结算记录列表/详情移除固定平台/店铺金额列，改由明细子表展示
-- 新增迁移脚本 upgrade-adapay-profit-sharing-dynamic-role.sql
+- 新增迁移脚本 upgrade-2026-07-07-adapay-profit-sharing.sql
 
 关联文档：
 - governance/feature-docs/adapay-profit-sharing/requirements-spec.md

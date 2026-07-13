@@ -64,7 +64,7 @@
 | API 契约符合 `contract-changes.md` | 是 | `/order/store-order/reject-refund` 路径、字段、权限一致；App 退款接口复用现有契约。 |
 | 无硬编码密钥 | 是 | 未引入新密钥/密码。 |
 | 租户隔离保持 | 是 | 查询/更新通过 MyBatis Plus 拦截器自动注入 tenant_id。 |
-| 数据库迁移脚本 | 是 | `backend/sql/upgrade-order-refund-reject.sql` 已提供，修改 comment 并新增 `refund_reapply` 列。 |
+| 数据库迁移脚本 | 是 | `backend/sql/upgrade-2026-07-05-order-refund-reject.sql` 已提供，修改 comment 并新增 `refund_reapply` 列。 |
 | 测试覆盖 | 是 | `admin/e2e/order-refund-reject.spec.ts` 覆盖核心、边界、列表/日志场景。 |
 | 功能分支命名 | 是 | `feat/order-refund-reject` 符合约定。 |
 | 无显著代码重复 | 是 | 状态映射在前后端分别维护，属于正常分层。 |

@@ -34,7 +34,7 @@ Div CSV 中 `div_user` 是 Adapay 实际的 MemberId（如 `m_154_2_91320507MACN
 
 ### 5. 收款人信息字段
 
-明细表新增 3 列：`recipient_member_id`、`recipient_name`、`role`（SQL: `upgrade-adapay-reconciliation-recipient.sql`）。仅 Phase 2 角色对账明细填充这些字段。
+明细表新增 3 列：`recipient_member_id`、`recipient_name`、`role`（SQL: `upgrade-2026-07-12-adapay-reconciliation.sql`）。仅 Phase 2 角色对账明细填充这些字段。
 
 ### 6. 账单下载接口
 
@@ -425,7 +425,7 @@ backend/yshop-module-pay/yshop-module-pay-api/src/main/java/co/yixiang/yshop/mod
     └── ReconciliationResultEnum.java               # 新增
 
 backend/sql/
-└── upgrade-adapay-reconciliation.sql              # 新增
+└── upgrade-2026-07-12-adapay-reconciliation.sql              # 新增
 
 admin/src/
 ├── views/mall/store/reconciliation/index.vue          # 单页面组件

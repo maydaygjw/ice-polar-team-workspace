@@ -14,7 +14,7 @@
 | API 契约保持一致 | 通过 | 复用已有端点；`CreateSharingOrderDTO`、`ProfitSharingOrderRespVO` 字段已同步移除固定角色字段 |
 | 没有硬编码密钥 | 通过 | 未发现硬编码密钥/密码 |
 | 已验证租户隔离 | 通过 | 明细表保留 `tenant_id`；查询继续通过 `TenantContextHolder` 隔离 |
-| 已创建数据库迁移脚本 | 通过 | 新增 `sql/upgrade-adapay-profit-sharing-dynamic-role.sql` |
+| 已创建数据库迁移脚本 | 通过 | 新增 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` |
 | 迁移脚本字段与 DO/BaseDO 一致 | 通过 | 迁移字段与更新后的 DO 一致 |
 | 数据字典项均已定义对应枚举/常量 | 通过 | 复用 `ProfitSharingRoleEnum`、`ProfitSharingCalculationTypeEnum`、`ProfitSharingStatusEnum` |
 | 测试覆盖本次变更 | 不通过 | 未新增针对动态角色的单元测试 |

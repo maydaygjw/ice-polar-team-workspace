@@ -34,7 +34,7 @@
 - `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/StoreOrderService.java`
 - `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/StoreOrderServiceImpl.java`
 - `yshop-module-merchant/yshop-module-merchant-biz/src/main/java/co/yixiang/yshop/module/merchant/service/order/AppOrderServiceImpl.java`
-- `sql/upgrade-order-refund-reject.sql` (new)
+- `sql/upgrade-2026-07-05-order-refund-reject.sql` (new)
 
 ### Admin Frontend (`admin/`)
 

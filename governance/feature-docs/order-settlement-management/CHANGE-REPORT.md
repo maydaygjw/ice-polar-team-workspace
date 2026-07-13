@@ -30,7 +30,7 @@
 
 ### DB 迁移
 
-`sql/upgrade-order-settlement-management.sql` — 在 `system_menu` 表中注册菜单项和按钮权限。
+`sql/upgrade-2026-07-12-order-settlement-management.sql` — 在 `system_menu` 表中注册菜单项和按钮权限。
 
 ### 无变更项
 
@@ -72,7 +72,7 @@ feat(order): add order settlement management page with Adapay profit-sharing det
 
 ## Contracts
 - API: 新增 `GET /order/store-order/settlement-page` 和 `GET /pay/profit-sharing-order/settlement-detail`
-- DB: 新增 `upgrade-order-settlement-management.sql` 菜单注册
+- DB: 新增 `upgrade-2026-07-12-order-settlement-management.sql` 菜单注册
 - 权限: 新增 `order:settlement:query`
 
 ## Verification

@@ -96,7 +96,7 @@ The WHERE clause already ensures `o.tenant_id = #{tenantId}` and orders are uniq
 
 3. **SQL injection safe**: All Mapper XML uses parameterized `#{}` placeholders. No `${}` string interpolation. ✅
 
-4. **Idempotent migration**: `upgrade-order-settlement-management.sql` uses `WHERE NOT EXISTS` guards, safe for re-execution. Follows existing `upgrade-site-order-menu.sql` pattern. ✅
+4. **Idempotent migration**: `upgrade-2026-07-12-order-settlement-management.sql` uses `WHERE NOT EXISTS` guards, safe for re-execution. Follows existing `upgrade-2026-03-27-site-order-menu.sql` pattern. ✅
 
 5. **CASE statement consistency**: The settlement status CASE logic is duplicated between SELECT and WHERE — this is necessary for MySQL, and both copies are identical. ✅
 

@@ -30,7 +30,7 @@
 - 前端：`http://localhost:3000`（可通过 `FRONTEND_URL` 覆盖）。
 - 管理员账号密码：`ADMIN_USERNAME` / `ADMIN_PASSWORD`。
 - 普通用户账号密码：`USER_PHONE` / `USER_PASSWORD`。
-- 数据库已执行 `backend/sql/upgrade-order-refund-reject.sql`。
+- 数据库已执行 `backend/sql/upgrade-2026-07-05-order-refund-reject.sql`。
 - 运行命令：`npx playwright test admin/e2e/order-refund-reject.spec.ts`。
 - 注意：admin 项目未声明 `@playwright/test` 依赖，运行前需全局安装或在工作区安装。
 

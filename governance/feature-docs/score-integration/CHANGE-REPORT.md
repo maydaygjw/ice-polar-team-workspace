@@ -33,7 +33,7 @@
 | `yshop-module-score/.../app/score/vo/AppSignResultVO.java` | 签到结果 VO |
 | `yshop-module-score/.../app/score/vo/AppSignStatusVO.java` | 签到状态 VO |
 | `yshop-module-score/.../app/score/vo/AppScoreRuleVO.java` | App 规则 VO |
-| `sql/upgrade-score-integration.sql` | 数据库升级脚本 |
+| `sql/upgrade-2026-06-15-score-integration.sql` | 数据库升级脚本 |
 
 #### Modified Files
 
@@ -88,7 +88,7 @@
 | API contracts consistent | PASS |
 | No hardcoded secrets | PASS |
 | Tenant isolation verified | PASS — 所有新表含 tenant_id，使用 TenantBaseDO |
-| Migration script present | PASS — `upgrade-score-integration.sql` |
+| Migration script present | PASS — `upgrade-2026-06-15-score-integration.sql` |
 | Tests designed | PASS — `test-plan.md` |
 | Feature branch naming | PASS — `feat/score-integration` |
 | Security (SQL/XSS) | PASS — 使用 MyBatis Plus，参数化查询 |

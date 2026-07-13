@@ -16,7 +16,7 @@
 ## Backend Changes (yshop-drink)
 
 ### Database
-- **Migration**: `sql/upgrade-miniapp-ad-carousel.sql`
+- **Migration**: `sql/upgrade-2026-06-05-miniapp-ad-carousel.sql`
   - `ALTER TABLE yshop_shop_ads ADD COLUMN link VARCHAR(500) DEFAULT NULL COMMENT '跳转链接' AFTER image`
 
 ### Java Files Modified
@@ -101,5 +101,5 @@ E2E 测试计划已覆盖以下场景：
 执行以下 SQL 迁移脚本后方可上线：
 
 ```bash
-mysql -u <user> -p <database> < backend/sql/upgrade-miniapp-ad-carousel.sql
+mysql -u <user> -p <database> < backend/sql/upgrade-2026-06-05-miniapp-ad-carousel.sql
 ```

@@ -24,7 +24,7 @@
 
 ### 新增表与迁移
 
-`sql/upgrade-business-region-permission.sql`：
+`sql/upgrade-2026-07-02-business-region-permission.sql`：
 
 - 创建 `business_region` 表。
 - 修改 `yshop_store_shop` 增加 `business_region_id`、`dept_id`。

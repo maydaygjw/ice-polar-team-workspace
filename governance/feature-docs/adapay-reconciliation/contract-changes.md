@@ -145,11 +145,11 @@ ReconciliationRetriggerRespVO {
 
 ### 迁移脚本
 
-- `sql/upgrade-adapay-reconciliation.sql` — 汇总表 + 明细表
-- `sql/upgrade-adapay-reconciliation-menu.sql` — 菜单和权限
-- `sql/upgrade-adapay-reconciliation-tenant-admin-auth.sql` — 租户管理员授权
-- `sql/upgrade-adapay-reconciliation-bill-content.sql` — 原始账单内容列（LONGTEXT）
-- `sql/upgrade-adapay-reconciliation-recipient.sql` — 收款人信息列
+- `sql/upgrade-2026-07-12-adapay-reconciliation.sql` — 汇总表 + 明细表
+- `sql/upgrade-2026-07-12-adapay-reconciliation.sql` — 菜单和权限
+- `sql/upgrade-2026-07-12-adapay-reconciliation.sql` — 租户管理员授权
+- `sql/upgrade-2026-07-12-adapay-reconciliation.sql` — 原始账单内容列（LONGTEXT）
+- `sql/upgrade-2026-07-12-adapay-reconciliation.sql` — 收款人信息列
 
 ## 枚举
 

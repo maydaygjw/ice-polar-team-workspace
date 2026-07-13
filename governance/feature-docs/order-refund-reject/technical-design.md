@@ -14,7 +14,7 @@ Add an admin "reject refund" action for `yshop_store_order`. When rejecting, the
 | `refund_reason` | varchar(255) | `NULL` | Reused as **管理员退款拒绝原因**. Migration drops the historical default `'不喜欢'` and updates the column comment. |
 | `refund_reapply` | tinyint(1) | `0` | **拒绝后是否允许再次申请退款** (`0=否 1=是`). |
 
-- Migration: `backend/sql/upgrade-order-refund-reject.sql`
+- Migration: `backend/sql/upgrade-2026-07-05-order-refund-reject.sql`
 
 ```sql
 ALTER TABLE `yshop_store_order`

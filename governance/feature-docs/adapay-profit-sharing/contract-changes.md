@@ -138,11 +138,11 @@
 
 ## 数据库变更
 
-- 既有迁移脚本：`sql/upgrade-adapay-profit-sharing.sql`（分账收款人、分账订单、日志、店铺扩展字段）、`sql/upgrade-adapay-profit-sharing-bank.sql`（银行字典表）、`sql/upgrade-adapay-profit-sharing-settle-account-replacement.sql`（结算账户更换快照字段）、`sql/upgrade-adapay-profit-sharing-rule.sql`（分账计费规则）。
-- 本次新增迁移脚本：`sql/upgrade-adapay-profit-sharing-region.sql`
+- 既有迁移脚本：`sql/upgrade-2026-07-07-adapay-profit-sharing.sql`（分账收款人、分账订单、日志、店铺扩展字段）、`sql/upgrade-2026-07-08-adapay-profit-sharing-bank.sql`（银行字典表）、`sql/upgrade-2026-07-07-adapay-profit-sharing.sql`（结算账户更换快照字段）、`sql/upgrade-2026-07-07-adapay-profit-sharing.sql`（分账计费规则）。
+- 本次新增迁移脚本：`sql/upgrade-2026-07-07-adapay-profit-sharing.sql`
   - 新建 `yshop_pay_adapay_region`
   - 从 Adapay 省市编码 JSON 初始化 34 个省份、378 个城市
-- **本次需求变更迁移脚本**：`sql/upgrade-adapay-profit-sharing-dynamic-role.sql`
+- **本次需求变更迁移脚本**：`sql/upgrade-2026-07-07-adapay-profit-sharing.sql`
   - 将 `yshop_adapay_profit_sharing_order` 中现有记录的 `commission_amount`/`shop_amount`/`platform_recipient_id`/`shop_recipient_id` 迁移到 `yshop_adapay_profit_sharing_order_item`；
   - 删除 `yshop_adapay_profit_sharing_order` 的 `commission_amount`、`shop_amount`、`platform_recipient_id`、`shop_recipient_id` 字段；
   - 更新 `ProfitSharingOrderDO`/`ProfitSharingOrderMapper.xml` 结果映射。
@@ -317,7 +317,7 @@
 
 ### 菜单与权限
 
-在 `sql/upgrade-adapay-profit-sharing-rule.sql` 中追加：
+在 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` 中追加：
 
 ```sql
 INSERT IGNORE INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name, status, visible, keep_alive, creator, create_time, updater, update_time, deleted) VALUES
@@ -364,9 +364,9 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 
 ## 银行列表
 
-`settleAccount.bankCode` 选项来自后端银行字典表 `yshop_pay_bank`，通过 `GET /admin-api/pay/bank/list` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/bank-list.json` 经迁移脚本 `sql/upgrade-adapay-profit-sharing-bank.sql` 导入。
+`settleAccount.bankCode` 选项来自后端银行字典表 `yshop_pay_bank`，通过 `GET /admin-api/pay/bank/list` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/bank-list.json` 经迁移脚本 `sql/upgrade-2026-07-08-adapay-profit-sharing-bank.sql` 导入。
 
-`settleAccount.adapayProvCode`/`adapayAreaCode` 选项来自后端 Adapay 省市字典表 `yshop_pay_adapay_region`，通过 `GET /admin-api/pay/adapay-region/province-list` 与 `GET /admin-api/pay/adapay-region/city-list?provinceCode=xxx` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/region-list.json` 经迁移脚本 `sql/upgrade-adapay-profit-sharing-region.sql` 导入。
+`settleAccount.adapayProvCode`/`adapayAreaCode` 选项来自后端 Adapay 省市字典表 `yshop_pay_adapay_region`，通过 `GET /admin-api/pay/adapay-region/province-list` 与 `GET /admin-api/pay/adapay-region/city-list?provinceCode=xxx` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/region-list.json` 经迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` 导入。
 
 格式：`[{ "regionCode": "0011", "regionName": "北京市" }, ...]`，共 34 个省份、378 个城市。
 
@@ -378,7 +378,7 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 
 ## 兼容性
 
-- **向后兼容**：**否**。本次需求变更从 `ProfitSharingOrderRespVO` 中移除 `commissionAmount`、`shopAmount`；admin 分账结算记录列表需从 `items` 汇总展示平台/店铺金额。数据库层面通过迁移脚本 `sql/upgrade-adapay-profit-sharing-dynamic-role.sql` 将历史数据从主表迁移到明细表并删除旧字段。
+- **向后兼容**：**否**。本次需求变更从 `ProfitSharingOrderRespVO` 中移除 `commissionAmount`、`shopAmount`；admin 分账结算记录列表需从 `items` 汇总展示平台/店铺金额。数据库层面通过迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` 将历史数据从主表迁移到明细表并删除旧字段。
 - **未启用分账的店铺**：行为不变。
 - **已启用分账但无计费规则的店铺**：继续 fallback 到原有 `commission_rate` 逻辑，但创建时写入平台、店铺两条明细记录。
 - **前端同步变更**：

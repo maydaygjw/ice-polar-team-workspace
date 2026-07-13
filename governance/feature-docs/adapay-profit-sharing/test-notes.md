@@ -11,7 +11,7 @@
 | 后端 order-biz 单元测试 | `mvn -pl yshop-module-mall/yshop-module-order-biz test` | ❌ 既有环境问题（`NoClassDefFoundError: StoreShopMapper`），与本次变更无关 |
 | admin 类型检查 | `pnpm ts:check` | ⚠️ 既有环境类型定义缺失，与本次变更无关 |
 | admin 生产构建 | `pnpm run build:prod` | ⚠️ 未执行（类型定义环境缺失） |
-| 测试环境数据库迁移 | `mysql < upgrade-adapay-profit-sharing-dynamic-role.sql` | ✅ 执行成功（已修复 creator/updater 字段差异） |
+| 测试环境数据库迁移 | `mysql < upgrade-2026-07-07-adapay-profit-sharing.sql` | ✅ 执行成功（已修复 creator/updater 字段差异） |
 | 测试环境后端部署 | `mvn clean package -DskipTests` + `start-yshop.sh` | ✅ 端口 8888 监听，`/doc.html` 返回 200 |
 | 测试环境 admin 部署 | `pnpm build:dev` + Nginx 替换 | ✅ `/index.html` 返回 200 |
 
@@ -24,7 +24,7 @@
 - `yshop-module-pay/yshop-module-pay-biz/src/main/java/co/yixiang/yshop/module/pay/service/profitsharingorder/ProfitSharingOrderServiceImpl.java`
 - `yshop-module-pay/yshop-module-pay-biz/src/main/resources/mapper/profitsharingorder/ProfitSharingOrderMapper.xml`
 - `yshop-module-mall/yshop-module-order-biz/src/main/java/co/yixiang/yshop/module/order/service/storeorder/AppStoreOrderServiceImpl.java`
-- `sql/upgrade-adapay-profit-sharing-dynamic-role.sql`
+- `sql/upgrade-2026-07-07-adapay-profit-sharing.sql`
 
 ### admin
 - `src/api/mall/store/profitSharingRecord/index.ts`
@@ -43,7 +43,7 @@
 
 - 分账订单主表 `yshop_adapay_profit_sharing_order` 已移除 `commission_amount`、`shop_amount`、`platform_recipient_id`、`shop_recipient_id`，角色信息全部下沉到 `yshop_adapay_profit_sharing_order_item`。
 - 佣金比例回退模式下，创建分账记录时也写入平台、店铺两条明细，保证所有分账执行/回退逻辑统一走明细表。
-- 新增迁移脚本 `sql/upgrade-adapay-profit-sharing-dynamic-role.sql` 会补录历史 fallback 记录的明细并删除主表固定字段。
+- 新增迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` 会补录历史 fallback 记录的明细并删除主表固定字段。
 - admin 分账结算记录列表/详情不再展示固定的平台抽成/店铺分账金额，改由详情内「分账明细」子表展示。
 
 ## 后续增强：服务订单完成时直接执行 Adapay 分账

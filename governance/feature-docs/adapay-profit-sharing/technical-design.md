@@ -109,7 +109,7 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 | `yshop-module-pay-biz` | 修改 | 新增 Adapay 省市字典表 DO/Mapper/Service/Controller；`ProfitRecipientServiceImpl` 创建/更换结算账户时校验并传入 `adapay_prov_code`/`adapay_area_code`；`ProfitRecipientDO` 新增 Adapay 省市快照字段；企业 Member 信息按 `/v1/corp_members` 补齐字段；附件打包为 zip 并 URLEncode 中文文件名；身份证 OCR 识别回填 |
 | `yshop-module-pay-api` | 修改 | 新增省市级联 DTO、错误码常量 |
 | `admin/` | 修改 | 分账收款人表单新增「开户省份」「开户城市」Adapay 级联选择；企业 Member 表单增加统一社会信用代码/有效期/经营范围/法人信息/企业地址/身份证正反面附件；身份证 OCR 自动识别回填；未更换结算账户时不展示/不校验 |
-| `yshop-module-mall` (sql) | 修改 | 新增迁移脚本 `sql/upgrade-adapay-profit-sharing-region.sql`；扩展 `yshop_adapay_profit_recipient` 企业 Member 字段 |
+| `yshop-module-mall` (sql) | 修改 | 新增迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql`；扩展 `yshop_adapay_profit_recipient` 企业 Member 字段 |
 
 ### 架构决策
 
