@@ -7,7 +7,14 @@ set -euo pipefail
 # Loads environment variables from governance/ENVIRONMENTS/<env-name>.env.
 # Do not execute this script directly; source it instead.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -n "${BASH_VERSION:-}" ]]; then
+  SCRIPT_FILE="${BASH_SOURCE[0]}"
+elif [[ -n "${ZSH_VERSION:-}" ]]; then
+  SCRIPT_FILE="${(%):-%N}"
+else
+  SCRIPT_FILE="$0"
+fi
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_FILE")" && pwd)"
 
 load_env() {
   local env_name="${1:-}"
@@ -22,13 +29,24 @@ load_env() {
     return 1
   fi
 
+  # Child deployment scripts (stop/start/check) consume these variables through
+  # the process environment. Preserve the caller's allexport setting while
+  # exporting values loaded from the environment file.
+  local had_allexport=0
+  case "$-" in
+    *a*) had_allexport=1 ;;
+  esac
+  set -a
   # shellcheck source=/dev/null
   source "$env_file"
+  if [[ "$had_allexport" -eq 0 ]]; then
+    set +a
+  fi
   echo "Loaded environment: $env_name (${SERVER_HOST})"
 }
 
 # Direct execution prints usage.
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+if [[ -n "${BASH_VERSION:-}" && "$SCRIPT_FILE" == "${0}" ]]; then
   echo "Source this file, do not execute it directly:"
   echo "  source governance/SCRIPTS/deploy-helper.sh && load_env test"
 fi
