@@ -5,7 +5,7 @@
 - `backend`：新增独立的 `yshop-module-store-import-biz`，承载导入模板元数据、OSS 文件登记、模板解析、预览、导入和清理能力；通过窄化的门店 API 创建带商圈默认值的新店铺。
 - `yshop-module-product-biz`：只保留商品、分类、SKU 和属性等核心能力；通过商品导入写入 API 为导入模块提供批量创建/清理商品能力，不承载导入流程编排。
 - `admin`：增加独立导入页面、模板管理弹窗、API client、路由和菜单契约。
-- `sql`：新增导入模板、批次/明细表，并给店铺、分类、商品增加可空批次标记和来源字段。
+- `sql`：只新增导入模板、批次/明细表；店铺、商品、分类原表不增加导入字段，目标 ID 和来源信息全部保存在导入模块表中。
 
 ## 关键决策
 
@@ -15,7 +15,7 @@
 4. 模板编码在租户内唯一；一个解析器可以对应多个上传模板，便于保存不同平台导出版本。新增平台格式必须先增加解析器实现。
 5. 下载接口只查询模板元数据并返回 OSS URL，前端直接打开静态文件，不调用 `ExcelUtils.write` 动态生成。
 6. 预览结果落入服务端临时批次，确认时重新校验并生成正式导入批次；确认接口必须幂等。
-7. 导入写入以批次为边界，成功、跳过、失败行均保存明细；删除按批次标记清理子数据后再清理店铺。
+7. 导入写入以批次为边界，成功、跳过、失败行均保存明细；删除从导入明细反向收集店铺、商品和分类 ID，再按目标 ID 清理。
 8. 首期图片只保存源 URL，避免在导入事务中引入外部图片下载失败和超时。
 
 ## Maven 模块边界
@@ -26,7 +26,7 @@
 
 - 迁移 `controller/admin/productimport`、导入 VO、导入 Service、模板解析器、导入批次/明细/模板 DO、Mapper 和导入状态枚举。
 - `product-biz` 保留商品核心 DO、分类/商品/属性服务及其实现；导入模块通过 `product-api` 新增的导入写入 DTO/API 调用商品能力。
-- 导入模块直接依赖 `store-api`、`product-api`、`order-api`、`infra-api` 和 Web/MyBatis/Excel starters，不直接依赖 `store-biz`，也不读取门店实现类或商品表。
+- 导入模块直接依赖 `store-api`、`product-api`、`order-api`、`infra-api` 和 Web/MyBatis/Excel starters，不直接依赖 `store-biz` 或商品表；商品模块通过 API 返回创建结果和执行目标 ID 清理。
 - `yshop-server` 增加 `yshop-module-store-import-biz` 依赖；原 `product-biz` 中的导入 Controller/Service 删除，避免 Bean 重复注册。
 
 拆分已完成：`product-api` 的商品导入写入契约由 `product-biz` 实现，导入代码已移动到新模块，`yshop-server` 已接入新依赖。API 路径、权限编码、数据库表名和前端路由保持不变。
