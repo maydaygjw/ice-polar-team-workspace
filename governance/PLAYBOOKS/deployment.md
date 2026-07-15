@@ -12,6 +12,8 @@
    source governance/SCRIPTS/deploy-helper.sh && load_env test
    ```
 
+   > **环境变量作用域**：`load_env` 通过 `source` 方式把变量注入**当前 shell**。后续所有步骤必须在**同一个 shell 会话**中执行；若切换终端、脚本或后台任务，请先重新执行上述命令。
+
 2. 确认已配置 SSH key 登录，禁止在脚本中硬编码密码。
 3. 如果是新服务器 / 首次搭建环境，请先按 `governance/PLAYBOOKS/environment-provisioning.md` 完成基础软件、运行时和目录初始化。
 4. 确认已阅读本 playbook 中对应服务的部署步骤和健康检查。
@@ -70,6 +72,8 @@
 
 **部署步骤**
 
+> 以下命令均假设已执行 `source governance/SCRIPTS/deploy-helper.sh && load_env <env>`，且在同一 shell 会话中运行。
+
 ```bash
 # 1. 拉取最新代码
 ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && git pull origin master"
@@ -115,6 +119,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
 ```
 
 > **注意**：
+> - 执行本章节任何命令前，必须先 `source governance/SCRIPTS/deploy-helper.sh && load_env <env>`；每个独立的 shell/终端/脚本入口都要重新加载。
 > - 若启动失败并提示端口被占用，说明旧进程未停干净，执行 `fuser -k ${YSHOP_PORT}/tcp` 后重试。
 > - 测试环境启动 yshop 时必须通过 `governance/SCRIPTS/start-yshop.sh` 注入 `ADAPAY_DEBUG=true`；生产环境不得开启。
 > - 生产环境由 `systemd` 管理，必须通过 `systemctl start/stop yshop.service` 启停。
