@@ -26,3 +26,4 @@ Thumbs.db
 logs/
 governance/ENVIRONMENTS/cert/
 .worktrees/
+.playwright-cli/
