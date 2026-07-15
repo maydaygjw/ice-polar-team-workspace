@@ -1,21 +1,33 @@
-# 测试记录 — 普通券与周期券
+# 测试记录 — 普通券与周期券（重新实现）
 
-## 已执行
+## 当前状态
 
-- `mvn -pl yshop-module-marketing/yshop-module-coupon-biz -am -DskipTests compile`：通过。
-- `mvn -pl yshop-module-marketing/yshop-module-coupon-biz -Dtest=CouponPeriodUtilsTest -Dsurefire.failIfNoSpecifiedTests=false test`：通过，3 个周期计算测试通过。
-- `pnpm exec eslint src/api/market/discountCoupon/index.ts src/views/market/discountCoupon/DiscountCouponForm.vue src/views/market/discountCoupon/index.vue`：通过，0 error；3 个事件命名 warning 为原有代码 warning。
-- `pnpm build:prod`：通过，生成 `dist`。
-- 两个 worktree 执行 `git diff --check`：通过。
+后端和管理端实现已落地，已完成后端 coupon 模块及订单模块 clean compile、管理端相关文件 ESLint 校验。旧方案依赖 `periodDate` 和数据库周期唯一索引的验证不再作为本方案证据；`issueCycleDays` 的周期计算和周期内限领仍需通过接口/数据库测试进一步验证。
 
-## 未通过或未完成
+## 重新实现后的验证要求
 
-- `mvn ... test`：在优惠券模块执行前被既有 `DesensitizeTest.test` 阻断，既有断言期望 `<芋***>`，实际为 `<y****>`，与本特性无关。
-- `pnpm ts:check`：被仓库既有类型声明缺失阻断：`@intlify/unplugin-vue-i18n/types`、`@types/qrcode`、`element-plus/global`、`vite-plugin-svg-icons/client`；生产构建已通过。
-- 未执行依赖真实 MySQL/Redis 的接口集成测试；周期领取的数据库唯一索引和事务行为需要部署迁移后验证。
-- 已补充周期券只能使用 `getType=0` 的后端约束，尚未执行真实接口请求验证。
-- OpenAPI 静态快照未重新生成；当前改动新增优惠券接口字段及周期券 `getType=0` 约束，需在目标环境生成后收集。
+- 后端单元测试：验证发放窗口前、窗口内、窗口后的领取结果。
+- 后端接口/事务测试：同一用户在同一周期内第二次领取失败；进入下一周期后可以再次领取，产生新的领取关系且库存逐次扣减。
+- 后端周期计算测试：验证 `issueCycleDays=1`、多日周期、发放窗口首尾和最后不足完整周期的边界。
+- 后端店铺范围测试：验证不限制店铺、指定单个/多个店铺、排除单个/多个店铺的领券和用券结果。
+- 后端商圈测试：未选择商圈、选择不存在商圈、跨租户商圈、店铺与商圈不匹配时均拒绝保存或使用。
+- 后端店铺范围测试：验证店铺范围与商品范围同时配置时分别生效，且租户/数据权限不能被绕过。
+- 后端接口/事务测试：配置 `limitNumber` 时按累计领取次数限制，不随周期重置；周期内一次领取限制仍然生效。
+- 后端关系测试：核销其中一张用户券，不影响同用户其他领取关系。
+- 后端有效期测试：验证 `takingEffectTime`/`expirationTime` 或按领取天数的有效期逻辑未被发放窗口字段污染。
+- 后端配置校验测试：周期券只能使用 `expirationType=2` 且 `expirationDay > 0`，固定时间和无限制时间配置必须失败。
+- 后端发放快照测试：领取成功后，关系记录保存计算后的 `taking_effect_time`、`expiration_time`；修改模板配置不影响已发放用户券的有效期。
+- 后端快照兼容测试：固定时间券、领取后天数券和无限期券均能生成正确的用户券有效期快照。
+- 后端查询测试：用户券列表、购物车可用券和过期判断只依赖关系记录的有效期快照。
+- 管理端表单测试：周期券展示发放周期配置，默认每 1 天一次；同时只能看到“领取后立即生效，有效期 X 天”，固定时间和无限制时间不可选。
+- 管理端表单测试：不限制店铺时不要求选择店铺；指定/排除模式支持多选并要求至少选择一个店铺。
+- 管理端表单测试：商圈为必填；切换商圈后店铺列表刷新并清空原已选店铺。
+- 数据库迁移测试：确认领取关系表新增有效期快照字段，不新增周期字段或周期唯一索引。
+- 数据库迁移测试：确认店铺范围字段兼容旧单店铺数据，且不改变商品范围字段语义。
+- 数据库迁移测试：确认历史优惠券均回填有效 `business_region_id`，不存在空商圈券。
+- 管理端：执行 `pnpm ts:check`、相关 ESLint 和生产构建。
+- OpenAPI 静态快照：实现后重新生成并收集新增字段。
 
 ## 覆盖范围
 
-`CouponPeriodUtilsTest` 覆盖每日周期、多日周期、发放窗口前后边界。管理端构建和目标文件 lint 已验证；同用户同周期唯一性依赖迁移脚本中的数据库约束。
+验证重点为“按 `issueCycleDays` 周期内唯一领取、跨周期重复领取、领取关系独立性和领取后有效期字段语义隔离”。

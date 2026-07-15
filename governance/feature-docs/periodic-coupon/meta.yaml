@@ -1,5 +1,5 @@
 feature: periodic-coupon
-status: done
+status: implemented
 risk: medium
 targets: [backend, admin]
 contract: true
