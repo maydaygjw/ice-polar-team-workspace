@@ -6,16 +6,15 @@
 - `POST /admin-api/product/import/template/upload`：上传导入模板文件并登记模板编码、名称、版本、解析器编码和说明；文件通过 infra-api 保存到主 OSS。
 - `GET /admin-api/product/import/template-download?code=meituan-user`：返回已登记模板的 OSS 文件访问地址，不再动态生成 Excel。
 - `POST /admin-api/product/import/preview`：上传文件并生成预览批次，参数包含模板编码、商圈和新店信息；不接收店铺公告或商品数据选项。
-- `GET /admin-api/product/import/preview?id=`：恢复仍处于 `PREVIEW` 状态的批次，返回店铺默认值和已保存的导入明细，管理端可继续编辑售价并调用确认接口导入；非预览状态不可恢复。
-- `POST /admin-api/product/import/draft`：保存仍处于 `PREVIEW` 状态的批次草稿；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price }`；草稿保存选择状态和预览阶段调整后的商品售价，不改变批次状态。
+- `GET /admin-api/product/import/preview?id=`：恢复仍处于草稿状态的批次，返回店铺默认值和已保存的导入明细，管理端可继续编辑售价并调用确认接口导入；已导入状态不可恢复。
+- `POST /admin-api/product/import/draft`：保存仍处于草稿状态的批次；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price }`；草稿保存选择状态和预览阶段调整后的商品售价，不改变批次状态。
 - `POST /admin-api/product/import/confirm`：确认预览批次并执行导入；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price }`，未选中的有效明细标记为 `SKIPPED` 且不创建商品；同一预览只能成功确认一次。
 - `GET /admin-api/product/import/page`：分页查询导入记录。
 - `GET /admin-api/product/import/get?id=`：查询批次摘要和统计。
 - `GET /admin-api/product/import/detail-page?batchId=`：分页查询行明细。
-- `DELETE /admin-api/product/import/delete-data?id=`：删除本批次店铺商品数据。
-- `DELETE /admin-api/product/import/delete-shop?id=`：删除本批次创建的店铺及本批次数据。
+- `DELETE /admin-api/product/import/delete-data?id=`：删除任意状态的导入批次及明细；只删除 import 数据，不删除店铺、商品或分类。
 
-成功响应使用现有 `{code: 0, data, msg}` 结构。模板编码和解析器校验、文件格式/大小、商圈状态、批次状态和删除条件错误返回明确业务错误；重复确认返回原批次结果，不重复写入。
+成功响应使用现有 `{code: 0, data, msg}` 结构。批次状态对管理端只返回 `DRAFT`（草稿）和 `IMPORTED`（已导入）；明细仍保留待导入、已导入、跳过和失败等行级结果。模板编码和解析器校验、文件格式/大小、商圈状态和批次状态错误返回明确业务错误；重复确认返回原批次结果，不重复写入。
 
 菜单展示名称为“门店中心 / 店铺导入”。为避免影响已接入的管理端和权限数据，当前 API 路径与权限编码仍保留 `product/import`、`product:import:*` 内部命名。
 
@@ -37,7 +36,7 @@
 
 ## 权限与数据范围
 
-- `product:import:query`、`product:import:preview`、`product:import:create`、`product:import:delete`、`product:import:delete-shop`。
+- `product:import:query`、`product:import:preview`、`product:import:create`、`product:import:delete`。
 - `product:import:template:upload`。
 - 模板列表和下载复用 `product:import:query`；上传使用 `product:import:template:upload`。
 - 只能选择当前租户可见且启用的商圈；店铺和批次查询遵循现有租户/部门/门店范围。
@@ -47,5 +46,5 @@
 - 新增跨模块能力通过 `store-api` 和 `product-api` 暴露，不让店铺导入模块依赖门店或商品实现类。
 - `store-api` 新增导入专用的商圈默认值、创建店铺和最小店铺信息 DTO；商品域不直接读取店铺表。
 - 预览响应返回 `selectedItemIds`；新建预览默认选中全部 `PENDING` 明细，确认和草稿接口均以 `selectedItemIds` 为导入范围。
-- `product-api` 新增 `ProductImportWriteApi` 及商品/ SKU DTO；商品域负责商品、分类、属性的写入和按批次清理。
+- `product-api` 新增 `ProductImportWriteApi` 及商品/ SKU DTO；商品域只负责商品、分类、属性的写入，不提供导入删除能力。
 - 不新增 MQ 或外部系统依赖；首期在请求内完成受限批次导入。
