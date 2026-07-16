@@ -6,7 +6,7 @@
 - `POST /admin-api/product/import/template/upload`：上传导入模板文件并登记模板编码、名称、版本、解析器编码和说明；文件通过 infra-api 保存到主 OSS。
 - `GET /admin-api/product/import/template-download?code=meituan-user`：返回已登记模板的 OSS 文件访问地址，不再动态生成 Excel。
 - `POST /admin-api/product/import/preview`：上传文件并生成预览批次，参数包含模板编码、商圈、新店信息和导入选项。
-- `POST /admin-api/product/import/confirm`：确认预览批次并执行导入；同一预览只能成功确认一次。
+- `POST /admin-api/product/import/confirm`：确认预览批次并执行导入；请求体包含 `id` 和可选的 `items`，其中每项为 `{ id, price }`，用于提交预览阶段调整后的商品售价；同一预览只能成功确认一次。
 - `GET /admin-api/product/import/page`：分页查询导入记录。
 - `GET /admin-api/product/import/get?id=`：查询批次摘要和统计。
 - `GET /admin-api/product/import/detail-page?batchId=`：分页查询行明细。
@@ -18,6 +18,8 @@
 菜单展示名称为“门店中心 / 店铺导入”。为避免影响已接入的管理端和权限数据，当前 API 路径与权限编码仍保留 `product/import`、`product:import:*` 内部命名。
 
 模板上传的 multipart 字段：`file`、`code`、`name`、`version`、`parserCode`、`description`。模板编码在当前租户内唯一，文件仅支持 `.xlsx`/`.xls`，大小不超过 10MB。
+
+店铺导入预览的 multipart 字段不再包含店铺手机号；店铺图片通过素材选择组件提交 `image`，确认时未设置手机号按空字符串创建。
 
 ## DB
 
