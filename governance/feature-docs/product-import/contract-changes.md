@@ -27,7 +27,7 @@
 - 新增 `yshop_product_import_item`：批次、源行号、外部商品 ID、规格、规范化数据、目标商品、行状态、错误和警告。
 - 新增 `yshop_product_import_template`：模板编码、版本、解析器编码、原文件名、OSS 文件地址和文件元数据。
 - `yshop_product_import_batch.shop_id` 保存本批次创建的店铺 ID。
-- `yshop_product_import_item` 保存外部商品 ID/规格、目标商品 ID、一级/最终分类 ID，以及分类是否由本批次创建。
+- `yshop_product_import_item` 保存外部商品 ID/分组键/门店 ID/规格/属性规格 JSON、目标商品 ID、一级/最终分类 ID，以及分类是否由本批次创建。
 - `yshop_store_shop`、`yshop_store_product`、`yshop_store_product_category` 不增加导入字段，避免对核心业务表产生侵入。
 - 所有新增导入业务表包含租户字段；批次、目标商品 ID 和来源字段建立必要索引。
 
