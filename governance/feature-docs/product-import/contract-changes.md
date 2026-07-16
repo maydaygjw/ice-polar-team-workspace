@@ -7,7 +7,8 @@
 - `GET /admin-api/product/import/template-download?code=meituan-user`：返回已登记模板的 OSS 文件访问地址，不再动态生成 Excel。
 - `POST /admin-api/product/import/preview`：上传文件并生成预览批次，参数包含模板编码、商圈和新店信息；不接收店铺公告或商品数据选项。
 - `GET /admin-api/product/import/preview?id=`：恢复仍处于 `PREVIEW` 状态的批次，返回店铺默认值和已保存的导入明细，管理端可继续编辑售价并调用确认接口导入；非预览状态不可恢复。
-- `POST /admin-api/product/import/confirm`：确认预览批次并执行导入；请求体包含 `id` 和可选的 `items`，其中每项为 `{ id, price }`，用于提交预览阶段调整后的商品售价；同一预览只能成功确认一次。
+- `POST /admin-api/product/import/draft`：保存仍处于 `PREVIEW` 状态的批次草稿；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price }`；草稿保存选择状态和预览阶段调整后的商品售价，不改变批次状态。
+- `POST /admin-api/product/import/confirm`：确认预览批次并执行导入；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price }`，未选中的有效明细标记为 `SKIPPED` 且不创建商品；同一预览只能成功确认一次。
 - `GET /admin-api/product/import/page`：分页查询导入记录。
 - `GET /admin-api/product/import/get?id=`：查询批次摘要和统计。
 - `GET /admin-api/product/import/detail-page?batchId=`：分页查询行明细。
@@ -45,5 +46,6 @@
 
 - 新增跨模块能力通过 `store-api` 和 `product-api` 暴露，不让店铺导入模块依赖门店或商品实现类。
 - `store-api` 新增导入专用的商圈默认值、创建店铺和最小店铺信息 DTO；商品域不直接读取店铺表。
+- 预览响应返回 `selectedItemIds`；新建预览默认选中全部 `PENDING` 明细，确认和草稿接口均以 `selectedItemIds` 为导入范围。
 - `product-api` 新增 `ProductImportWriteApi` 及商品/ SKU DTO；商品域负责商品、分类、属性的写入和按批次清理。
 - 不新增 MQ 或外部系统依赖；首期在请求内完成受限批次导入。
