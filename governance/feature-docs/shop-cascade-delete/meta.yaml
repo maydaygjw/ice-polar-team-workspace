@@ -1,0 +1,8 @@
+feature: shop-cascade-delete
+status: done
+risk: high
+targets: [backend, admin]
+contract: false
+ui: true
+e2e: false
+blocked: false
