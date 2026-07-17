@@ -4,11 +4,15 @@
   "description": "Workspace-level E2E tests with Playwright",
   "scripts": {
     "test": "playwright test",
+    "test:record": "E2E_RECORD_VIDEO=1 playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "report": "playwright show-report"
   },
-  "keywords": ["playwright", "e2e"],
+  "keywords": [
+    "playwright",
+    "e2e"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {

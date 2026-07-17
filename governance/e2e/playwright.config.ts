@@ -24,7 +24,8 @@ export default defineConfig({
     timezoneId: 'Asia/Shanghai',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    // 默认关闭视频录制；E2E_RECORD_VIDEO=1 时为所有 Playwright 用例开启录制。
+    video: process.env.E2E_RECORD_VIDEO === '1' ? 'on' : 'off',
   },
   projects: [
     {
