@@ -40,6 +40,7 @@ async function clearHighlight(locator: Locator) {
 
 async function clickForVideo(page: Page, locator: Locator, pause = VIDEO_PAUSE) {
   await highlightForVideo(page, locator, pause)
+  await page.locator('.el-loading-mask:not(.is-hidden)').waitFor({ state: 'detached', timeout: 15_000 })
   await locator.click()
   await page.waitForTimeout(450)
   await clearHighlight(locator)
@@ -256,9 +257,13 @@ test('店铺导入 E2E（美团外卖用户端模板）', async () => {
     await clickForVideo(page, page.getByRole('option', { name: shopName, exact: true }))
     await clickForVideo(page, page.getByRole('tab', { name: '待上架产品', exact: true }))
     await page.waitForTimeout(1500)
-    const productRows = page.locator('.el-table__row')
-    await expect(productRows.first()).toBeVisible({ timeout: 30_000 })
-    expect(await productRows.count()).toBeGreaterThan(0)
+    const visibleProductCount = await page.evaluate((name) => {
+      return Array.from(document.querySelectorAll('.el-table__row')).filter((tr) => {
+        const style = window.getComputedStyle(tr)
+        return style.display !== 'none' && style.visibility !== 'hidden' && tr.textContent?.includes(name)
+      }).length
+    }, shopName)
+    expect(visibleProductCount).toBeGreaterThan(0)
     console.log('[shop-import] 商品查询断言通过：至少查到 1 个商品')
 
     // 回到门店管理执行 teardown。
