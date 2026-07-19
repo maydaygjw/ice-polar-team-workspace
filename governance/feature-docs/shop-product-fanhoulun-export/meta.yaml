@@ -1,0 +1,8 @@
+feature: shop-product-fanhoulun-export
+status: requirements
+risk: low
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: false
+blocked: false
