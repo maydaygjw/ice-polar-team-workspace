@@ -7,8 +7,8 @@
 - `GET /admin-api/product/import/template-download?code=meituan-user`：返回已登记模板的 OSS 文件访问地址，不再动态生成 Excel。
 - `POST /admin-api/product/import/preview`：上传文件并生成预览批次，参数包含模板编码、商圈和新店信息；不接收店铺公告或商品数据选项。
 - `GET /admin-api/product/import/preview?id=`：恢复仍处于草稿状态的批次，返回店铺默认值和已保存的导入明细，管理端可继续编辑售价并调用确认接口导入；已导入状态不可恢复。
-- `POST /admin-api/product/import/draft`：保存仍处于草稿状态的批次；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price }`；草稿保存选择状态和预览阶段调整后的商品售价，不改变批次状态。
-- `POST /admin-api/product/import/confirm`：确认预览批次并执行导入；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price }`，未选中的有效明细标记为 `SKIPPED` 且不创建商品；同一预览只能成功确认一次。
+- `POST /admin-api/product/import/draft`：保存仍处于草稿状态的批次；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price, productName?, firstCategory? }`；草稿保存选择状态、预览阶段调整后的售价、商品名称和一级分类，不改变批次状态。
+- `POST /admin-api/product/import/confirm`：确认预览批次并执行导入；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price, productName?, firstCategory? }`，未选中的有效明细标记为 `SKIPPED` 且不创建商品；同一预览只能成功确认一次。
 - `GET /admin-api/product/import/page`：分页查询导入记录。
 - `GET /admin-api/product/import/get?id=`：查询批次摘要和统计。
 - `GET /admin-api/product/import/detail-page?batchId=`：分页查询行明细。
