@@ -19,8 +19,9 @@ test.describe('管理后台登录', () => {
 
     await page.getByRole('button', { name: '登录' }).click()
 
-    await expect(page.locator('.el-menu--vertical').first()).toBeVisible({ timeout: 15_000 })
-    await expect(page).not.toHaveURL(/.*\/login/)
+    await expect(page).not.toHaveURL(/.*\/login/, { timeout: 15_000 })
+    // 登录后 sidebar 可能折叠，改用 breadcrumb 中可见的「首页」确认已进入后台。
+    await expect(page.getByRole('link', { name: '首页' }).first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('LOGIN-02 错误密码登录失败并提示', async ({ page }) => {

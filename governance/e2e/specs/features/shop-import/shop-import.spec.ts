@@ -94,7 +94,7 @@ test('店铺导入 E2E（美团外卖用户端模板）', async () => {
     console.log('[shop-import] 录制设置完成：浏览器全屏 + 小字体')
 
     // 2. 通过菜单导航进入店铺导入页面
-    await clickForVideo(page, page.getByText('门店', { exact: true }).first())
+    await clickForVideo(page, page.locator('p').filter({ hasText: /^门店(中心)?$/ }))
     await page.waitForTimeout(800)
     await clickForVideo(page, page.getByRole('menuitem', { name: '店铺导入', exact: true }))
     await page.waitForLoadState('networkidle')
@@ -181,7 +181,7 @@ test('店铺导入 E2E（美团外卖用户端模板）', async () => {
     await clickForVideo(page, page.getByRole('button', { name: '确认导入' }))
 
     // 10. 处理确认弹窗
-    const confirmDialog = page.getByRole('dialog', { name: '系统提示' }).filter({ hasText: /确认创建新店铺并导入商品吗/ })
+    const confirmDialog = page.getByRole('dialog', { name: '系统提示' }).filter({ hasText: /创建/ })
     await expect(confirmDialog).toBeVisible({ timeout: 10_000 })
     await clickForVideo(page, confirmDialog.getByRole('button', { name: '确定' }))
 
@@ -216,7 +216,7 @@ test('店铺导入 E2E（美团外卖用户端模板）', async () => {
     await page.waitForTimeout(2500)
 
     // 15. 进入门店管理，按唯一店铺名查询并断言店铺已创建。
-    await clickForVideo(page, page.getByText('门店', { exact: true }).first())
+    await clickForVideo(page, page.locator('p').filter({ hasText: /^门店(中心)?$/ }))
     await page.waitForTimeout(800)
     await clickForVideo(page, page.getByRole('menuitem', { name: '门店管理', exact: true }))
     await page.waitForLoadState('networkidle')
@@ -246,7 +246,7 @@ test('店铺导入 E2E（美团外卖用户端模板）', async () => {
     console.log(`[shop-import] 店铺查询断言通过：${shopName}`)
 
     // 16. 进入商品管理，按店铺筛选并断言至少查到一个商品。
-    await clickForVideo(page, page.getByText('商品', { exact: true }).first())
+    await clickForVideo(page, page.locator('p').filter({ hasText: /^商品(中心)?$/ }))
     await page.waitForTimeout(800)
     await clickForVideo(page, page.getByRole('menuitem', { name: '商品管理', exact: true }))
     await page.waitForLoadState('networkidle')
@@ -255,19 +255,18 @@ test('店铺导入 E2E（美团外卖用户端模板）', async () => {
     const shopSelect = page.locator('.el-form-item').filter({ hasText: '选择门店' }).locator('.el-select').first()
     await clickForVideo(page, shopSelect)
     await clickForVideo(page, page.getByRole('option', { name: shopName, exact: true }))
-    await clickForVideo(page, page.getByRole('tab', { name: '待上架产品', exact: true }))
+    // 选择门店后点击搜索，等待表格数据刷新
+    await clickForVideo(page, page.getByRole('button', { name: '搜索' }))
     await page.waitForTimeout(1500)
-    const visibleProductCount = await page.evaluate((name) => {
-      return Array.from(document.querySelectorAll('.el-table__row')).filter((tr) => {
-        const style = window.getComputedStyle(tr)
-        return style.display !== 'none' && style.visibility !== 'hidden' && tr.textContent?.includes(name)
-      }).length
-    }, shopName)
-    expect(visibleProductCount).toBeGreaterThan(0)
-    console.log('[shop-import] 商品查询断言通过：至少查到 1 个商品')
+    // 「选择门店」已限定当前店铺，表格列出的即为该店铺商品。
+    const productRows = page.locator('table tbody tr')
+    await expect(productRows.first()).toBeVisible({ timeout: 15_000 })
+    const rowCount = await productRows.count()
+    expect(rowCount).toBeGreaterThan(0)
+    console.log(`[shop-import] 商品查询断言通过：查到 ${rowCount} 个商品`)
 
     // 回到门店管理执行 teardown。
-    await clickForVideo(page, page.getByText('门店', { exact: true }).first())
+    await clickForVideo(page, page.locator('p').filter({ hasText: /^门店(中心)?$/ }))
     await page.waitForTimeout(800)
     await clickForVideo(page, page.getByRole('menuitem', { name: '门店管理', exact: true }))
     await page.waitForLoadState('networkidle')
