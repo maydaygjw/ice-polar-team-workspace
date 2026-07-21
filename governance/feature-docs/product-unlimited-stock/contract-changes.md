@@ -10,8 +10,8 @@
 
 ## DB
 
-- 无表结构变更。
 - `yshop_store_product.stock`、`yshop_store_product_attr_value.stock`、`yshop_store_option.stock` 使用 `-1` 作为“不限制库存”约定值。
+- 商品和 SKU 库存字段不得使用 `unsigned`；升级脚本为 `backend/sql/upgrade-2026-07-21-product-unlimited-stock.sql`。
 - 现有数据保持原值；本次仅扩展业务语义，不提供迁移脚本。
 
 ## 库存校验与扣减
