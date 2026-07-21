@@ -28,6 +28,7 @@
 ### 商品主表（product-biz，admin）
 
 - 商品创建/更新请求 VO 增加 `hasOptions`（0/1）。保存时校验：`hasOptions=1` 与 `isCombo=1` 互斥（返回明确业务错误）。
+- `POST /admin-api/product/store-product/create` 返回新建或保存后的商品 ID，供随后保存商品引用的选项分组。
 - `PUT /admin-api/product/store-product/option-groups`：设置商品引用的门店分组，body `{ productId, groups:[{groupId, displayName}] }`（全量覆盖，排序按传入顺序；`displayName` 为空则用共享组名）。
 - `GET /admin-api/product/store-product/option-groups?productId=`：查询商品引用的分组（带选项实时价/库存/状态；组名已应用 `displayName` 覆盖，并回传 `displayName` 供编辑回填）。
 
