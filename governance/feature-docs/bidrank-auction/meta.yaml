@@ -1,0 +1,9 @@
+feature: bidrank-auction
+status: review # requirements|design|implementation|verification|review|done
+risk: high     # 涉及支付/财务/历史数据不可变
+targets: [backend, admin] # 本期。小程序前端 + app-api 竞价/结算/退款/排序注入 延后至下一期
+contract: true
+ui: true
+e2e: true
+blocked: false
+source: BACKLOG-005-bid-rank-auction # 遗留系统迁移（饭火轮 PHP addons/hlmall）
