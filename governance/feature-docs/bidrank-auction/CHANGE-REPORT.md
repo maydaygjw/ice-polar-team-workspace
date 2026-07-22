@@ -10,7 +10,7 @@
 
 ## 契约 / 迁移
 - **API**：新增 admin `/bidrank/auction/{create,update,enable,delete,get,page}`；通用门店排序能力由 `store-api` 的 `StoreShopSortApi` 提供，竞价模块通过该 API 写入排序结果。app-api/MQ/Job 延后期。
-- **DB**：`sql/upgrade-2026-07-22-bidrank-auction.sql` 新增 4 张竞价表及 1 张 store 模块拥有的通用排序表（`yshop_store_shop_sort`，不含 `auction_id`），含菜单 seed 与回滚。破坏性变更含回滚语句。
+- **DB**：`sql/upgrade-2026-07-22-bidrank-auction.sql` 新增 4 张带 `yshop_` 前缀的竞价表（`yshop_bid_auction`、`yshop_bid_rank`、`yshop_bid_order`、`yshop_bid_order_his`）及 1 张 store 模块拥有的通用排序表（`yshop_store_shop_sort`，不含 `auction_id`），含菜单 seed 与回滚。破坏性变更含回滚语句。
 - **权限**：菜单树 `商圈竞价 › 竞价活动` + `bidrank:auction:*`，经租户套餐 `menu_ids` 售卖。
 
 ## 验证结果

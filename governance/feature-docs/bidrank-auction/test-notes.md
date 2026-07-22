@@ -18,7 +18,7 @@
 
 ### 单元测试（`BidAuctionServiceImplTest`，H2 `BaseDbUnitTest`）
 覆盖 11 例：创建成功（默认模型/展示、档位落库）、区间/名额/价格校验异常、更新成功（含档位整表覆盖）、更新不存在、删除（级联档位）、详情（含下次生效日期派生）、详情不存在、启停、分页（含档位填充）。
-测试资源：`src/test/resources/application-unit-test.yaml` + `sql/create_tables.sql`（bid_auction/bid_rank）+ `sql/clean.sql`。
+测试资源：`src/test/resources/application-unit-test.yaml` + `sql/create_tables.sql`（yshop_bid_auction/yshop_bid_rank）+ `sql/clean.sql`。
 
 > `git-commit-id-maven-plugin` 在 git worktree 布局下报 "Could not get HEAD Ref"，与本功能代码无关；用 `-Dgit.skip=true -Dmaven.gitcommitid.skip=true` 跳过后 server 正常编译。正式 CI（非 worktree）无此问题。
 > mapstruct 提示 unmapped target（id/tenantId/deptId/auctionModel/displayMode/ranks 等）均为预期：由租户拦截器、Service 手动或读取时填充。

@@ -62,7 +62,7 @@ StoreShopSortDTO { Long storeId; Integer rankStart; Integer rankEnd; }
 |-----------|--------|--------|------|
 | `bidrank_refund` | `BidRankSettleJob` | `BidRefundConsumer` | 未中标出价全额异步退款 |
 
-退款经 `pay-api`，幂等按 `bid_order.status` 机；消息含 `orderId`。
+退款经 `pay-api`，幂等按 `yshop_bid_order.status` 机；消息含 `orderId`。
 
 ## 定时任务（Quartz，延后期）
 
@@ -75,12 +75,12 @@ StoreShopSortDTO { Long storeId; Integer rankStart; Integer rankEnd; }
 
 升级脚本：`sql/upgrade-2026-07-22-bidrank-auction.sql`。新增 4 张竞价表及 1 张 store 模块拥有的通用排序表（DDL 见 `technical-design.md`）+ 菜单 seed + 套餐授权样例。
 
-- `bid_auction` 为周期模板（cycle_type/anchor_effect_date/advance_days/start_time/duration_minutes/pay_minutes/enabled/description/rules）；每周期实例表 `bid_auction_cycle` 属延后期，本期不建。
-- 竞价表含 `tenant_id` + BaseDO；`bid_rank/bid_order/bid_order_his` 关联 `auction_id`。
+- `yshop_bid_auction` 为周期模板（cycle_type/anchor_effect_date/advance_days/start_time/duration_minutes/pay_minutes/enabled/description/rules）；每周期实例表 `yshop_bid_auction_cycle` 属延后期，本期不建。
+- 竞价表含 `tenant_id` + BaseDO；`yshop_bid_rank/yshop_bid_order/yshop_bid_order_his` 关联 `auction_id`。
 - 通用排序表由 store 模块拥有，表名为 `yshop_store_shop_sort`，含 `tenant_id`、`dept_id`、`business_region_id`、`store_id`、来源标识、排名范围和生效期；不含 `auction_id` 或其他竞价专属字段。
 - 出价单 ID String(32)，金额 bigint（分）。
 - 破坏性变更含回滚（DROP TABLE + DELETE 菜单/授权）。
-- 历史表 `bid_order_his`、结算/退款相关字段不可变。
+- 历史表 `yshop_bid_order_his`、结算/退款相关字段不可变。
 
 ## 权限 / 数据范围
 

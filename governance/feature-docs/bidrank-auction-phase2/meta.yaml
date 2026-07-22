@@ -1,0 +1,9 @@
+feature: bidrank-auction-phase2
+status: done # requirements|design|implementation|verification|review|done
+risk: medium   # 涉及支付/退款，但暂不实现并发竞价与复杂状态机
+targets: [backend, admin] # 仅接口,不做小程序前端页面
+contract: true
+ui: true       # admin 监控页
+e2e: true       # 仅验证后端主链路和 admin 查询
+blocked: false
+source: BACKLOG-005-bid-rank-auction # 遗留系统迁移;二期承接 bidrank-auction(一期)
