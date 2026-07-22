@@ -2,19 +2,35 @@
 
 功能级契约增量。平台级规则无变化：`N/A`（沿用 `ARCHITECTURE.md`）。
 
-> **交付分期**：本期落地 = 模块依赖、Admin 活动/档位配置 API、DB Schema、权限/套餐授权。标注「延后期」的小节（跨模块排序 API、App API、MQ、Job）随小程序交付 —— 契约本期定义、实现延后。
+> **交付分期**：本期落地 = 模块依赖、Admin 活动/档位配置 API、store 通用排序 API、DB Schema、权限/套餐授权。标注「延后期」的小节（竞价结算调用、App API、MQ、Job、排序注入）随小程序交付。
 
 ## 模块依赖
 
-新增：`bidrank-api`（被 `store-biz` 依赖）；`bidrank-biz` 依赖 `pay-api`、`store-api`。无跨模块直连 `-biz`。
+新增：`bidrank-api` 仅承载竞价模块自身对外 API；通用门店排序能力归 `store-api`。`bidrank-biz` 依赖 `pay-api`、`store-api`，`store-biz` 不依赖 `bidrank-api`。无跨模块直连 `-biz`。
 
-## 跨模块 API（bidrank-api，延后期）
+## 跨模块 API（store-api）
 
 ```
-BidRankSortApi.listActiveSort(Long businessRegionId) : List<BidRankSortDTO>
-BidRankSortDTO { Long storeId; Integer rankStart; Integer rankEnd; }
+StoreShopSortApi.upsert(StoreShopSortSaveDTO) : Long
+StoreShopSortApi.disableBySource(String sourceCode, String sourceRecordId) : void
+StoreShopSortApi.listActiveSort(Long businessRegionId) : List<StoreShopSortDTO>
+
+StoreShopSortSaveDTO {
+  Long businessRegionId;
+  Long storeId;
+  String sourceCode;
+  String sourceRecordId;
+  Integer rankStart;
+  Integer rankEnd;
+  LocalDate effectStartDate;
+  LocalDate effectEndDate;
+}
+StoreShopSortDTO { Long storeId; Integer rankStart; Integer rankEnd; }
 ```
-语义：返回某商圈当前生效的中标店铺及其档位范围；无授权/无数据返回空列表。随机落位由调用方（store 列表）在范围内完成。
+
+语义：store 模块拥有排序结果表并实现该 API，负责租户/部门派生、来源隔离、幂等写入、失效和有效期过滤；不解析 `sourceCode` 的业务含义。返回某商圈当前生效的门店及其排名范围；无数据返回空列表。随机落位由 store 门店列表在范围内完成。
+
+竞价模块写入时使用 `sourceCode="bidrank"`；`sourceRecordId` 由竞价模块自行定义，store 模块只做来源隔离和幂等键。
 
 ## Admin API（`/admin-api/bidrank/...`，权限 `bidrank:*`）
 
@@ -52,15 +68,16 @@ BidRankSortDTO { Long storeId; Integer rankStart; Integer rankEnd; }
 
 | Job | 触发 | 动作 |
 |-----|------|------|
-| `BidRankSettleJob` | 活动 `final_pay_deadline` 后 | 结算入围、写 `bid_shop_sort`、发退款 MQ、作废未付清 |
+| `BidRankSettleJob` | 活动 `final_pay_deadline` 后 | 结算入围、经 `StoreShopSortApi` 写排序结果、发退款 MQ、作废未付清 |
 | `BidSortExpireJob` | 每日 | 过期排序置失效 |
 
 ## DB Schema
 
-升级脚本：`sql/upgrade-2026-07-22-bidrank-auction.sql`。新增 5 表（DDL 见 `technical-design.md`）+ 菜单 seed + 套餐授权样例。
+升级脚本：`sql/upgrade-2026-07-22-bidrank-auction.sql`。新增 4 张竞价表及 1 张 store 模块拥有的通用排序表（DDL 见 `technical-design.md`）+ 菜单 seed + 套餐授权样例。
 
 - `bid_auction` 为周期模板（cycle_type/anchor_effect_date/advance_days/start_time/duration_minutes/pay_minutes/enabled/description/rules）；每周期实例表 `bid_auction_cycle` 属延后期，本期不建。
-- 全表含 `tenant_id` + BaseDO；`bid_rank/bid_order/bid_order_his/bid_shop_sort` 关联 `auction_id`；`bid_order/bid_shop_sort` 含 `dept_id`/`business_region_id`。
+- 竞价表含 `tenant_id` + BaseDO；`bid_rank/bid_order/bid_order_his` 关联 `auction_id`。
+- 通用排序表由 store 模块拥有，表名为 `yshop_store_shop_sort`，含 `tenant_id`、`dept_id`、`business_region_id`、`store_id`、来源标识、排名范围和生效期；不含 `auction_id` 或其他竞价专属字段。
 - 出价单 ID String(32)，金额 bigint（分）。
 - 破坏性变更含回滚（DROP TABLE + DELETE 菜单/授权）。
 - 历史表 `bid_order_his`、结算/退款相关字段不可变。

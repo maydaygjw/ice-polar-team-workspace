@@ -4,9 +4,9 @@
 
 ### 已实现
 - 新模块 `yshop-module-bidrank`（`-api` + `-biz`），包 `co.yixiang.yshop.module.bidrank`。
-- `-api`：`BidRankSortApi` + `BidRankSortDTO`（契约，实现延后）。
+- `-api`：竞价模块自身 API；通用 `StoreShopSortApi` 契约归 `store-api`，实现位于 `store-biz`。
 - `-biz`：`BidAuctionDO`/`BidRankDO`、Mapper、Convert、Service/ServiceImpl、`BidAuctionController`（admin CRUD + 启停）、错误码。
-- SQL：`sql/upgrade-2026-07-22-bidrank-auction.sql`（5 表 + 菜单树 + 授权说明 + 回滚）。
+- SQL：`sql/upgrade-2026-07-22-bidrank-auction.sql`（4 张竞价表 + 1 张 store 通用排序表 + 菜单树 + 授权说明 + 回滚）。
 - 注册：根 `pom.xml`、`yshop-server/pom.xml`。
 
 ### 编译结果
@@ -24,7 +24,7 @@
 > mapstruct 提示 unmapped target（id/tenantId/deptId/auctionModel/displayMode/ranks 等）均为预期：由租户拦截器、Service 手动或读取时填充。
 
 ### 未执行 / 待补
-- `dept_id` 本期未从商圈派生（留空）：需 `store-api` 暴露商圈 dept 后回填，属数据权限精化项。
+- 竞价结算 Job 尚未接入 `StoreShopSortApi`；通用排序 API 已由 store 模块负责写入并派生 `dept_id`，排序注入仍属延后期。
 - `updateById` 对 `description/rules` 置空不生效（MP 忽略 null）：如需清空富文本改用 UpdateWrapper。
 
 ## 前端（admin，worktree `.worktrees/admin-bidrank-auction`，分支 `feat/bidrank-auction`）

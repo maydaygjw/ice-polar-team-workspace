@@ -4,13 +4,13 @@
 平台运营可在后台按商圈配置**周期性排名竞价活动**（每周/每月，含提前天数/启动时间/活动时长/支付时长、排名档位、竞拍说明与规则），并按模块授权售卖（租户套餐菜单）。竞拍出价、结算、排序生效与小程序属延后期。
 
 ## 影响仓库
-- `backend`（`feat/bidrank-auction`）：新增 `yshop-module-bidrank`（api+biz）、5 表 SQL、菜单、poms 注册。
+- `backend`（`feat/bidrank-auction`）：新增 `yshop-module-bidrank`（api+biz）、4 张竞价表及 1 张 store 通用排序表的 SQL、菜单、poms 注册。
 - `admin`（`feat/bidrank-auction`）：新增竞价活动 API + 列表页 + 表单页。
 - `miniapp`：本期无改动（延后期）。
 
 ## 契约 / 迁移
-- **API**：新增 admin `/bidrank/auction/{create,update,enable,delete,get,page}`；跨模块 `BidRankSortApi`（契约本期定义、实现延后）。app-api/MQ/Job 延后期。
-- **DB**：`sql/upgrade-2026-07-22-bidrank-auction.sql` 新增 5 表（bid_auction/bid_rank 本期启用，其余延后期），含菜单 seed 与回滚。破坏性变更含回滚语句。
+- **API**：新增 admin `/bidrank/auction/{create,update,enable,delete,get,page}`；通用门店排序能力由 `store-api` 的 `StoreShopSortApi` 提供，竞价模块通过该 API 写入排序结果。app-api/MQ/Job 延后期。
+- **DB**：`sql/upgrade-2026-07-22-bidrank-auction.sql` 新增 4 张竞价表及 1 张 store 模块拥有的通用排序表（`yshop_store_shop_sort`，不含 `auction_id`），含菜单 seed 与回滚。破坏性变更含回滚语句。
 - **权限**：菜单树 `商圈竞价 › 竞价活动` + `bidrank:auction:*`，经租户套餐 `menu_ids` 售卖。
 
 ## 验证结果
@@ -29,4 +29,4 @@
 
 ## 建议 PR
 标题：`feat(bidrank): 商圈排名竞价活动配置（本期 backend+admin）`
-正文要点：见本报告 业务结果 / 影响仓库 / 契约迁移 / 验证结果 / 残余风险；标注延后期范围。含 DB 迁移（新增 5 表）。
+正文要点：见本报告 业务结果 / 影响仓库 / 契约迁移 / 验证结果 / 残余风险；标注延后期范围。含 DB 迁移（新增 4 张竞价表及 1 张 store 通用排序表）。

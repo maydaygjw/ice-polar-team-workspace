@@ -8,7 +8,7 @@
 ## 检查项
 | 项 | 结论 |
 |----|------|
-| 模块依赖方向（biz→api，无跨 biz） | ✅ bidrank-biz 仅依赖 bidrank-api；store 未被反向耦合 |
+| 模块依赖方向（biz→api，无跨 biz） | ✅ 竞价写入排序结果改经 store-api；store 不依赖 bidrank-biz |
 | 多租户隔离 | ✅ DO 含 tenant_id，拦截器自动注入；查询未跨租户 |
 | API 前缀 / 权限码 | ✅ `/admin-api` 前缀（框架统一加），`bidrank:auction:*` 与菜单一致 |
 | 金额单位一致 | ✅ 元 decimal(10,2)，DO/VO/SQL/前端对齐 |

@@ -2,20 +2,20 @@
 
 只记录本功能增量。契约细节见 `contract-changes.md`。
 
-> **交付分期**：本期实现 = 模块骨架 + 5 表 + admin 活动/档位配置 + 套餐授权。标注「（延后期）」的小节（出价/结算/退款流程、排序注入、app 侧）随小程序一起交付，本期只保留契约与表结构。
+> **交付分期**：本期实现 = 模块骨架 + 竞价业务表及 store 通用排序结果表 + admin 活动/档位配置 + 套餐授权。标注「（延后期）」的小节（出价/结算/退款流程、排序注入、app 侧）随小程序一起交付，本期只保留契约与表结构。
 
 ## 模块
 
-新增独立 Maven 模块（保证可单独售卖/下架，不侵入 store）：
+新增独立 Maven 模块（保证可单独售卖/下架，不依赖 store 内部实现）：
 
 ```
 yshop-module-bidrank/
-├── yshop-module-bidrank-api    # BidRankSortApi + DTO：供 store 模块查排序结果
+├── yshop-module-bidrank-api    # 竞价模块自身对外 API；不承载 store 排序结果 API
 └── yshop-module-bidrank-biz    # controller(admin/app)/service/dal/job/mq
     package co.yixiang.yshop.module.bidrank
 ```
 
-依赖方向（遵守 `-api` 契约）：`store-biz ──→ bidrank-api`；`bidrank-biz` 不反向依赖 store 内部。`bidrank-biz` 依赖 `pay-api`（下单/退款）、`store-api`（校验门店/商圈）。仅 `-biz` 在 `yshop-server` 注册启动。
+依赖方向（遵守 `-api` 契约）：`bidrank-biz ──→ store-api`，由 store 模块拥有通用门店排序结果表及读写 API；`store-biz` 不依赖 `bidrank-api`，也不直接依赖 `bidrank-biz`。`bidrank-biz` 另外依赖 `pay-api`（下单/退款）、`store-api`（校验门店/商圈及写入排序结果）。仅 `-biz` 在 `yshop-server` 注册启动。
 
 ## 可扩展点（策略化，本期只落默认实现）
 
@@ -27,7 +27,7 @@ yshop-module-bidrank/
 
 策略经 `auction_model` / `display_mode` 字段选择，主流程不因新增策略而改。
 
-## 数据模型（5 表，`bid_` 前缀）
+## 数据模型（4 张竞价表 + 1 张 store 通用排序表）
 
 均含 `tenant_id` 及 `BaseDO` 审计/逻辑删除字段；需部门过滤的含 `dept_id`；`business_region_id` 写入时从门店派生。
 
@@ -52,23 +52,40 @@ status：0出价中 1被超越 2已付全款 3已作废 4已生效 5已退款。
 ### bid_order_his — 出价历史（只写不改，历史不可变）
 `id(Long) / tenant_id / order_id / auction_id / rank_id / store_id / bid_price(分) / action(tinyint: 0出价 1加价 2被超越 3付尾款 4退款) / create_time`
 
-### bid_shop_sort — 排序结果（Job 写，store 读）
-`id(Long) / tenant_id / business_region_id / auction_id / store_id / rank_start(int) / rank_end(int) / effect_start_date / effect_end_date / status(tinyint: 0生效 1失效)`
+### yshop_store_shop_sort — 通用门店排序结果（store 模块拥有）
+`id(Long) / tenant_id / dept_id / business_region_id / store_id / source_code / source_record_id / rank_start(int) / rank_end(int) / effect_start_date / effect_end_date / status(tinyint: 0生效 1失效) / BaseDO`
 
-> 只存"该店命中 [rank_start,rank_end]"，**具体位置由门店列表读取时在范围内随机分配**，排序表稳定可对账。
+- 表属于 store 模块，不使用 `bid_` 前缀；表结构和字段不表达竞价、活动或拍卖语义。
+- `source_code`、`source_record_id` 是通用来源标识，用于区分竞价、运营置顶或其他排名系统写入的结果；store 模块只负责存储、有效期过滤和对外查询，不解析来源业务。
+- `dept_id` 在写入时由门店/商圈派生，供后台部门数据权限使用。
+- 同一来源通过 Store Sort API 幂等写入和失效；不由竞价模块直接操作表。
+
+> 只存"该店命中 [rank_start,rank_end]"，**具体位置由门店列表读取时在范围内随机分配**，排序表稳定可对账。表中不保存 `auction_id` 或其他竞价专属字段。
 
 ## 关键流程（延后期）
 
 - **出价/加价**：`RedissonLock(auction:rank)` 串行 → 按阶段校验门槛（未满：≥ `start_price` 且 > 自身上次出价+`min_increment`；已满：> 当前最低入围价+`min_increment`）→ 生成/更新 bid_order（预付=出价×ratio，补差额）→ 调 pay-api 下预付单 → 支付回调置"出价中"；出满后被挤出前 `slot_count` 名者置"被超越" → 写 his。
 - **价格透明度**：`最低入围价` = 该档位有效出价按 `bid_price` 降序第 `slot_count` 名的价（不足 `slot_count` 名即"未满"）。仅"已满"时经 app 接口对外可见；服务端每次出价在锁内实时计算，不落库。
 - **尾款截止**：每周期 `支付截止` 后出价锁定，商家在支付截止前付尾款（全款−预付）→ pay 回调置"已付全款"。
-- **结算**：`BidRankSettleJob`（Quartz）扫描到期周期 → 每档"已付全款"按 `bid_price` 降序取前 `slot_count` 名置"已生效"、写 bid_shop_sort；未中标"已付全款"发退款 MQ；未付清置"已作废"（预付没收，不退）。
+- **结算**：`BidRankSettleJob`（Quartz）扫描到期周期 → 每档"已付全款"按 `bid_price` 降序取前 `slot_count` 名置"已生效"、经 `StoreShopSortApi` 写入通用排序结果；未中标"已付全款"发退款 MQ；未付清置"已作废"（预付没收，不退）。
 - **退款**：`BidRefundConsumer` 消费 RocketMQ，调 pay-api 退全款，回置"已退款"、写 his。
-- **失效**：`BidSortExpireJob` 将过期 bid_shop_sort 置失效。
+- **失效**：store 模块负责通用排序结果的有效期过滤；竞价模块如需按来源提前失效，经 `StoreShopSortApi` 执行，不直接更新排序表。
 
 ## 排序注入（唯一耦合点，延后期）
 
-`store-biz` 的 `AppStoreController` 门店列表：查 `BidRankSortApi.listActiveSort(regionId)` → 命中店在其档位范围内随机加权前置，其余走默认排序。**模块未授权/无生效数据时短路**，行为与现状一致。
+`store-biz` 的 `AppStoreController` 门店列表：由 store 模块直接查询 `yshop_store_shop_sort` 的有效记录 → 命中店在其档位范围内随机加权前置，其余走默认排序。**无生效数据时短路**，行为与现状一致。store 模块不感知竞价模块，也不按 `source_code` 写死竞价逻辑。
+
+### Store Sort API（跨模块唯一入口）
+
+`store-api` 对外提供通用排序结果能力：
+
+```text
+StoreShopSortApi.upsert(StoreShopSortSaveDTO) : Long
+StoreShopSortApi.disableBySource(String sourceCode, String sourceRecordId) : void
+StoreShopSortApi.listActiveSort(Long businessRegionId) : List<StoreShopSortDTO>
+```
+
+竞价模块通过 `sourceCode="bidrank"` 携带自身的来源记录标识调用写入/失效接口；store 模块不解析该值，仅作为隔离和幂等键使用。
 
 ## 按模块售卖
 
@@ -78,8 +95,8 @@ status：0出价中 1被超越 2已付全款 3已作废 4已生效 5已退款。
 
 ## 迁移/回滚
 
-- SQL：`sql/upgrade-2026-07-22-bidrank-auction.sql`（建 5 表 + 菜单/套餐授权 seed），破坏性变更含回滚。
-- 遗留 5 表 → 新 5 表映射见 BACKLOG-005；配置金额（起拍价/加价）用 `decimal(10,2)` 元，支付金额（延后期预付/尾款）用 `decimal(10,2)` 元；时间对齐服务端。
+- SQL：`sql/upgrade-2026-07-22-bidrank-auction.sql`（建 4 张竞价表 + 1 张 store 通用排序表 + 菜单/套餐授权 seed），破坏性变更含回滚。
+- 遗留竞价表 → 新竞价表映射见 BACKLOG-005；通用排序结果表由 store 模块拥有；配置金额（起拍价/加价）用 `decimal(10,2)` 元，支付金额（延后期预付/尾款）用 `decimal(10,2)` 元；时间对齐服务端。
 
 ## 风险
 
