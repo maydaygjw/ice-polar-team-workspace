@@ -54,7 +54,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "tail -f ${YSHOP_START_PATH}/app.log"
 
 # 健康检查
 ssh ${DEPLOY_USER}@${SERVER_HOST} "systemctl status yshop.service --no-pager | head -n 20"
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${YSHOP_PORT}\b\""
 ```
 
 ### 3.2 icepolar-dms
@@ -69,7 +69,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "grep -nF -- 'IMEI' ${DMS_CODE_PATH}/scripts/m
 ssh ${DEPLOY_USER}@${SERVER_HOST} "grep -nF -- 'ORDER_ID' ${DMS_CODE_PATH}/scripts/main.log | tail -n 50"
 
 # 健康检查
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${DMS_PORT}"
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${DMS_PORT}\b\""
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[s]tart_main.sh'"
 ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[s]tart_simulator.sh'"
 ```

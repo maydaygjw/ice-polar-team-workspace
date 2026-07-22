@@ -23,15 +23,19 @@ for var_name in "${required_vars[@]}"; do
 done
 
 ssh "${DEPLOY_USER}@${SERVER_HOST}" "
+  # test 环境统一从 ~/.bash_profile 加载并校验密钥一次，供下方两条启动路径共用
+  if [ \"${ENV_NAME}\" = \"test\" ]; then
+    set -a
+    source ~/.bash_profile
+    set +a
+    if [ -z \"\${DASHSCOPE_API_KEY:-}\" ]; then
+      echo 'DASHSCOPE_API_KEY is missing from ~/.bash_profile' >&2
+      exit 1
+    fi
+  fi
+
   if systemctl list-unit-files | grep -q yshop.service; then
     if [ \"${ENV_NAME}\" = \"test\" ]; then
-      set -a
-      source ~/.bash_profile
-      set +a
-      if [ -z \"\${DASHSCOPE_API_KEY:-}\" ]; then
-        echo 'DASHSCOPE_API_KEY is missing from ~/.bash_profile' >&2
-        exit 1
-      fi
       systemctl import-environment DASHSCOPE_API_KEY
       systemctl set-environment ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true
     else
@@ -41,13 +45,6 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
   else
     cd ${YSHOP_START_PATH}
     if [ \"${ENV_NAME}\" = \"test\" ]; then
-      set -a
-      source ~/.bash_profile
-      set +a
-      if [ -z \"\${DASHSCOPE_API_KEY:-}\" ]; then
-        echo 'DASHSCOPE_API_KEY is missing from ~/.bash_profile' >&2
-        exit 1
-      fi
       ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true nohup java -jar target/${YSHOP_JAR} > ${YSHOP_START_PATH}/app.log 2>&1 &
     else
       nohup java -jar target/${YSHOP_JAR} > ${YSHOP_START_PATH}/app.log 2>&1 &

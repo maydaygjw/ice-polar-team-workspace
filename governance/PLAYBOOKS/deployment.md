@@ -85,9 +85,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "
   fi
 "
 
-# 3. 停止旧进程；如服务器使用 systemd 管理，优先用 systemctl
-#    注意：不要同时用 systemctl stop + pkill，否则 systemd 的 Restart=on-failure
-#    会立刻拉起新进程，导致后续启动时的端口冲突。
+# 3. 停止旧进程（脚本自动识别 systemd/裸进程并轮询等待退出；原理见下方「注意」）
 bash governance/SCRIPTS/stop-yshop.sh
 
 # 4. 对比远端 commit 与 JAR 内嵌 commit，决定是否需要重新打包
@@ -107,7 +105,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[j]ava -jar target/${YSHOP_JAR
 # 8. 等待 Spring Boot 启动完成并验证端口（最多等 120s）
 ssh ${DEPLOY_USER}@${SERVER_HOST} "
   for i in \$(seq 1 120); do
-    if ss -tlnp | grep -q ${YSHOP_PORT}; then
+    if ss -tlnp | grep -q \":${YSHOP_PORT}\b\"; then
       echo 'Port ${YSHOP_PORT} is listening'
       break
     fi
@@ -115,7 +113,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "
   done
 "
 # 检查启动结果
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${YSHOP_PORT}\b\""
 ```
 
 > **注意**：
@@ -142,7 +140,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "systemctl status yshop.service --no-pager | h
 ssh ${DEPLOY_USER}@${SERVER_HOST} "journalctl -u yshop.service --no-pager -n 30"
 
 # 检查端口监听
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${YSHOP_PORT}\b\""
 ```
 
 ---
@@ -168,8 +166,9 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${YSHOP_PORT}"
 cd ${ADMIN_LOCAL_PATH} && ${ADMIN_BUILD_CMD}
 
 # 2. 将构建产物打包为压缩包，减少小文件 SSH 传输 overhead
+#    macOS 上必须加 COPYFILE_DISABLE=1，否则会把 AppleDouble 元数据文件（._*）打进包里污染远端目录
 cd ${ADMIN_LOCAL_PATH}/dist
-tar czf ../dist.tar.gz .
+COPYFILE_DISABLE=1 tar czf ../dist.tar.gz .
 
 # 3. 上传压缩包到服务器临时目录
 scp ${ADMIN_LOCAL_PATH}/dist.tar.gz ${DEPLOY_USER}@${SERVER_HOST}:${ADMIN_REMOTE_PATH}/../dist.tar.gz
@@ -190,6 +189,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ls -la ${ADMIN_REMOTE_PATH}/ | head -20"
 > **说明**：
 > - 测试环境使用 `${ADMIN_BUILD_CMD}` 构建。如需构建生产环境版本，将对应环境的 `ADMIN_BUILD_CMD` 改为 `pnpm build:prod`。
 > - 使用 `tar.gz` 整体替换，避免 `scp -r` 逐个文件传输 1000+ 小文件的 SSH 握手开销；同时保证每次部署目录与本地 `dist/` 完全一致。
+> - macOS 打包务必带 `COPYFILE_DISABLE=1`，否则 `._*` AppleDouble 文件会混入远端 dist；若发现残留，用 `find ${ADMIN_REMOTE_PATH} -name '._*' -delete` 清理。
 
 **健康检查**
 
@@ -254,7 +254,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep 'start_main.sh' | grep -v grep"
 ssh ${DEPLOY_USER}@${SERVER_HOST} "tail -n 50 ${DMS_CODE_PATH}/scripts/main.log"
 
 # 检查端口监听
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep ${DMS_PORT}"
+ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${DMS_PORT}\b\""
 ```
 
 **模拟器**

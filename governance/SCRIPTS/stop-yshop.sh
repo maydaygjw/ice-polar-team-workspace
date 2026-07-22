@@ -30,7 +30,14 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
       sleep 1
     done
   else
+    # 无 systemd：先 SIGTERM 优雅停机，轮询等待进程退出，超时再 SIGKILL 兜底。
+    pkill -TERM -f '[j]ava -jar target/${YSHOP_JAR}' || true
+    for i in \$(seq 1 30); do
+      if ! pgrep -f '[j]ava -jar target/${YSHOP_JAR}' > /dev/null 2>&1; then
+        break
+      fi
+      sleep 1
+    done
     pkill -9 -f '[j]ava -jar target/${YSHOP_JAR}' || true
-    sleep 3
   fi
 "
