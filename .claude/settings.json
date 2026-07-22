@@ -1,7 +1,21 @@
 {
   "permissions": {
     "deny": [
-      
+
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/pin-cwd-block-bare-cd.sh\"",
+            "statusMessage": "Checking cwd guard..."
+          }
+        ]
+      }
     ]
   }
 }

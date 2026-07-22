@@ -106,10 +106,6 @@ Pull requests should:
 
 The following rules are mandatory. No exceptions.
 
-1. **Working Directory Rule** — All Bash commands must run from the workspace root.
-   - Never `cd` into subdirectories without wrapping in a subshell `(cd subdir && cmd)`
-   - Prefer `(cd backend && git status)` over `cd backend && git status`
-   - The user's terminal session shares the working directory; leaving them in a submodule causes confusion and mistakes
-2. **API first** — any cross-repo change starts with contract definition in `governance/CONTRACTS.md`.
-3. **Never commit secrets** — DB passwords, API keys, JWT secrets, or local `.env` values must not be committed. Use `.env.example` and project environment files.
-4. **Do not auto-commit** — unless the user explicitly asks to commit, never commit code after completing a task. Stage or summarize changes for the user to review and commit themselves.
+1. **API first** — any cross-repo change starts with contract definition in `governance/CONTRACTS.md`.
+2. **Never commit secrets** — DB passwords, API keys, JWT secrets, or local `.env` values must not be committed. Use `.env.example` and project environment files.
+3. **Do not auto-commit** — unless the user explicitly asks to commit, never commit code after completing a task. Stage or summarize changes for the user to review and commit themselves.
