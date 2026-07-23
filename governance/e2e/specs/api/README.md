@@ -24,6 +24,8 @@ governance/e2e/specs/api/
 
 案例只覆盖 API 行为；跨端用户链路仍放在 `specs/features/`，使用 Playwright 页面操作。
 
+竞价排名案例：[`bidrank.api.spec.ts`](bidrank/bidrank.api.spec.ts)。它默认只读，不创建出价、不调用支付；运行前需要设置 `BIDRANK_BUSINESS_REGION_ID`，并准备有竞价查询权限的管理用户和测试商家用户。
+
 ## 编写约定
 
 ```ts
@@ -54,6 +56,7 @@ test('API-001 查询成功', async ({ request }) => {
 - 写接口用唯一测试标识，测试结束必须通过业务 API 清理并复核；必要时使用 `try/finally`；
 - 不记录完整 Token、Cookie、密码或个人数据；
 - 优先从 `governance/CONTRACT/backend-api.json` 和功能文档取得路径、参数及错误码。
+- 涉及出价/支付的扩展案例必须使用唯一测试门店和测试标识，并在 `try/finally` 中清理出价、支付单及关联记录；未配置支付沙箱时不得启用。
 
 ## 运行
 
@@ -66,6 +69,9 @@ source governance/SCRIPTS/deploy-helper.sh && load_env test
   API_BASE_URL="https://${DOMAIN_API}" \
     TEST_TENANT_ID="${TEST_TENANT_ID}" \
     TEST_USER_ID="1" \
+    BIDRANK_BUSINESS_REGION_ID="<测试商圈 ID>" \
+    BIDRANK_APP_USER_ID="<测试商家用户 ID>" \
+    BIDRANK_ADMIN_USER_ID="<有 bidrank:order:query 权限的管理员 ID>" \
     npx playwright test specs/api
 )
 ```
