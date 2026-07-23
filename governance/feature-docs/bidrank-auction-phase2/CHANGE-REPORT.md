@@ -19,7 +19,7 @@
 - 新增 pay API 的竞价支付/退款 DTO 和 `bizType` 分流；竞价支付通知由 bidrank 消费。
 - 新增 `yshop_bid_auction_cycle`；扩展 `yshop_bid_order` 周期、支付状态字段及 `cycle + store` 唯一约束；扩展 `pay_out_order_no.biz_type`。
 - 新增 admin 出价单、结算结果菜单和 `bidrank:order:query` 权限。
-- 迁移脚本：`backend/sql/upgrade-2026-07-22-bidrank-auction-phase2.sql`。
+- 迁移脚本已与一期合并为：`backend/sql/upgrade-2026-07-22-bidrank-auction.sql`。
 
 ## 验证结果
 

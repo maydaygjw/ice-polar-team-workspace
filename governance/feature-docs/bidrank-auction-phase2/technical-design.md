@@ -35,7 +35,7 @@ effect_date / bid_start_time / bid_end_time / final_pay_deadline
 status(0待开始 1竞拍中 2已锁定 3已结算) / BaseDO
 ```
 
-`BidCycleScheduleJob` 每日为启用活动创建当前周期实例。开发环境也允许通过 service 手工创建实例，方便接口测试。
+`BidCycleScheduleJob` 每日为启用活动创建当前周期实例。周期实例的生效日期必须满足竞价尚未开始：竞价开始时间为 `effect_date - advance_days + start_time`；如果候选生效日的竞价开始时间已到或已过，则顺延到下一周期。开发环境也允许通过 service 手工创建实例，方便接口测试。
 
 本期只创建当前周期，不预生成未来多周期；周期时间沿用一期规则：
 
@@ -157,7 +157,7 @@ final_pay_time datetime     尾款支付完成时间
 
 ## 迁移与回滚
 
-升级脚本：`sql/upgrade-2026-07-22-bidrank-auction-phase2.sql`。
+升级脚本已与一期合并为：`sql/upgrade-2026-07-22-bidrank-auction.sql`。
 
 - 新建 `yshop_bid_auction_cycle`。
 - 给 `yshop_bid_order` 增加 `cycle_id`、`final_pay_time` 并调整唯一约束为 `(cycle_id, store_id)`。

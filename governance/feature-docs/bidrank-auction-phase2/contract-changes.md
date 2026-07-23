@@ -100,7 +100,7 @@ BidRankSettleJob -> PayOrderApi.refund(PayRefundReqDTO)
 
 ## DB Schema
 
-升级脚本：`sql/upgrade-2026-07-22-bidrank-auction-phase2.sql`。
+升级脚本已与一期合并为：`sql/upgrade-2026-07-22-bidrank-auction.sql`。
 
 - 新增 `yshop_bid_auction_cycle`：
   `id / tenant_id / auction_id / business_region_id / effect_date / bid_start_time / bid_end_time / final_pay_deadline / status / BaseDO`。
