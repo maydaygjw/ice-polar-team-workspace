@@ -1,9 +1,14 @@
 # E2E 测试
 
-测试用例位于 `specs/`，例如店铺导入案例：
+测试用例位于 `specs/`。API 测试案例位于 `specs/api/`，技术约定见 [`specs/api/README.md`](specs/api/README.md)；页面 E2E 案例例如店铺导入：
 
 ```text
 specs/features/shop-import/shop-import.spec.ts
+```
+
+```bash
+# 只运行 API 测试
+(cd governance/e2e && npx playwright test specs/api)
 ```
 
 默认不录制视频。需要录制时设置 `E2E_RECORD_VIDEO=1`；该开关对所有 Playwright 用例生效。
