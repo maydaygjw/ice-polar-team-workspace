@@ -1,0 +1,8 @@
+feature: pay-module-yue-support
+status: design
+risk: medium
+targets: [backend]
+contract: true
+ui: false
+e2e: false
+blocked: false
