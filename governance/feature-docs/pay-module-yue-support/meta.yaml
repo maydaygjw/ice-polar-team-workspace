@@ -1,5 +1,5 @@
 feature: pay-module-yue-support
-status: design
+status: done
 risk: medium
 targets: [backend]
 contract: true
