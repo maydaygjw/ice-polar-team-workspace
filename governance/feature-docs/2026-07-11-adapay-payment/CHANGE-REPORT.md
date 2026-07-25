@@ -210,11 +210,11 @@ feat(pay/order/admin): Adapay 第三方支付集成
 - [ ] 完成后端单元测试与 E2E 用例（ADAPAY-E2E-001/002/003/006/007/009/010）。
 
 ## 相关文档
-- governance/feature-docs/adapay-payment/requirements-spec.md
-- governance/feature-docs/adapay-payment/technical-design.md
-- governance/feature-docs/adapay-payment/contract-changes.md
-- governance/feature-docs/adapay-payment/review-report.md
-- governance/feature-docs/adapay-payment/CHANGE-REPORT.md
+- governance/feature-docs/2026-07-11-adapay-payment/requirements-spec.md
+- governance/feature-docs/2026-07-11-adapay-payment/technical-design.md
+- governance/feature-docs/2026-07-11-adapay-payment/contract-changes.md
+- governance/feature-docs/2026-07-11-adapay-payment/review-report.md
+- governance/feature-docs/2026-07-11-adapay-payment/CHANGE-REPORT.md
 - governance/ADR/adr-003-adapay-out-pay-no.md
 - governance/ADR/adr-004-adapay-refund-and-close.md
 ```

@@ -88,7 +88,7 @@ E2E 仍须通过 UI 验证真实用户链路，API 直调只用于 API 测试，
 
 ## 5. 测试记录
 
-在 `governance/feature-docs/{feature}/test-notes.md` 记录：
+在 `governance/feature-docs/{YYYY-MM-DD}-{feature}/test-notes.md` 记录：
 
 ```markdown
 ## API 测试

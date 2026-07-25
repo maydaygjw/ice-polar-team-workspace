@@ -47,8 +47,8 @@
 
 ## References
 
-- `governance/feature-docs/product-unlimited-stock/requirements-spec.md`
-- `governance/feature-docs/product-unlimited-stock/contract-changes.md`
-- `governance/feature-docs/product-unlimited-stock/ui-ux-design.md`
-- `governance/feature-docs/product-unlimited-stock/test-notes.md`
-- `governance/feature-docs/product-unlimited-stock/review-report.md`
+- `governance/feature-docs/2026-07-21-product-unlimited-stock/requirements-spec.md`
+- `governance/feature-docs/2026-07-21-product-unlimited-stock/contract-changes.md`
+- `governance/feature-docs/2026-07-21-product-unlimited-stock/ui-ux-design.md`
+- `governance/feature-docs/2026-07-21-product-unlimited-stock/test-notes.md`
+- `governance/feature-docs/2026-07-21-product-unlimited-stock/review-report.md`

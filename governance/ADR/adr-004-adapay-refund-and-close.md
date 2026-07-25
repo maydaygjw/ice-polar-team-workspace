@@ -59,7 +59,7 @@
 
 - 相关 ADR：`adr-003-adapay-out-pay-no.md`
 - 相关合约：
-  - `governance/feature-docs/adapay-payment/requirements-spec.md`
-  - `governance/feature-docs/adapay-payment/technical-design.md`
-  - `governance/feature-docs/adapay-payment/contract-changes.md`
-- 依赖功能：`governance/feature-docs/adapay-profit-sharing/`（分账状态校验）
+  - `governance/feature-docs/2026-07-11-adapay-payment/requirements-spec.md`
+  - `governance/feature-docs/2026-07-11-adapay-payment/technical-design.md`
+  - `governance/feature-docs/2026-07-11-adapay-payment/contract-changes.md`
+- 依赖功能：`governance/feature-docs/2026-07-13-adapay-profit-sharing/`（分账状态校验）

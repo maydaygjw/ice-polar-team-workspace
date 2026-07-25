@@ -4,7 +4,7 @@
 
 | 项目 | 内容 |
 |------|------|
-| 评审对象 | `governance/feature-docs/adapay-reconciliation/` |
+| 评审对象 | `governance/feature-docs/2026-07-13-adapay-reconciliation/` |
 | 评审范围 | 需求规格、技术设计、API/数据库契约、管理后台 UI/UX |
 | 评审角色 | 独立第三方需求评审人 |
 | 评审结论 | **暂不通过，修改后复审** |

@@ -8,16 +8,16 @@
 
 ### Workspace root (governance/docs)
 
-- `governance/feature-docs/order-refund-reject/requirements-spec.md`
-- `governance/feature-docs/order-refund-reject/technical-design.md`
-- `governance/feature-docs/order-refund-reject/contract-changes.md`
-- `governance/feature-docs/order-refund-reject/ui-ux-design.md`
-- `governance/feature-docs/order-refund-reject/backend-impl-notes.md`
-- `governance/feature-docs/order-refund-reject/frontend-impl-notes.md`
-- `governance/feature-docs/order-refund-reject/miniapp-impl-notes.md`
-- `governance/feature-docs/order-refund-reject/test-notes.md`
-- `governance/feature-docs/order-refund-reject/review-report.md`
-- `governance/feature-docs/order-refund-reject/CHANGE-REPORT.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/requirements-spec.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/technical-design.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/contract-changes.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/ui-ux-design.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/backend-impl-notes.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/frontend-impl-notes.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/miniapp-impl-notes.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/test-notes.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/review-report.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/CHANGE-REPORT.md`
 
 ### Backend (`backend/`)
 
@@ -130,7 +130,7 @@ ALTER TABLE `yshop_store_order`
 
 **PASS** — 功能实现完整，契约匹配，未发现阻塞性缺陷。
 
-评审报告：`governance/feature-docs/order-refund-reject/review-report.md`
+评审报告：`governance/feature-docs/2026-07-13-order-refund-reject/review-report.md`
 
 ## Risks
 

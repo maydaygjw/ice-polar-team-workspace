@@ -26,11 +26,11 @@
 ## 影响
 
 - 对现有代码：纯增量。`spec_type=0/1` 与 `is_combo` 逻辑不变；`has_options` 与 `is_combo` 互斥。
-- 对 API/合约：新增门店选项库（分组/选项/指派）、商品引用分组 admin 接口；C 端商品详情按 `spec_type + has_options` 返回规格 + 选项分组；下单带选项、服务端实时计价。契约见 `feature-docs/product-option-pricing/contract-changes.md`。
+- 对 API/合约：新增门店选项库（分组/选项/指派）、商品引用分组 admin 接口；C 端商品详情按 `spec_type + has_options` 返回规格 + 选项分组；下单带选项、服务端实时计价。契约见 `feature-docs/2026-07-21-product-option-pricing/contract-changes.md`。
 - 对数据库：新增 `yshop_store_option_group`、`yshop_store_option`、`yshop_store_option_group_item`、`yshop_product_option_group_ref` 四表；`yshop_store_product` 加 `has_options`；`yshop_store_order_cart_info` 加 `option_snapshot`、`option_total_delta`。废弃初版 `yshop_store_topping`、`yshop_product_option_group`、`yshop_product_option`。均含回滚。
 - 对部署/运维：仅 DB 增量迁移，无新外部依赖、无 MQ 变更；test 已部署初版需清旧表重跑迁移。
 
 ## 相关
 
-- 相关的合约：`governance/feature-docs/product-option-pricing/contract-changes.md`
+- 相关的合约：`governance/feature-docs/2026-07-21-product-option-pricing/contract-changes.md`
 - 需求：`governance/BACKLOG/BACKLOG-004-product-option-pricing.md`

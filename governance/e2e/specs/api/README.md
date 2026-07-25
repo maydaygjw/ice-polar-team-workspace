@@ -76,4 +76,4 @@ source governance/SCRIPTS/deploy-helper.sh && load_env test
 )
 ```
 
-本地后端将 `API_BASE_URL` 改为 `http://localhost:8888`。测试结果和清理结果写入对应功能的 `governance/feature-docs/{feature}/test-notes.md`。
+本地后端将 `API_BASE_URL` 改为 `http://localhost:8888`。测试结果和清理结果写入对应功能的 `governance/feature-docs/{YYYY-MM-DD}-{feature}/test-notes.md`。

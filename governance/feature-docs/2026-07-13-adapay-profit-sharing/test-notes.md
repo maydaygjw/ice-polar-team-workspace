@@ -31,13 +31,13 @@
 - `src/views/mall/store/profitSharingRecord/index.vue`
 
 ### governance
-- `feature-docs/adapay-profit-sharing/meta.yaml`
-- `feature-docs/adapay-profit-sharing/requirements-spec.md`
-- `feature-docs/adapay-profit-sharing/technical-design.md`
-- `feature-docs/adapay-profit-sharing/contract-changes.md`
-- `feature-docs/adapay-profit-sharing/test-notes.md`
-- `feature-docs/adapay-profit-sharing/CHANGE-REPORT.md`
-- `feature-docs/adapay-profit-sharing/review-report.md`
+- `feature-docs/2026-07-13-adapay-profit-sharing/meta.yaml`
+- `feature-docs/2026-07-13-adapay-profit-sharing/requirements-spec.md`
+- `feature-docs/2026-07-13-adapay-profit-sharing/technical-design.md`
+- `feature-docs/2026-07-13-adapay-profit-sharing/contract-changes.md`
+- `feature-docs/2026-07-13-adapay-profit-sharing/test-notes.md`
+- `feature-docs/2026-07-13-adapay-profit-sharing/CHANGE-REPORT.md`
+- `feature-docs/2026-07-13-adapay-profit-sharing/review-report.md`
 
 ## 注意事项
 

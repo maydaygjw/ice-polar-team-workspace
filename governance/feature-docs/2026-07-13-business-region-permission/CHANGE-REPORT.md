@@ -98,7 +98,7 @@
 
 - `governance/CONTRACTS.md`：增加 Business Region 与门店权限合同。
 - `governance/ADR/adr-001-business-region-permission.md`：架构决策记录。
-- `governance/feature-docs/business-region-permission/`：需求规格、技术设计、合同变更、UI/UX 设计、测试计划、Phase 1 关口报告。
+- `governance/feature-docs/2026-07-13-business-region-permission/`：需求规格、技术设计、合同变更、UI/UX 设计、测试计划、Phase 1 关口报告。
 
 ## 审查结论
 

@@ -15,10 +15,10 @@ Resolved. User decisions received on 2026-07-05.
 
 ## Updated Artifacts
 
-- `governance/feature-docs/order-refund-reject/requirements-spec.md`
-- `governance/feature-docs/order-refund-reject/technical-design.md`
-- `governance/feature-docs/order-refund-reject/contract-changes.md`
-- `governance/feature-docs/order-refund-reject/ui-ux-design.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/requirements-spec.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/technical-design.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/contract-changes.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/ui-ux-design.md`
 
 ## Branch Plan for Phase 2
 

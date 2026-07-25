@@ -63,4 +63,4 @@
 ## 相关
 
 - `governance/CONTRACTS.md`
-- `governance/feature-docs/business-region-permission/contract-changes.md`
+- `governance/feature-docs/2026-07-13-business-region-permission/contract-changes.md`

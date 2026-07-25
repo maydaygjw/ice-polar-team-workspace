@@ -364,9 +364,9 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 
 ## 银行列表
 
-`settleAccount.bankCode` 选项来自后端银行字典表 `yshop_pay_bank`，通过 `GET /admin-api/pay/bank/list` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/bank-list.json` 经迁移脚本 `sql/upgrade-2026-07-08-adapay-profit-sharing-bank.sql` 导入。
+`settleAccount.bankCode` 选项来自后端银行字典表 `yshop_pay_bank`，通过 `GET /admin-api/pay/bank/list` 获取。初始数据从 `governance/feature-docs/2026-07-13-adapay-profit-sharing/bank-list.json` 经迁移脚本 `sql/upgrade-2026-07-08-adapay-profit-sharing-bank.sql` 导入。
 
-`settleAccount.adapayProvCode`/`adapayAreaCode` 选项来自后端 Adapay 省市字典表 `yshop_pay_adapay_region`，通过 `GET /admin-api/pay/adapay-region/province-list` 与 `GET /admin-api/pay/adapay-region/city-list?provinceCode=xxx` 获取。初始数据从 `governance/feature-docs/adapay-profit-sharing/region-list.json` 经迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` 导入。
+`settleAccount.adapayProvCode`/`adapayAreaCode` 选项来自后端 Adapay 省市字典表 `yshop_pay_adapay_region`，通过 `GET /admin-api/pay/adapay-region/province-list` 与 `GET /admin-api/pay/adapay-region/city-list?provinceCode=xxx` 获取。初始数据从 `governance/feature-docs/2026-07-13-adapay-profit-sharing/region-list.json` 经迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` 导入。
 
 格式：`[{ "regionCode": "0011", "regionName": "北京市" }, ...]`，共 34 个省份、378 个城市。
 

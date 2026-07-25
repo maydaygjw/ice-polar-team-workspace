@@ -15,11 +15,11 @@
 
 ## 产物
 
-- 所有功能：`governance/feature-docs/{feature}/test-notes.md`
-- 复杂 E2E：`governance/feature-docs/{feature}/test-plan.md`
+- 所有功能：`governance/feature-docs/{YYYY-MM-DD}-{feature}/test-notes.md`
+- 复杂 E2E：`governance/feature-docs/{YYYY-MM-DD}-{feature}/test-plan.md`
 - 用例：`governance/e2e/specs/features/{feature}/*.spec.ts`
 - 稳定后移入 `governance/e2e/specs/main/`
-- API 测试结果、请求样例、断言和失败归类：`governance/feature-docs/{feature}/test-notes.md`
+- API 测试结果、请求样例、断言和失败归类：`governance/feature-docs/{YYYY-MM-DD}-{feature}/test-notes.md`
 - API 测试案例：`governance/e2e/specs/api/{feature}/*.api.spec.ts`
 - 可复用的 API 测试脚本或请求集合：与对应功能测试资产一同存放，并在 `test-notes.md` 记录运行方式
 

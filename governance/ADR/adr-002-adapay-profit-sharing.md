@@ -59,4 +59,4 @@ Adapay 支付渠道支持三方支付的"延迟分账"模式：支付时设置 `
 
 - 替代的 ADR: 无
 - 相关的合约: `CONTRACTS.md#Commission Contract`、`CONTRACTS.md#Module Dependency Rules`
-- 相关的设计: `governance/feature-docs/adapay-profit-sharing/technical-design.md`
+- 相关的设计: `governance/feature-docs/2026-07-13-adapay-profit-sharing/technical-design.md`

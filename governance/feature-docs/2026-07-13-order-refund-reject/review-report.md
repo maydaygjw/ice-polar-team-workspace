@@ -2,7 +2,7 @@
 
 ## Review Summary
 
-本次评审覆盖 `backend/`、`admin/`、`miniapp/` 三个子仓库 `feat/order-refund-reject` 分支相对于各自 base 分支的改动，依据 `governance/feature-docs/order-refund-reject/` 下的需求、设计、契约与测试文档进行。
+本次评审覆盖 `backend/`、`admin/`、`miniapp/` 三个子仓库 `feat/order-refund-reject` 分支相对于各自 base 分支的改动，依据 `governance/feature-docs/2026-07-13-order-refund-reject/` 下的需求、设计、契约与测试文档进行。
 
 整体实现与需求/契约一致：后端新增 `refundStatus = 3` 状态、`refund_reapply` 字段、拒绝退款接口、确认退款前置校验、用户重新申请校验；Admin 增加拒绝退款按钮/弹窗/详情退款信息；小程序增加已拒绝状态展示、拒绝原因回显与重新申请入口；数据库迁移脚本与 E2E 测试已补齐。
 

@@ -53,5 +53,5 @@ feat(order): add GET /order/reply/list for app-side review query
 
 ## References
 
-- Feature: `governance/feature-docs/order-review-query/`
+- Feature: `governance/feature-docs/2026-07-12-order-review-query/`
 - Gitee PR: #50

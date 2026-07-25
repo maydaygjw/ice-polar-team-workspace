@@ -19,10 +19,10 @@
 
 ## 已更新文档
 
-- `governance/feature-docs/adapay-profit-sharing/technical-design.md`
-- `governance/feature-docs/adapay-profit-sharing/contract-changes.md`
-- `governance/feature-docs/adapay-profit-sharing/ui-ux-design.md`
-- `governance/feature-docs/adapay-profit-sharing/requirements-spec.md`
+- `governance/feature-docs/2026-07-13-adapay-profit-sharing/technical-design.md`
+- `governance/feature-docs/2026-07-13-adapay-profit-sharing/contract-changes.md`
+- `governance/feature-docs/2026-07-13-adapay-profit-sharing/ui-ux-design.md`
+- `governance/feature-docs/2026-07-13-adapay-profit-sharing/requirements-spec.md`
 
 ## 下一步
 

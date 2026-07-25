@@ -211,4 +211,4 @@ public class VoucherOrderCreateRespVO {
 ## 6. Contract Version
 
 - **Initial version** — 2026-06-25, created during `product-exchange-voucher` Phase 1 architecture design.
-- **Depends on**: `CONTRACTS.md` (platform), `feature-docs/device-api/contract-changes.md` (device order creation), `feature-docs/order-detail-page/contract-changes.md` (order detail fields).
+- **Depends on**: `CONTRACTS.md` (platform), `feature-docs/2026-07-24-device-api/contract-changes.md` (device order creation), `feature-docs/2026-06-05-order-detail-page/contract-changes.md` (order detail fields).

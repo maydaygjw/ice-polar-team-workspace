@@ -20,13 +20,13 @@
 | | `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` |
 | `admin/` | `src/api/mall/store/profitSharingRecord/index.ts` |
 | | `src/views/mall/store/profitSharingRecord/index.vue` |
-| `governance/` | `feature-docs/adapay-profit-sharing/meta.yaml` |
-| | `feature-docs/adapay-profit-sharing/requirements-spec.md` |
-| | `feature-docs/adapay-profit-sharing/technical-design.md` |
-| | `feature-docs/adapay-profit-sharing/contract-changes.md` |
-| | `feature-docs/adapay-profit-sharing/test-notes.md` |
-| | `feature-docs/adapay-profit-sharing/review-report.md` |
-| | `feature-docs/adapay-profit-sharing/CHANGE-REPORT.md` |
+| `governance/` | `feature-docs/2026-07-13-adapay-profit-sharing/meta.yaml` |
+| | `feature-docs/2026-07-13-adapay-profit-sharing/requirements-spec.md` |
+| | `feature-docs/2026-07-13-adapay-profit-sharing/technical-design.md` |
+| | `feature-docs/2026-07-13-adapay-profit-sharing/contract-changes.md` |
+| | `feature-docs/2026-07-13-adapay-profit-sharing/test-notes.md` |
+| | `feature-docs/2026-07-13-adapay-profit-sharing/review-report.md` |
+| | `feature-docs/2026-07-13-adapay-profit-sharing/CHANGE-REPORT.md` |
 
 ## 3. 契约变化摘要
 
@@ -92,11 +92,11 @@
 - 新增迁移脚本 upgrade-2026-07-07-adapay-profit-sharing.sql
 
 关联文档：
-- governance/feature-docs/adapay-profit-sharing/requirements-spec.md
-- governance/feature-docs/adapay-profit-sharing/technical-design.md
-- governance/feature-docs/adapay-profit-sharing/contract-changes.md
-- governance/feature-docs/adapay-profit-sharing/test-notes.md
-- governance/feature-docs/adapay-profit-sharing/review-report.md
+- governance/feature-docs/2026-07-13-adapay-profit-sharing/requirements-spec.md
+- governance/feature-docs/2026-07-13-adapay-profit-sharing/technical-design.md
+- governance/feature-docs/2026-07-13-adapay-profit-sharing/contract-changes.md
+- governance/feature-docs/2026-07-13-adapay-profit-sharing/test-notes.md
+- governance/feature-docs/2026-07-13-adapay-profit-sharing/review-report.md
 ```
 
 ## 8. PR 链接

@@ -114,7 +114,7 @@ yshop-module-store-biz ──→ yshop-module-pay-api (ProfitRecipientApi)
 ### 架构决策
 
 1. **单表存储省市数据**：`yshop_pay_region` 统一存放省份与城市，`region_type` 区分层级，`parent_code` 表示城市所属省份编码。省份 34 条、城市 378 条，单表即可满足级联查询，无需分表。
-2. **一次性初始化**：数据从 `governance/feature-docs/adapay-profit-sharing/region-list.json` 经迁移脚本写入；本期为只读字典表，不开发后台管理页面。
+2. **一次性初始化**：数据从 `governance/feature-docs/2026-07-13-adapay-profit-sharing/region-list.json` 经迁移脚本写入；本期为只读字典表，不开发后台管理页面。
 3. **级联 API 分离**：`province-list` 返回全部省份；`city-list` 按 `provinceCode` 返回城市。数据量小，无需缓存；若后续并发高，可加 `@Cacheable`。
 4. **结算账户省市必填时机**：创建收款人时 `settleAccount` 必填，其 `provCode`/`areaCode` 必填；更新收款人时仅 `replaceSettleAccount=true` 才需填写。
 5. **后端强校验**：`provCode` 必须存在且 `region_type=1`；`areaCode` 必须存在且 `region_type=2`、`parent_code=provCode`；任一不满足抛 `REGION_*` 错误码。

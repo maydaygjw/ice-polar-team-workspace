@@ -54,7 +54,7 @@
 **PASS**
 
 - 实现与需求规格一致
-- API 合同变更已归档至 `governance/feature-docs/voice-broadcast/contract-changes.md`
+- API 合同变更已归档至 `governance/feature-docs/2026-06-05-voice-broadcast/contract-changes.md`
 - 无硬编码密钥
 - 复用现有 `canManage()` 权限校验，租户隔离不变
 - 无数据库变更

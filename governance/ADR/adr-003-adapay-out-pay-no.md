@@ -36,5 +36,5 @@ Adapay（汇付天下）不允许对同一个订单号重复发起支付。当�
 
 ## 相关
 
-- `governance/feature-docs/adapay-payment/technical-design.md`
-- `governance/feature-docs/adapay-payment/contract-changes.md`
+- `governance/feature-docs/2026-07-11-adapay-payment/technical-design.md`
+- `governance/feature-docs/2026-07-11-adapay-payment/contract-changes.md`

@@ -3,8 +3,8 @@
 ## 新增/变更文件
 
 - `admin/e2e/order-refund-reject.spec.ts`
-- `governance/feature-docs/order-refund-reject/e2e-test-plan.md`
-- `governance/feature-docs/order-refund-reject/test-notes.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/e2e-test-plan.md`
+- `governance/feature-docs/2026-07-13-order-refund-reject/test-notes.md`
 
 ## 已覆盖场景
 

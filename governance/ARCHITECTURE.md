@@ -37,7 +37,7 @@
 | 层级 | 文件 | 范围 |
 |------|------|------|
 | Platform | `ARCHITECTURE.md`（本章节） | 通用规则、模块边界、依赖、外部系统 |
-| Feature | `governance/feature-docs/{feature}/contract-changes.md` | 单个功能的 API 语义、DTO、权限规则 |
+| Feature | `governance/feature-docs/{YYYY-MM-DD}-{feature}/contract-changes.md` | 单个功能的 API 语义、DTO、权限规则 |
 | Machine | `governance/CONTRACT/*.json` | OpenAPI / AsyncAPI，自动收集 |
 
 ### 什么算契约

@@ -11,9 +11,11 @@
 - 不提交密钥或私密配置。未经用户明确授权，不 commit、push、创建或合并 PR。
 - 仅高风险歧义、破坏性操作、远程环境操作和交付动作需要用户确认。
 
-## Feature Meta
+## Feature 文档目录与 Meta
 
-在 `governance/feature-docs/{feature}/meta.yaml` 维护路由和进度，不写业务、设计、对话或文件清单：
+功能目录名使用创建日期前缀：`governance/feature-docs/{YYYY-MM-DD}-{feature}/`，例如 `governance/feature-docs/2026-07-26-order-refund-reject/`。其中日期使用功能文档首次创建当天的本地日期，`feature` 使用短横线命名的功能标识。
+
+在 `governance/feature-docs/{YYYY-MM-DD}-{feature}/meta.yaml` 维护路由和进度，不写业务、设计、对话或文件清单：
 
 ```yaml
 feature: order-refund-reject
@@ -40,7 +42,7 @@ blocked: false
 
 ## 产物
 
-目录：`governance/feature-docs/{feature}/`
+目录：`governance/feature-docs/{YYYY-MM-DD}-{feature}/`
 
 | 文件 | 条件 |
 |---|---|
