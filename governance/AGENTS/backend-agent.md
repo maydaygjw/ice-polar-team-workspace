@@ -13,7 +13,6 @@
 - 跨模块调用通过 `-api`，实现位于 `-biz`
 - Controller 按 `admin/*` 与 `app/*` 分端；C 端使用 `@PreAuthenticated`，管理端使用 `@PreAuthorize`
 - 新业务表和查询验证 `tenant_id`；需要时验证部门/门店数据范围
-- 升级使用 `sql/upgrade-YYYY-MM-DD-{feature}.sql`；同一特性的增量合并到同一脚本，不直接修改基线 SQL；脚本必须幂等（DDL 用列/表存在性判断，菜单/数据用 NOT EXISTS），可重复执行
-- 新增 admin 页面或 `@PreAuthorize` 权限时，必须随 feature 在升级 SQL 中提供对应菜单与按钮权限（`system_menu`），否则页面无入口/按钮不可见；菜单迁移用 UPDATE 改 `parent_id` 保持菜单 id 稳定，不删旧菜单重建
+- 升级使用 `sql/upgrade-YYYY-MM-DD-{feature}.sql`；同一特性的增量合并到同一脚本，不直接修改基线 SQL
 - 对象转换或批量赋值优先使用 `BeanUtils`（`co.yixiang.yshop.framework.common.util.object.BeanUtils`）等属性拷贝工具，避免冗长的逐字段 setter；仅当字段来自多个异源对象或需特殊映射时才手写赋值
 - `*-api` 模块的接口必须保持领域通用，不得夹带调用方/设备/特定业务概念（如 `ProductApi` 不出现打印/设备语义）；设备侧编排与语义放在调用方模块，通过参数（如目标分类名、选项名）传入
