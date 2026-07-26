@@ -24,8 +24,8 @@
 
 ## Minor
 
-### m1. `regeneratePrintProductOptions` 只覆盖引用、不删旧 Option 组/项，每次同步累积孤儿行
-`ProductApiImpl.regeneratePrintProductOptions` + `ProductOptionGroupRefServiceImpl.saveProductGroups`：仅 `physicalDeleteByProductId`（删 product→group 引用）后插新引用，旧的 `StoreOptionGroupDO`/`StoreOptionDO` 行不删。规格 UC4「先删除…已有…Option」字面要求删除。每次同步累积无引用旧组/项（商品页面只显示新引用，功能不受影响）。
+### m1. `regenerateProductOptions` 只覆盖引用、不删旧 Option 组/项，每次同步累积孤儿行
+`ProductApiImpl.regenerateProductOptions` + `ProductOptionGroupRefServiceImpl.saveProductGroups`：仅 `physicalDeleteByProductId`（删 product→group 引用）后插新引用，旧的 `StoreOptionGroupDO`/`StoreOptionDO` 行不删。规格 UC4「先删除…已有…Option」字面要求删除。每次同步累积无引用旧组/项（商品页面只显示新引用，功能不受影响）。
 **建议**：覆盖前记录旧 groupId，覆盖后删除不再被任何商品引用的组及其选项。本期保留为已知缺口（页面可选中清理）。
 
 ### m2. 幂等命中未校验同人，requestId 跨用户复用可泄露订单号/金额 — 已修复
@@ -46,7 +46,7 @@
 ## Verified-OK（已读码确认，非问题）
 
 - **计价数学正确**：`(skuPrice + optionTotalDelta) × count × copies`，`optionTotalDelta` 为 per-unit 加价合计；`count`=file→pageCount/photo→photoCount；`setScale(2, HALF_UP)`；BigDecimal 全程无 int 溢出。单测断言 3.00 / 24.00 正确。
-- **远程调用不在 DB 事务内**：`getFilePages` 在任何 DB 写之前；`regeneratePrintProductOptions` 的 `@Transactional` 内无远程调用（纸张名由 device 侧先取好传入）；`initDevice` 远程调用与单条设备 upsert 分离。
+- **远程调用不在 DB 事务内**：`getFilePages` 在任何 DB 写之前；`regenerateProductOptions` 的 `@Transactional` 内无远程调用（纸张名由 device 侧先取好传入）；`initDevice` 远程调用与单条设备 upsert 分离。
 - **快照失败补偿**：设备订单插入失败调 `cancelUnpaidOrderKeepRecord` 补偿取消业务订单，补偿自身异常被捕获并 ERROR，无可支付孤儿订单。
 - **链科失败不建可支付订单**：`getFilePages` 失败/页数 null/≤0 → 抛 `PRINT_FILE_PAGES_FAILED`，发生在 `createPrintOrder` 之前（单测验证 `createPrintOrder` 未被调用）。
 - **shopId 类型一致**：`StoreOrderDO.shopId`=Long、`StoreProductDO.shopId`=Integer、`AppStoreProductDTO.shopId`=Integer 各自转换（`.intValue()`/`.longValue()`）无混用 bug。

@@ -21,7 +21,7 @@
 | `device/controller/admin/printdevice/PrintDeviceController.java` | `/admin-api/device/print-device` list-by-shop/init/sync-options |
 | `device/controller/admin/printdevice/vo/*.java` | RespVO / InitReq / InitResp / SyncReq / SyncResp |
 | `order-api order/api/dto/PrintOrderCreateDTO.java` | 打印业务订单创建入参 |
-| `product-api .../dto/ProductSkuDTO.java` / `PrintProductSummaryDTO.java` | SKU / 打印商品摘要 |
+| `product-api .../dto/ProductSkuDTO.java` / `ProductSummaryDTO.java` | SKU / 商品摘要 |
 | `test/.../PrinterOrderServiceTest.java` / `PrintDeviceInitServiceTest.java` | 计价/校验/同步 单测 13 |
 
 ## Backend 修改
@@ -36,7 +36,7 @@
 | `device/printer/api/dto/PrintJobSubmitDTO.java` | +`dmColor` |
 | `order-api order/api/OrderApi.java` | +`createPrintOrder` |
 | `order-biz order/api/OrderApiImpl.java` | 打印业务订单直接落库（复用现有支付，payType=no，支付成功覆盖） |
-| `product-api product/ProductApi.java` | +`getCategoryNames`/`resolveSku`/`listPrintProductsByShop`/`regeneratePrintProductOptions` |
+| `product-api product/ProductApi.java` | +`getCategoryNames`/`resolveSku`/`listProductsByCategoryNames`/`regenerateProductOptions`（领域通用、按目标分类名驱动，不含打印/设备语义） |
 | `product-biz product/ProductApiImpl.java` | 上述实现；Option 同步 @Transactional，BeanUtils 属性拷贝 |
 
 ## Admin 新增

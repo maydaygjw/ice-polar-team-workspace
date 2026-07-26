@@ -15,3 +15,4 @@
 - 新业务表和查询验证 `tenant_id`；需要时验证部门/门店数据范围
 - 升级使用 `sql/upgrade-YYYY-MM-DD-{feature}.sql`；同一特性的增量合并到同一脚本，不直接修改基线 SQL
 - 对象转换或批量赋值优先使用 `BeanUtils`（`co.yixiang.yshop.framework.common.util.object.BeanUtils`）等属性拷贝工具，避免冗长的逐字段 setter；仅当字段来自多个异源对象或需特殊映射时才手写赋值
+- `*-api` 模块的接口必须保持领域通用，不得夹带调用方/设备/特定业务概念（如 `ProductApi` 不出现打印/设备语义）；设备侧编排与语义放在调用方模块，通过参数（如目标分类名、选项名）传入
