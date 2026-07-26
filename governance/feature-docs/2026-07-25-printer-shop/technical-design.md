@@ -10,7 +10,7 @@
 | `yshop-module-device-biz` | 新增 `device/printer/`：`LiankePrinterGateway`（HTTP 直连链科）、打印 Service、**`PrintPayNoticeConsumer`（监听 `order.pay.notice`，在 device-biz）**、打印专属计价器、回调 Controller、`PrintDeliveryGateway` 占位接口；`DeviceManagementServiceImpl` 硬编码 ICE_MAKER 处改为按类型分发 |
 | `yshop-module-order-biz` | 复用既有 OrderApi（状态推进/退款），新增按页计价所需订单数据读取；**不新增打印 consumer**（在 device-biz） |
 | `yshop-module-pay` | 无改动（复用现有支付/退款通道） |
-| `yshop-module-product` | 复用 SKU（`StoreProductAttrValueDO`）承载打印规格单价；如需跨模块查 SKU 规格，扩展 `ProductApi` |
+| `yshop-module-product` | 复用 SKU（`StoreProductAttrValueDO`）承载商品基础单价，复用商品 Option 承载纸张/颜色等可加价选项；如需跨模块查 SKU 规格，扩展 `ProductApi` |
 | admin (yshop-drink-vue) | **仅新增「打印任务管理」页**；打印店用现有门店管理，打印机用现有商品管理 |
 
 依赖方向：跨模块只经 `-api`。Device → Order 走 `OrderApi`；Order 不依赖 Device（支付通知经 MQ 解耦，device-biz 消费）。
@@ -37,7 +37,7 @@
 ### D3b 页数计价（不侵入通用价格逻辑）
 打印按页计价，区别于普通商品。决策：
 - 下单时前端传入**页数**（用户上传文件后由前端/后端解析附件得出）；后端用附件实际页数**校验**入参，不一致拒绝下单。
-- 价格 = 单价(来自 SKU 规格：纸张/颜色等) × 页数 × 份数。该计算走**打印专属计价器**，不改通用订单价格引擎。
+- 价格 =（SKU 基础单价 + Option 加价）× 页数 × 份数。纸张大小、颜色通过商品 Option 表达。该计算走**打印专属计价器**，不改通用订单价格引擎。
 - 边界：计价器在打印订单创建路径生效（orderType=device + deviceType=printer）；普通商品价格逻辑零改动。
 - 附件解析页数（**方案 B**）：PDF 取页数、图片计 1 页，下单时后端即校验入参 `pageCount`；Office 文档（Word/Excel）后端不解析，页数以**链科解析结果**为准——提交任务后回读链科返回的实际页数比对，不符则按打印失败自动退款。
 
@@ -81,7 +81,7 @@ REVOKED            CANCELLED            → 自动退款(若已付)    refund_st
 用户下单(传页数+文件) → 打印计价器(单价×页数×份数) → 支付
   → MQ order.pay.notice
   → device-biz PrintPayNoticeConsumer(orderNo 幂等)
-  → Device: 查 printer 设备/店铺、取 SKU 规格单价、文件签名URL → 组装 dmPaperSize/dmCopies/页数
+  → Device: 查 printer 设备/店铺、取 SKU 基础单价和 Option 加价、文件签名URL → 组装 dmPaperSize/dmCopies/页数
   → LiankePrinterGateway.submitJob → 拿 task_id
   → DeviceOrder: CREATED→QUEUED, 存 task_id
 链科回调 /app-api/device/printer/callback（原文打 debug 日志，不入库）

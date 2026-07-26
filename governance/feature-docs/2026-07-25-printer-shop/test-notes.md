@@ -82,7 +82,7 @@ API 测试使用 `governance/e2e` 的 Playwright `APIRequestContext`，不替代
 | Token | 按 playbook 使用 `test<用户ID>`，只写入运行环境，不写入文档或报告 |
 | 管理权限 | `device:print-job:query`、`device:print-job:cancel`、`device:print-job:retry` 分别配置到测试角色；Mock Token 不会自动授予菜单权限 |
 | 店铺 | 通过现有门店管理创建一次性测试店铺；绑定唯一 printer 设备，并确保 `deviceId = shop_code = device_code`，一店一云盒一打印机 |
-| 打印商品 | 通过现有商品管理创建并启用一次性打印商品；至少准备纸张/颜色/份数等 SKU 规格及价格，规格与打印设备能力一致 |
+| 打印商品 | 通过现有商品管理创建并启用一次性打印商品；准备基础 SKU，并将纸张/颜色等配置为商品 Option 及对应价格，且与打印设备能力一致 |
 | 设备 | 测试租户中准备唯一的 `deviceType=printer` 设备，`device_id/device_code/shop_code` 关系有效，凭证仅使用环境配置 |
 | 订单 | 准备可追踪、可丢弃的 printer `DeviceOrder` fixtures：至少 CREATED/QUEUED、PROCESSING、SUCCEEDED、FAILED、CANCELLED 各一条，并记录 `orderNo/taskId` |
 | 外部依赖 | 使用独立 HTTP Mock 服务承接后端发往链科的请求；回调测试不依赖链科主动投递。若未配置 mock，跳过会触发真实链科请求的用例并标记环境阻塞 |

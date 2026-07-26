@@ -64,4 +64,4 @@
 - 端到端下单链路（谁建 printer 设备订单、`fillJobFileAndSpec` 填充文件/规格）在小程序，本期占位。
 - 真机联调：链科提交/查询/取消的真实 HTTP 字段映射待配置凭证后验证（含 Minor m1 jobFile 形式）。
 - 配送平台 `PrintDeliveryGateway` 占位，未真实下单。
-- 打印专属计价器（SKU 单价 × 页数 × 份数）随下单链路实现。
+- 打印专属计价器（SKU 基础单价 + Option 加价，再乘页数 × 份数）随下单链路实现。
