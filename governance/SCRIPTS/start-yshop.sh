@@ -45,7 +45,7 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
   else
     cd ${YSHOP_START_PATH}
     if [ \"${ENV_NAME}\" = \"test\" ]; then
-      ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true nohup java -jar target/${YSHOP_JAR} > ${YSHOP_START_PATH}/app.log 2>&1 &
+      ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true nohup java -jar target/${YSHOP_JAR} --spring.profiles.active=dev > ${YSHOP_START_PATH}/app.log 2>&1 &
     else
       nohup java -jar target/${YSHOP_JAR} > ${YSHOP_START_PATH}/app.log 2>&1 &
     fi

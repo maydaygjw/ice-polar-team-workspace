@@ -70,6 +70,12 @@
 | 启动路径 | `${YSHOP_START_PATH}` |
 | JAR 文件 | `${YSHOP_JAR}` |
 
+**启动配置**
+
+- **Spring Profile**：测试环境启动时必须指定 `--spring.profiles.active=dev`（使用 `application-dev.yaml` 的数据库和日志配置）
+- **日志级别**：`co.yixiang.yshop.module.device` 为 `DEBUG`（用于排查链科云打印等远程调用），其他业务模块 MyBatis Mapper 为 `DEBUG`，其余为 `INFO`
+- **环境变量**：测试环境启动时注入 `ADAPAY_DEBUG=true` 和 `AI_IMAGE_ENABLED=true`
+
 **部署步骤**
 
 > 以下命令均假设已执行 `source governance/SCRIPTS/deploy-helper.sh && load_env <env>`，且在同一 shell 会话中运行。
