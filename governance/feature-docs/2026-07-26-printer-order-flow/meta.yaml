@@ -1,0 +1,8 @@
+feature: printer-order-flow
+status: review
+risk: high
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: true
+blocked: false
