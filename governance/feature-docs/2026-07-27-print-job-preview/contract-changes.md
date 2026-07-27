@@ -6,7 +6,8 @@
 
 | 方法 | 路径 | 说明 | 权限 |
 |------|------|------|------|
-| POST | `/admin-api/device/print-job/preview` | 打印预览：取页数 + 计价，不落库 | `device:print-job:create` |
+| POST | `/admin-api/device/print-job/preview` | 打印预览：取页数 + 计价，并提交链科预览图任务，返回 `taskId` | `device:print-job:create` |
+| GET | `/admin-api/device/print-job/preview-result` | 轮询预览图：按 `taskId` 返回 `taskState`/`previewImages[]`/`taskTicket` | `device:print-job:create` |
 
 ### 请求 `PrintJobPreviewReqVO`
 
@@ -31,6 +32,21 @@
 | `totalPrice` | BigDecimal | 应付 = unitPrice × pageCount × copies |
 | `deviceModel` | String | 打印机型号（展示用） |
 | `paperName` / `colorName` | String | 回显所选规格 |
+| `taskId` | String | 链科预览图任务 ID（isPreview=1 提交返回），用于轮询 preview-result |
+
+### 预览图轮询 `GET /preview-result`
+
+请求参数：`taskId`（String，必填）、`shopId`（Long，必填，用于定位店铺 printer 设备凭证后查询链科）。
+
+响应 `PrintJobPreviewImageRespVO`：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `taskState` | String | 链科任务状态：PARSING/SENDING/SUCCESS/FAILURE 等 |
+| `finished` | Boolean | 是否已出结果（SUCCESS 或 FAILURE） |
+| `previewImages` | List\<String\> | 每页预览图 URL（仅 SUCCESS 时有值，带时效签名） |
+| `taskTicket` | String | 链科预览任务凭证（仅返回前端，不落库） |
+| `resultCode` / `resultMsg` | Integer/String | 失败时链科 task_result.code/msg（如 502 设备端下载文件失败） |
 
 复用：`PrinterGateway.getFilePages`、`PrintSpecResolver`(dmPaperSize/dmColor)、`ProductOptionOrderApi.priceAndValidate`（Option 计价）。
 抽取：`PrinterOrderService` 打印计价段抽为可复用方法，下单与预览共用同一口径。
@@ -47,8 +63,9 @@
 
 ## MQ / 外部系统
 
-- 调用链科 `file_pages`（已封装），无新增外部系统。
-- 不触发 MQ、不注册回调、不提交打印任务。
+- 调用链科 `file_pages`（已封装）取页数计价。
+- 预览图：调用链科 `POST /print/job`（`isPreview=1`）提交预览任务 + `GET /print/job` 轮询取 `img_list`（已实测），仍不真实打印、不下发打印机。
+- 不触发 MQ、不注册回调。
 
 ## 依赖 / 数据范围
 

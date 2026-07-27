@@ -40,6 +40,23 @@
 
 预览纯计算：仅读设备/商品/Option + 调链科 file_pages，**无任何 insert/update**，不创建设备订单/业务订单、不提交链科、不注册回调、不触发 MQ。因此无需幂等、无需退款、无需回调地址。
 
+### D6 预览图走链科 isPreview 异步任务（提交 + 轮询）
+
+需求增量：预览不仅要页数+计价，还要把**文件每页的预览图**展示给用户核对。
+
+链科机制（已实测）：`POST /print/job` 带 `isPreview=1` 立即返回 `task_id`（只生成预览中间文件，不真实打印）；轮询 `GET /print/job?task_id=` 至 `task_state=SUCCESS`，从 `task_result.data.img_list` 取每页 JPG（`preview.liankenet.com`，带 `auth_key` 时效签名），`task_result.data.taskTicket` 为可复用预览凭证。失败时 `task_result.code!=200`（如设备端下载不到文件 → 502）。
+
+因此拆为两步：
+- **提交**：`POST /preview` 在原计价基础上，额外 `submitJob(isPreview=1)` 提交预览任务，返回 `taskId` + 计价结果。
+- **轮询**：新增 `GET /preview-result?taskId=`，返回 `taskState` / `previewImages[]` / `taskTicket` / 失败原因；前端轮询至出图。
+
+关键约束：
+- 预览图**异步**，用户等待数秒~十几秒，前端「生成中…」轮询，不阻塞。
+- 展示**全部页**缩略图（用户打印前逐页核对排版）。
+- `taskTicket` 本期**仅返回前端、不落库**；后续真实打印复用中间文件时再设计持久化。
+- 仍**不真实打印**：isPreview 任务只产预览中间文件，不下发打印机；不创建任何订单。
+- 预览图 URL 带时效签名，仅用于即时展示，不做长期存储与引用。
+
 ## 契约增量
 
 详见 `contract-changes.md`。要点：
