@@ -6,7 +6,6 @@
 
 - 可修改后端 Java、Mapper、资源、测试及 `backend/sql/upgrade-YYYY-MM-DD-{feature}.sql`
 - 不修改 `admin/`、`miniapp/`、`icepolar-dms/`
-- `app-api` 变化必须通知其实际消费端
 
 ## 专有约束
 
