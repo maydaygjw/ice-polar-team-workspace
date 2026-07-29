@@ -1,0 +1,8 @@
+feature: miniapp-print-access
+status: done # requirements|design|implementation|verification|review|done
+risk: high            # low|medium|high
+targets: [backend]
+contract: true
+ui: false
+e2e: true
+blocked: false
