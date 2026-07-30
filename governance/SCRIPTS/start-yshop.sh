@@ -14,6 +14,11 @@ required_vars=(
   YSHOP_JAR
 )
 
+test_runtime_env=""
+if [[ "${ENV_NAME}" = "test" && -n "${LIANKE_PRINT_HOST:-}" ]]; then
+  test_runtime_env="LIANKE_PRINT_HOST=${LIANKE_PRINT_HOST} LIANKE_PRINT_API_KEY=${LIANKE_PRINT_API_KEY:-} LIANKE_PRINT_CALLBACK_BASE_URL=${LIANKE_PRINT_CALLBACK_BASE_URL:-}"
+fi
+
 for var_name in "${required_vars[@]}"; do
   if [[ -z "${!var_name:-}" ]]; then
     echo "Missing required environment variable: ${var_name}" >&2
@@ -37,15 +42,15 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
   if systemctl list-unit-files | grep -q yshop.service; then
     if [ \"${ENV_NAME}\" = \"test\" ]; then
       systemctl import-environment DASHSCOPE_API_KEY
-      systemctl set-environment ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true
+      systemctl set-environment ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true ${test_runtime_env}
     else
-      systemctl unset-environment ADAPAY_DEBUG AI_IMAGE_ENABLED DASHSCOPE_API_KEY || true
+      systemctl unset-environment ADAPAY_DEBUG AI_IMAGE_ENABLED DASHSCOPE_API_KEY LIANKE_PRINT_HOST LIANKE_PRINT_API_KEY LIANKE_PRINT_CALLBACK_BASE_URL || true
     fi
     systemctl start yshop.service
   else
     cd ${YSHOP_START_PATH}
     if [ \"${ENV_NAME}\" = \"test\" ]; then
-      ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true nohup java -jar target/${YSHOP_JAR} --spring.profiles.active=dev > ${YSHOP_START_PATH}/app.log 2>&1 &
+      ${test_runtime_env} ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true nohup java -jar target/${YSHOP_JAR} --spring.profiles.active=dev > ${YSHOP_START_PATH}/app.log 2>&1 &
     else
       nohup java -jar target/${YSHOP_JAR} > ${YSHOP_START_PATH}/app.log 2>&1 &
     fi

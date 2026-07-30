@@ -25,14 +25,19 @@ if [ ! -f "${start_path}/target/${jar_file}" ]; then
   exit 1
 fi
 
-# 远端当前 commit（短 sha）
-remote_commit=$(cd "${source_dir}" && git rev-parse --short HEAD)
+# 远端当前 commit（完整 sha）
+remote_commit=$(cd "${source_dir}" && git rev-parse HEAD)
 
-# 从 JAR 内解压出 BOOT-INF/classes/git.properties 中的 git.commit.id.abbrev
+# 从 JAR 内解压出 BOOT-INF/classes/git.properties 中的完整 commit；兼容旧 JAR 的 abbrev 字段。
 jar_commit=$(unzip -p "${start_path}/target/${jar_file}" BOOT-INF/classes/git.properties 2>/dev/null \
-  | grep '^git.commit.id.abbrev=' | cut -d= -f2 || true)
+  | grep '^git.commit.id=' | cut -d= -f2 || true)
 
-if [ "${remote_commit}" = "${jar_commit}" ] && [ -n "${jar_commit}" ]; then
+if [ -z "${jar_commit}" ]; then
+  jar_commit=$(unzip -p "${start_path}/target/${jar_file}" BOOT-INF/classes/git.properties 2>/dev/null \
+    | grep '^git.commit.id.abbrev=' | cut -d= -f2 || true)
+fi
+
+if [ -n "${jar_commit}" ] && [[ "${remote_commit}" == "${jar_commit}"* ]]; then
   echo "OK: commit ${jar_commit}"
   exit 0
 else
