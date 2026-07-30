@@ -13,3 +13,6 @@
 [submodule "icepolar-dms"]
 	path = icepolar-dms
 	url = https://gitee.com/icepolar/dms.git
+[submodule "mock-external-server"]
+	path = mock-external-server
+	url = https://gitee.com/icepolar/mock-external-server.git

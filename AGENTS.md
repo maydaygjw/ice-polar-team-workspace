@@ -11,6 +11,7 @@ ice-polar-team-workspace/
 ├── admin/              # submodule — yshop-drink-vue (Vue3/Vite)
 ├── miniapp/            # submodule — icepolarminiapp (Native WeChat Mini Program)
 ├── icepolar-dms/       # submodule — icepolar-dms (Python/FastAPI)
+├── mock-external-server/ # submodule — mock-external-server (FastAPI 外部依赖模拟服务)
 └── .gitmodules
 ```
 
@@ -20,6 +21,7 @@ ice-polar-team-workspace/
 | `admin/` | `https://gitee.com/icepolar/yshop-drink-vue.git` | Vue3, Vite4, Element Plus, TypeScript, pnpm | `master` |
 | `miniapp/` | `https://gitee.com/icepolar/icepolarminiapp.git` | Native WeChat Mini Program (WXML/WXSS/JS) | `main` |
 | `icepolar-dms/` | `git@github.com:holun-yshop/icepolar-dms.git` | Python 3.12+, FastAPI, SQLAlchemy 2.x, pytest | `main` |
+| `mock-external-server/` | `https://gitee.com/icepolar/mock-external-server.git` | Python 3.12+, FastAPI, pytest | `master` |
 
 ### Initialize & Sync
 
@@ -34,7 +36,7 @@ git pull --recurse-submodules
 git submodule update --remote
 
 # Check status across all repos
-for d in backend admin miniapp icepolar-dms; do
+for d in backend admin miniapp icepolar-dms mock-external-server; do
   echo "[$d] $(cd $d && git status --short | wc -l | xargs) changes"
 done
 ```
@@ -76,6 +78,7 @@ Run commands from the target submodule root. Each submodule owns its own build, 
 (cd backend && mvn clean test)
 (cd admin && pnpm dev)
 (cd icepolar-dms && pytest -v)
+(cd mock-external-server && pytest -v)
 ```
 
 ## Coding Style & Testing Guidelines
