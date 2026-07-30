@@ -77,3 +77,31 @@ source governance/SCRIPTS/deploy-helper.sh && load_env test
 ```
 
 本地后端将 `API_BASE_URL` 改为 `http://localhost:8888`。测试结果和清理结果写入对应功能的 `governance/feature-docs/{YYYY-MM-DD}-{feature}/test-notes.md`。
+
+### 打印 / Lianke Fake
+
+打印 API 测试通过独立 Node HTTP Fake 承接后端发往链科的请求，Playwright 不拦截后端出站流量。
+
+先以 Fake 地址启动后端：
+
+```bash
+LIANKE_PRINT_HOST=http://127.0.0.1:18080/api \\
+LIANKE_PRINT_API_KEY=e2e-fake-key \\
+LIANKE_PRINT_CALLBACK_BASE_URL=http://127.0.0.1:8888 \\
+  <启动后端命令>
+```
+
+再运行打印 API 测试：
+
+```bash
+cd governance/e2e
+PRINTER_API_FAKE=1 \\
+API_BASE_URL=http://localhost:8888 \\
+TEST_TENANT_ID=<测试租户> \\
+PRINTER_ADMIN_USER_ID=<具备打印设备/任务权限的管理员> \\
+PRINTER_SHOP_ID=<一次性测试店铺> \\
+  npx playwright test specs/api/printer/printer.api.spec.ts
+```
+
+预览用例还需要测试店铺已配置文件打印商品、SKU 和 Option，并额外设置
+`PRINTER_PREVIEW_PRODUCT_READY=1`。Fake 的 `/__admin/*` 仅用于测试推进任务状态，不是后端生产 API。

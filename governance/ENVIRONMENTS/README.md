@@ -25,5 +25,6 @@ Then execute the commands in the playbook; the `${VAR}` placeholders will resolv
 
 | File | Environment | Description |
 |------|-------------|-------------|
+| `dev.env` | Development | mock-external-server 部署与运维 |
 | `test.env` | Test | 功能验证、集成测试 |
 | `prod.env` | Production | 线上生产环境 |

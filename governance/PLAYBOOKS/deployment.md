@@ -278,6 +278,52 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "tail -n 50 ${DMS_CODE_PATH}/scripts/simulator
 
 ---
 
+## mock-external-server
+
+链科 Mock 部署在 `rprod18:/opt/holun/mock-external-server`，由
+`mock-external-server.service` 管理，监听 `127.0.0.1:8085`。首次初始化请先执行
+[`environment-provisioning.md`](environment-provisioning.md) 的对应章节。
+
+**发布**
+
+代码必须先提交并推送到 Gitee，生产机只执行 `pull`，不接收本地打包文件。提交完成后执行：
+
+```bash
+cd mock-external-server
+python3 -m pytest -q
+git add -A
+git commit -m "feat(mock): update external mock server"
+git push origin master
+cd ..
+
+source governance/SCRIPTS/deploy-helper.sh && load_env dev
+bash governance/SCRIPTS/deploy-mock-external-server.sh
+```
+
+**健康检查**
+
+```bash
+ssh root@rprod18 "systemctl is-active mock-external-server.service && curl -fsS http://127.0.0.1:8085/health"
+ssh root@rprod18 "curl -fsS http://127.0.0.1:8085/api/external_api/printer_list"
+```
+
+生产管理接口应保持关闭；故障排查日志：
+
+```bash
+ssh root@rprod18 "journalctl -u mock-external-server.service --no-pager -n 50"
+```
+
+**回滚**
+
+```bash
+source governance/SCRIPTS/deploy-helper.sh && load_env dev
+bash governance/SCRIPTS/rollback-mock-external-server.sh <known-good-commit>
+```
+
+回滚完成后，下一次正常部署前执行 `git -C /opt/holun/mock-external-server switch master`，再按提交后的版本重新拉取。
+
+---
+
 ## 通用规则
 
 1. **测试优先** — 任何变更必须先部署到测试环境验证通过

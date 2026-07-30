@@ -122,7 +122,37 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ---
 
-## 6. 可选 / 根据业务需要
+## 6. mock-external-server
+
+用于在 rprod18 上运行链科云打印协议 Mock，供 API、集成测试和端到端测试使用。首次初始化只执行一次；完成后，版本更新统一按 `governance/PLAYBOOKS/deployment.md` 通过 Git 提交和拉取完成。
+
+**当前目标信息**
+
+| 属性 | 值 |
+|------|-----|
+| 服务器 | `rprod18` |
+| 代码目录 | `/opt/holun/mock-external-server` |
+| 运行用户 | `holun-mock` |
+| systemd 服务 | `mock-external-server.service` |
+| 监听地址 | `127.0.0.1:8085` |
+| 响应配置 | `/opt/holun/mock-external-server/config/responses.yaml` |
+
+**首次初始化步骤**
+
+执行前必须确认 `mock-external-server` 的代码已经提交并推送到 Gitee `master` 分支：
+
+```bash
+source governance/SCRIPTS/deploy-helper.sh && load_env dev
+bash governance/SCRIPTS/provision-mock-external-server.sh
+```
+
+脚本会创建系统用户、代码目录、虚拟环境、生产环境文件和 systemd 单元，并启动服务。
+
+服务只监听本机回环地址，生产管理接口关闭。后端接入时使用 `LIANKE_PRINT_HOST=http://127.0.0.1:8085/api`；异常场景应在受控测试实例中开启管理面，不要直接开放生产管理接口。
+
+---
+
+## 7. 可选 / 根据业务需要
 
 - [ ] MQ 中间件（RocketMQ / RabbitMQ）—— 用于支付回调、订单超时、异步通知
 - [ ] 日志收集（ELK、Loki、Promtail）
@@ -132,7 +162,7 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ---
 
-## 7. 部署前置检查
+## 8. 部署前置检查
 
 完成以上步骤后，请执行以下检查，确认环境已就绪：
 
