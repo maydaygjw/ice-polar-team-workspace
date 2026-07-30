@@ -22,6 +22,8 @@
    - 复用现有权限 `shop:store-product:export`，不新增菜单和权限 SQL。
 5. **商家账号数据隔离**
    - `FHLExportMapper` 内部使用 `SecurityFrameworkUtils.getLoginUser().getShopId()` 做最终过滤；平台账号登录时使用请求中的 `shopId`。
+6. **兼容历史 SKU 数据**
+   - SKU 持久化格式为逗号分隔，导出同时兼容历史竖线分隔格式。历史 SKU 缺少已声明的规格维度时，使用属性定义中的选项补齐组合，避免 `口味` 等维度因旧数据缺失而留空。
 
 ## 导出列映射
 
@@ -38,11 +40,11 @@
 | 9 | 是否招牌 | `isHot` | 固定 `2` | 固定 `2` |
 | 10 | 是否上架 | `isShow` | `StoreProductDO.isShow` | 同单规格 |
 | 11 | 规格维度1 | `specDim1` | 空 | 第 1 个 `attrName` |
-| 12 | 规格值1 | `specValue1` | 空 | SKU `sku` 拆分后第 1 段 |
+| 12 | 规格值1 | `specValue1` | 空 | SKU `sku` 按逗号（兼容竖线）拆分后第 1 段 |
 | 13 | 规格维度2 | `specDim2` | 空 | 第 2 个 `attrName` |
-| 14 | 规格值2 | `specValue2` | 空 | SKU `sku` 拆分后第 2 段 |
+| 14 | 规格值2 | `specValue2` | 空 | SKU `sku` 按逗号（兼容竖线）拆分后第 2 段 |
 | 15 | 规格维度3 | `specDim3` | 空 | 第 3 个 `attrName` |
-| 16 | 规格值3 | `specValue3` | 空 | SKU `sku` 拆分后第 3 段 |
+| 16 | 规格值3 | `specValue3` | 空 | SKU `sku` 按逗号（兼容竖线）拆分后第 3 段 |
 | 17 | SKU外卖价格 | `skuPrice` | 空 | `StoreProductAttrValueDO.price` |
 | 18 | SKU店内价格 | `skuOtPrice` | 空 | 与 `skuPrice` 相同 |
 | 19 | SKU库存 | `skuStock` | 空 | `StoreProductAttrValueDO.stock` |
