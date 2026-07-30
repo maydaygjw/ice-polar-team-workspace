@@ -78,30 +78,62 @@ source governance/SCRIPTS/deploy-helper.sh && load_env test
 
 本地后端将 `API_BASE_URL` 改为 `http://localhost:8888`。测试结果和清理结果写入对应功能的 `governance/feature-docs/{YYYY-MM-DD}-{feature}/test-notes.md`。
 
-### 打印 / Lianke Fake
+### 打印 / Lianke Mock Server
 
-打印 API 测试通过独立 Node HTTP Fake 承接后端发往链科的请求，Playwright 不拦截后端出站流量。
+打印 API 测试使用独立的 `mock-external-server`。Playwright 不拦截后端出站请求；后端通过
+`LIANKE_PRINT_HOST` 访问 Mock Server，测试脚本只通过业务 API 验证结果。
 
-先以 Fake 地址启动后端：
+后端运行环境配置：
 
-```bash
-LIANKE_PRINT_HOST=http://127.0.0.1:18080/api \\
-LIANKE_PRINT_API_KEY=e2e-fake-key \\
-LIANKE_PRINT_CALLBACK_BASE_URL=http://127.0.0.1:8888 \\
-  <启动后端命令>
+```env
+LIANKE_PRINT_HOST=http://127.0.0.1:8085/api
+LIANKE_PRINT_API_KEY=e2e-fake-key
+LIANKE_PRINT_CALLBACK_BASE_URL=https://yshop-api.holuntech.com
 ```
 
-再运行打印 API 测试：
+当前 rprod18 的 Mock 仅监听本机回环地址。测试从本地运行时，先建立隧道：
+
+```bash
+ssh -N -L 18085:127.0.0.1:8085 root@rprod18
+```
+
+再运行测试：
 
 ```bash
 cd governance/e2e
-PRINTER_API_FAKE=1 \\
-API_BASE_URL=http://localhost:8888 \\
+LIANKE_MOCK_BASE_URL=http://127.0.0.1:18085 \\
+API_BASE_URL=https://yshop-api.holuntech.com \\
 TEST_TENANT_ID=<测试租户> \\
 PRINTER_ADMIN_USER_ID=<具备打印设备/任务权限的管理员> \\
 PRINTER_SHOP_ID=<一次性测试店铺> \\
   npx playwright test specs/api/printer/printer.api.spec.ts
 ```
 
-预览用例还需要测试店铺已配置文件打印商品、SKU 和 Option，并额外设置
-`PRINTER_PREVIEW_PRODUCT_READY=1`。Fake 的 `/__admin/*` 仅用于测试推进任务状态，不是后端生产 API。
+默认 `config/responses.yaml` 使用 scheduled 场景：`READY → PARSING → SENDING → SUCCESS`。
+预览用例还需要设置 `PRINTER_PREVIEW_PRODUCT_READY=1`。人工失败场景额外需要测试实例开启
+Mock 管理接口，并设置 `LIANKE_MOCK_ADMIN_TOKEN`；生产实例管理接口关闭，因此该用例会跳过。
+
+真实提交测试还需显式设置 `PRINTER_CREATE_JOB_READY=1`。它调用
+`POST /admin-api/device/print-job/create`，Mock 按 scheduled 场景连续回调，测试通过
+`/admin-api/device/print-job/get` 断言本地状态经过 `PROCESSING` 最终到达 `SUCCEEDED`。
+该接口会创建设备订单；当前没有业务删除接口，只能使用一次性测试数据并在测试记录中保留订单号。
+
+App 打印 API 使用 `printer.app.api.spec.ts`。前两个用例只读/预览，不扣余额：
+
+```bash
+LIANKE_MOCK_BASE_URL=http://127.0.0.1:18085 \\
+API_BASE_URL=https://yshop-api.holuntech.com \\
+APP_TEST_TENANT_ID=157 \\
+APP_PRINT_SHOP_ID=73 \\
+  npx playwright test specs/api/printer/printer.app.api.spec.ts -g 'APP-PRINTER-001|APP-PRINTER-002'
+```
+
+完整链路用例 `APP-PRINTER-003` 会创建真实业务订单，并调用
+`POST /app-api/order/pay`，请求体使用 `{ from: "routine", paytype: "yue", uni: orderNo }`。
+它还会轮询 App 进度，验证 `CREATED → PROCESSING → SUCCEEDED`，因此必须使用有余额的专用测试用户，
+设置 `APP_TEST_USER_ID`、`APP_PRINT_PRODUCT_ID` 后执行。测试环境已准备用户 `59`，余额 2000 元，
+对应打印店为 `Automation-test` 租户的店铺 `73`，文件打印商品为 `3848`。
+当前没有确认可安全取消已完成打印订单的业务接口，测试订单号和余额扣减必须记录在测试结果中。
+
+注意：完整链路要求后端已包含 `ProductApiImpl` 对商品 `shopId` 的映射修复，否则合法商品会被错误返回
+`1009002000 / 打印商品不存在`，余额支付请求不会被执行。

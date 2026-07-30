@@ -86,6 +86,19 @@ Mock 成功响应固定使用 `data.pages`，并覆盖页数为 0、负数、缺
 - 不在日志、测试报告或文档中记录完整 ApiKey、deviceKey 或签名 URL。
 - 小程序不在本 feature 范围内；admin 打印设备管理页本期实现并通过 `pnpm build:prod` 构建验证，Playwright/人工 E2E 待菜单挂载后另行验证。
 
+## API 测试记录（2026-07-30）
+
+- `printer.app.api.spec.ts` 已实现 App 打印 API 测试：打印店发现、能力读取、预览计价，以及下单后余额支付和 scheduled 回调状态推进。
+- 已执行：`APP-PRINTER-001`、`APP-PRINTER-002`，rprod18 测试环境 **2/2 通过**。
+- 已准备租户 1 的专用 App 测试用户 `58`，通过管理端用户创建/余额变更业务接口充值 20 元；用户余额已回读确认。
+- `APP-PRINTER-003` 使用 `POST /app-api/order/pay` 的 `paytype=yue`，会扣除该用户余额并创建真实业务订单，现已移除支付用例的显式跳过开关。
+- 完整链路执行后需记录订单号、扣款金额和回调状态；当前没有确认可安全删除已完成打印订单的业务接口。
+- 首次完整链路尝试在创建打印订单阶段失败：远端后端商品 DTO 未映射 `shopId`，错误返回 `1009002000 / 打印商品不存在`；余额支付请求未发出，测试用户余额未扣减。
+- `ProductApiImpl.queryProductById` 的 `shopId` 映射修复已部署并验证生效。
+- 后端修复部署后，已通过管理端同步 Mock 能力到租户 1 店铺 72 的商品 Option；`APP-PRINTER-001`、`APP-PRINTER-002` 通过。
+- `APP-PRINTER-003` 创建订单成功，但余额支付接口返回 500：`Transaction synchronization is not active`。订单 `2082710855224393728` 已扣款 0.30 元，用户 58 余额为 1999.70 元，打印进度仍为 `CREATED`，未进入回调流程。
+- 已在 `AppStoreOrderServiceImpl.pay` 增加 `@Transactional(REQUIRED, rollbackFor = Exception.class)`，使 `yuePay` 与 `paySuccess` 共享外层事务；订单模块单独编译通过，待按部署流程发布后再执行，避免重复扣款。
+
 ---
 
 # 执行记录（2026-07-26）
