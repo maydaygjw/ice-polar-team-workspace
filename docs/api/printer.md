@@ -6,7 +6,7 @@
 >
 > 源码：`backend/yshop-module-device/yshop-module-device-biz-print/.../controller/app/`
 >
-> **整体流程**：附近门店 → 门店详情（拿纸张/颜色能力）→ **上传文件拿 fileUrl** → 计价预览 → 创建订单 → 走现有订单支付接口付款 → 轮询打印进度 →（如配送）轮询配送进度。支付成功后由后端自动提交打印任务给链科云打印。
+> **整体流程**：附近门店 → 门店详情（拿纸张/颜色能力）→ **上传文件拿 fileUrl** → 计价预览 → 创建订单 → 查询打印订单列表/详情 → 走现有订单支付接口付款 → 轮询打印进度 →（如配送）轮询配送进度。支付成功后由后端自动提交打印任务给链科云打印。
 
 | 方法 | 路径 | 说明 | 需要登录 |
 |------|------|------|:---:|
@@ -15,6 +15,8 @@
 | GET | `/app-api/device/printer/shop/detail` | 打印店详情（纸张/颜色能力） | ❌ |
 | POST | `/app-api/device/printer/preview` | 打印计价预览（不真实打印） | ❌ |
 | POST | `/app-api/device/printer/order` | 创建打印订单 | ✅ |
+| GET | `/app-api/device/printer/order/list` | 打印订单列表（含打印特殊信息） | ✅ |
+| GET | `/app-api/device/printer/order/detail` | 打印订单详情（含文件/选项/任务信息） | ✅ |
 | GET | `/app-api/device/printer/progress` | 打印进度（前端轮询） | ✅ |
 | GET | `/app-api/device/printer/delivery/progress` | 配送进度（前端轮询） | ✅ |
 | POST | `/app-api/device/printer/callback` | 链科打印任务状态回调（**外部系统用，前端不调**） | ❌ |
@@ -248,7 +250,146 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 
 ---
 
-## 6. 打印进度 `GET /app-api/device/printer/progress`
+## 6. 打印订单列表 `GET /app-api/device/printer/order/list`
+
+**需登录**。该接口是打印专用订单列表，底层复用订单模块查询支付金额、支付状态和业务状态，同时读取设备订单快照中的打印信息；不要用普通 `/app-api/order/list` 代替。
+
+### Query 参数
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|:---:|:---:|------|
+| page | int | 否 | `1` | 页码 |
+| limit | int | 否 | `10` | 每页数量，最大 `100` |
+| operationStatus | string | 否 | — | `CREATED` / `QUEUED` / `PROCESSING` / `SUCCEEDED` / `FAILED` / `CANCELLED` |
+
+### 请求样例
+
+```http
+GET /app-api/device/printer/order/list?page=1&limit=10&operationStatus=PROCESSING
+Authorization: Bearer <token>
+```
+
+### 响应样例
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": [
+    {
+      "orderNo": "202607301200001",
+      "productType": "FILE_PRINT",
+      "pageCount": 5,
+      "photoCount": 0,
+      "copies": 2,
+      "fileName": "简历.pdf",
+      "fileExt": "pdf",
+      "paperName": "A4 210 x 297 毫米",
+      "colorName": "黑白",
+      "payPrice": 1.00,
+      "paid": 0,
+      "payTime": null,
+      "operationStatus": "PROCESSING",
+      "businessStatus": 0,
+      "failureReason": null,
+      "finished": false,
+      "createTime": "2026-07-30 12:00:00"
+    }
+  ]
+}
+```
+
+列表为空时返回 `data: []`。当 `paid=0` 时，可使用 `orderNo` 作为订单模块支付接口的 `uni` 参数。
+
+---
+
+## 7. 打印订单详情 `GET /app-api/device/printer/order/detail`
+
+**需登录**。详情接口返回列表字段，并补充打印文件、Option 选择快照和链科任务 ID。
+
+### Query 参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| orderNo | string | **是** | 打印订单号，即创建接口返回的 `orderNo` |
+
+### 请求样例
+
+```http
+GET /app-api/device/printer/order/detail?orderNo=202607301200001
+Authorization: Bearer <token>
+```
+
+### 响应样例
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "orderNo": "202607301200001",
+    "productType": "FILE_PRINT",
+    "pageCount": 5,
+    "photoCount": 0,
+    "copies": 2,
+    "fileKey": "print/20260730/abc.pdf",
+    "fileUrl": "https://cdn.example.com/files/resume.pdf",
+    "fileName": "简历.pdf",
+    "fileExt": "pdf",
+    "paperName": "A4 210 x 297 毫米",
+    "colorName": "黑白",
+    "optionSelections": [
+      {
+        "groupId": 1,
+        "optionId": 11,
+        "groupName": "纸张",
+        "optionName": "A4 210 x 297 毫米",
+        "price": 0.00
+      },
+      {
+        "groupId": 2,
+        "optionId": 21,
+        "groupName": "颜色",
+        "optionName": "黑白",
+        "price": 0.00
+      }
+    ],
+    "taskId": null,
+    "payPrice": 1.00,
+    "paid": 0,
+    "payTime": null,
+    "operationStatus": "CREATED",
+    "businessStatus": 0,
+    "failureReason": null,
+    "finished": false,
+    "createTime": "2026-07-30 12:00:00"
+  }
+}
+```
+
+订单不存在、不是打印订单或不属于当前用户时返回 `PRINT_ORDER_NOT_EXISTS`，不会泄露其他用户的订单信息。
+
+支付仍调用通用订单接口：
+
+```http
+POST /app-api/order/pay
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "uni": "202607301200001",
+  "from": "routine",
+  "paytype": "weixin"
+}
+```
+
+支付完成后重新请求本接口确认 `paid=1`，再开始轮询打印进度。
+
+---
+
+## 8. 打印进度 `GET /app-api/device/printer/progress`
 
 **需登录**，前端轮询（建议 2–3s 一次）。
 
@@ -283,7 +424,7 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 
 ---
 
-## 7. 配送进度 `GET /app-api/device/printer/delivery/progress`
+## 9. 配送进度 `GET /app-api/device/printer/delivery/progress`
 
 **需登录**，仅配送订单使用，前端轮询。
 
@@ -319,7 +460,7 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 
 ---
 
-## 8. 打印回调 `POST /app-api/device/printer/callback`
+## 10. 打印回调 `POST /app-api/device/printer/callback`
 
 **链科云平台调用，前端不要调。** 无登录、无签名，后端靠 device_id / task_id / 状态机三重校验防伪造；始终返回成功避免链科重投。
 
@@ -328,7 +469,9 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 ## 对接提示
 
 - **下单前**：先 `shop/detail` 确认 `canOrder=true`，文件打印先 `preview` 展示页数和价格。
+- **查询**：订单列表使用 `order/list`，详情使用 `order/detail?orderNo=`；普通订单接口不会返回打印文件、纸张、颜色、页数等扩展信息。
 - **支付**：`order` 返回 `orderNo` 后调现有订单支付接口；未支付不会进入打印队列。
+- **支付状态**：使用打印订单列表/详情返回的 `paid` 判断是否展示支付按钮；支付后重新查询详情确认 `paid=1`。
 - **轮询**：`progress` 的 `finished=true` 即停止；`FAILED` 时展示 `failureReason`。
 - **幂等**：下单重试、网络超时重发必须用同一个 `requestId`，后端按幂等键去重。
 - 本地启动后端后可在线查看 API 文档：`http://localhost:8888/doc.html`。
