@@ -45184,6 +45184,22 @@
                         "format": "int64",
                         "example": 1001
                     },
+                    "businessRegionName": {
+                        "type": "string",
+                        "description": "\u5546\u5708\u540d\u79f0",
+                        "example": "\u57ce\u897f\u5546\u5708"
+                    },
+                    "deptId": {
+                        "type": "integer",
+                        "description": "\u5f52\u5c5e\u90e8\u95e8ID",
+                        "format": "int64",
+                        "example": 103
+                    },
+                    "deptName": {
+                        "type": "string",
+                        "description": "\u5f52\u5c5e\u90e8\u95e8\u540d\u79f0",
+                        "example": "\u8fd0\u8425\u4e00\u90e8"
+                    },
                     "name": {
                         "type": "string",
                         "description": "\u5e97\u94fa\u540d\u79f0",
