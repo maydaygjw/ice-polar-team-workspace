@@ -1,10 +1,10 @@
-# 打印接口（App 端）
+# 打印接口（App 端与管理后台）
 
 > 前端对接文档。所有接口统一返回 `CommonResult`：`{ code, msg, data }`，`code = 0` 表示成功，非 0 时 `msg` 为错误文案，直接 toast 即可。
 >
 > 登录要求逐接口标注；需登录的请求头：`Authorization: Bearer <token>`。
 >
-> 源码：`backend/yshop-module-device/yshop-module-device-biz-print/.../controller/app/`
+> 源码：App 端位于 `backend/yshop-module-device/yshop-module-device-biz-print/.../controller/app/`；管理后台位于 `.../controller/admin/printerorder/`。
 >
 > **整体流程**：附近门店 → 门店详情（拿纸张/颜色能力）→ **上传文件拿 fileUrl** → 计价预览 → 创建订单 → 查询打印订单列表/详情 → 走现有订单支付接口付款 → 轮询打印进度 →（如配送）轮询配送进度。支付成功后由后端自动提交打印任务给链科云打印。
 
@@ -475,3 +475,113 @@ Content-Type: application/json
 - **轮询**：`progress` 的 `finished=true` 即停止；`FAILED` 时展示 `failureReason`。
 - **幂等**：下单重试、网络超时重发必须用同一个 `requestId`，后端按幂等键去重。
 - 本地启动后端后可在线查看 API 文档：`http://localhost:8888/doc.html`。
+
+---
+
+## 11. 管理后台打印订单查询
+
+管理后台接口用于查询当前租户的打印设备订单，不复用仅限当前 App 用户的打印订单接口。所有接口统一返回 `CommonResult`，分页接口的 `data` 为 `PageResult`。
+
+权限：`device:printer-order:query`。
+
+### 11.1 打印订单分页 `GET /admin-api/device/printer-order/page`
+
+**Query 参数**
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|:---:|:---:|------|
+| pageNo | int | 否 | `1` | 页码 |
+| pageSize | int | 否 | `10` | 每页数量 |
+| bizOrderId | string | 否 | — | 关联商户订单号 |
+| taskId | string | 否 | — | 链科打印任务 ID |
+| deviceCode | string | 否 | — | 打印设备号 |
+| status | string | 否 | — | 设备打印状态：`CREATED` / `QUEUED` / `PROCESSING` / `SUCCEEDED` / `FAILED` / `CANCELLED` |
+| userId | string | 否 | — | 下单用户 ID |
+
+**请求样例**
+
+```http
+GET /admin-api/device/printer-order/page?pageNo=1&pageSize=10&status=PROCESSING
+Authorization: Bearer <token>
+```
+
+**响应样例**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "list": [
+      {
+        "id": 230,
+        "orderNo": "2083344313370017792",
+        "bizOrderId": "2083344313370017792",
+        "deviceCode": "lk10gf25368889",
+        "deviceType": "printer",
+        "operationType": "printer_order",
+        "userId": "57",
+        "operationStatus": "PROCESSING",
+        "taskId": "task-202608010001",
+        "failureReason": null,
+        "startedAt": "2026-08-01 08:16:00",
+        "finishedAt": null,
+        "createTime": "2026-08-01 08:09:26",
+        "printParams": {
+          "productType": "FILE_PRINT",
+          "pageCount": 1,
+          "photoCount": 0,
+          "copies": 1,
+          "fileName": "授权委托书.docx",
+          "fileExt": "docx",
+          "paperName": "A4 210 x 297 毫米",
+          "colorName": "黑白",
+          "optionSelections": []
+        },
+        "paymentInfo": {
+          "orderId": "2083344313370017792",
+          "uid": 57,
+          "orderType": "device",
+          "totalPrice": 0.50,
+          "payPrice": 0.50,
+          "paid": 1,
+          "payType": "yue",
+          "payTime": "2026-08-01 08:15:24",
+          "status": 0,
+          "refundStatus": 0,
+          "refundPrice": 0,
+          "shopId": 75,
+          "shopName": "打印店",
+          "createTime": "2026-08-01 08:09:26"
+        }
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+### 11.2 打印订单详情 `GET /admin-api/device/printer-order/get`
+
+**Query 参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| orderNo | string | **是** | 设备打印订单号，即响应中的 `orderNo` |
+
+**请求样例**
+
+```http
+GET /admin-api/device/printer-order/get?orderNo=2083344313370017792
+Authorization: Bearer <token>
+```
+
+响应结构与分页项一致；详情可返回 `printParams.fileKey`、`printParams.fileUrl` 和完整的 `optionSelections`。
+
+### 11.3 字段与安全规则
+
+- 后端固定筛选 `deviceType=printer` 且 `deleted=0` 的设备订单；租户条件由多租户拦截器追加。
+- `paymentInfo` 由订单模块聚合；商户订单不存在或已软删除时，设备订单仍保留，`paymentInfo` 返回 `null`。
+- `printParams` 是下单时保存的打印参数快照，包含文件、页数、份数、纸张、颜色和 Option 选择。
+- 不返回 `deviceKey`、支付密钥或第三方凭证。
+- 管理后台查询不接受客户端传入 `tenantId`、用户租户或设备凭证。
