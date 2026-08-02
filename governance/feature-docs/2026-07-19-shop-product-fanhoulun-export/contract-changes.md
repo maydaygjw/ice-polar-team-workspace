@@ -29,7 +29,9 @@
 - `StoreProductFHLExportReqVO`
   - `shopId`: Integer，可选。
 - `FHLProductExportVO`
-  - 19 个 String 字段，对应 `dishes.xls` 19 列。
+  - 35 个 String 字段，对应饭火轮最新 `dishes (9).xls` 的 35 列。
+  - 第 11 列为“原价”，第 12 列为“商品销量”；规格与 SKU 列从第 13 列开始。
+  - 库存为 `-1` 时导出为 `100000`；排序列按导出商品顺序从 1 开始，同商品多 SKU 共用排序值。
 
 ## 依赖
 
