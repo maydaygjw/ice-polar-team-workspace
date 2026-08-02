@@ -6,14 +6,16 @@
 >
 > 源码：App 端位于 `backend/yshop-module-device/yshop-module-device-biz-print/.../controller/app/`；管理后台位于 `.../controller/admin/printerorder/`。
 >
-> **整体流程**：附近门店 → 门店详情（拿纸张/颜色能力）→ **上传文件拿 fileUrl** → 计价预览 → 创建订单 → 查询打印订单列表/详情 → 走现有订单支付接口付款 → 轮询打印进度 →（如配送）轮询配送进度。支付成功后由后端自动提交打印任务给链科云打印。
+> **整体流程**：附近门店 → 门店详情（拿纸张/颜色能力）→ **上传文件拿 fileUrl** →（可选）获取页数/计价 → 提交文件预览并轮询预览图 → 创建订单 → 查询打印订单列表/详情 → 走现有订单支付接口付款 → 轮询真实打印进度 →（如配送）轮询配送进度。支付成功后由后端自动提交真实打印任务给链科云打印。
 
 | 方法 | 路径 | 说明 | 需要登录 |
 |------|------|------|:---:|
 | POST | `/app-api/infra/file/upload` | 上传文件（拿 fileUrl） | ❌ |
 | GET | `/app-api/device/printer/shop/nearby` | 附近可打印门店列表 | ❌ |
 | GET | `/app-api/device/printer/shop/detail` | 打印店详情（纸张/颜色能力） | ❌ |
-| POST | `/app-api/device/printer/preview` | 打印计价预览（不真实打印） | ❌ |
+| POST | `/app-api/device/printer/page-count` | 获取文件页数与计价，不生成预览图 | ✅ |
+| POST | `/app-api/device/printer/preview` | 提交文件预览图任务，不真实打印 | ✅ |
+| GET | `/app-api/device/printer/preview-result` | 轮询文件预览图任务 | ✅ |
 | POST | `/app-api/device/printer/order` | 创建打印订单 | ✅ |
 | GET | `/app-api/device/printer/order/list` | 打印订单列表（含打印特殊信息） | ✅ |
 | GET | `/app-api/device/printer/order/detail` | 打印订单详情（含文件/选项/任务信息） | ✅ |
@@ -25,7 +27,7 @@
 
 ## 1. 上传文件 `POST /app-api/infra/file/upload`
 
-无需登录。preview / order 需要的 `fileUrl` 都从这里拿。multipart 表单上传。
+无需登录。`page-count` / `preview` / `order` 需要的 `fileUrl` 都从这里拿。multipart 表单上传。
 
 **表单字段**
 
@@ -116,9 +118,9 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 
 ---
 
-## 4. 打印计价预览 `POST /app-api/device/printer/preview`
+## 4. 获取文件页数与计价 `POST /app-api/device/printer/page-count`
 
-无需登录。文件打印专用：解析文件实际页数并按「(SKU 基础价 + Option 加价) × 页数 × 份数」计价，不产生订单、不真实打印。
+**需登录**。文件打印专用：解析文件实际页数并按「(SKU 基础价 + Option 加价) × 页数 × 份数」计价，不产生订单，也不提交预览图任务。
 
 **Body**
 
@@ -166,10 +168,118 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 
 - `totalPrice = unitPrice × pageCount × copies`，与下单同一计价口径。
 - `pageCount` 由链科解析文件得出，前端无需自己算页数。
+- 该接口只返回页数和价格，不返回 `taskId`，不会生成预览图片。
 
 ---
 
-## 5. 创建打印订单 `POST /app-api/device/printer/order`
+## 5. 提交文件预览 `POST /app-api/device/printer/preview`
+
+**需登录**。该接口生成链科异步预览任务，不真实打印、不创建订单、不扣款。响应会同时返回页数和计价结果，以及用于轮询图片的 `taskId`。
+
+### Body
+
+请求字段与 [获取文件页数与计价](#4-获取文件页数与计价-post-app-apideviceprinterpage-count) 相同。
+
+```json
+{
+  "shopId": 72,
+  "fileUrl": "https://cdn.example.com/files/resume.pdf",
+  "fileExt": "pdf",
+  "paperName": "A4 210 x 297 毫米",
+  "colorName": "黑白",
+  "copies": 2
+}
+```
+
+### 响应样例
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "pageCount": 5,
+    "basePrice": 0.10,
+    "optionDelta": 0.00,
+    "unitPrice": 0.10,
+    "copies": 2,
+    "totalPrice": 1.00,
+    "deviceModel": "POS-80C",
+    "paperName": "A4 210 x 297 毫米",
+    "colorName": "黑白",
+    "taskId": "lianke-task-123"
+  }
+}
+```
+
+- `taskId` 为空表示链科预览任务提交失败；此时仍可能返回页数和计价结果，但不能继续获取预览图。
+- 预览任务只生成中间预览图，不会下发打印机。
+- 生成完成后使用下一节接口轮询 `previewImages`。
+
+---
+
+## 6. 轮询文件预览图 `GET /app-api/device/printer/preview-result`
+
+**需登录**。提交预览接口返回 `taskId` 后，前端建议每 500ms–3s 请求一次，直到 `finished=true`。
+
+### Query 参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| shopId | long | **是** | 店铺 ID，用于定位打印机凭证 |
+| taskId | string | **是** | 提交预览接口返回的链科任务 ID |
+
+```http
+GET /app-api/device/printer/preview-result?shopId=72&taskId=lianke-task-123
+Authorization: Bearer <token>
+```
+
+### 处理中响应
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "taskState": "PARSING",
+    "finished": false,
+    "previewImages": null,
+    "taskTicket": null,
+    "resultCode": null,
+    "resultMsg": null
+  }
+}
+```
+
+### 成功响应
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "taskState": "SUCCESS",
+    "finished": true,
+    "previewImages": [
+      "https://preview.liankenet.com/page-1.jpg?auth_key=...",
+      "https://preview.liankenet.com/page-2.jpg?auth_key=..."
+    ],
+    "taskTicket": "preview-ticket-123",
+    "resultCode": null,
+    "resultMsg": null
+  }
+}
+```
+
+### 失败响应
+
+当 `taskState` 为 `FAILURE` 或 `REVOKED` 时，`finished=true`，前端停止轮询并展示 `resultMsg`；此时通常没有 `previewImages`。
+
+> `preview-result` 是预览图轮询接口，不是真实打印进度接口。真实打印任务使用 [打印进度](#10-打印进度-get-app-apideviceprinterprogress) 查询。
+
+---
+
+## 7. 创建打印订单 `POST /app-api/device/printer/order`
 
 **需登录**。只创建订单（幂等），**支付调现有订单支付接口**；支付成功后后端自动提交打印任务。
 
@@ -250,7 +360,7 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 
 ---
 
-## 6. 打印订单列表 `GET /app-api/device/printer/order/list`
+## 8. 打印订单列表 `GET /app-api/device/printer/order/list`
 
 **需登录**。该接口是打印专用订单列表，底层复用订单模块查询支付金额、支付状态和业务状态，同时读取设备订单快照中的打印信息；不要用普通 `/app-api/order/list` 代替。
 
@@ -303,7 +413,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 7. 打印订单详情 `GET /app-api/device/printer/order/detail`
+## 9. 打印订单详情 `GET /app-api/device/printer/order/detail`
 
 **需登录**。详情接口返回列表字段，并补充打印文件、Option 选择快照和链科任务 ID。
 
@@ -389,7 +499,7 @@ Content-Type: application/json
 
 ---
 
-## 8. 打印进度 `GET /app-api/device/printer/progress`
+## 10. 打印进度 `GET /app-api/device/printer/progress`
 
 **需登录**，前端轮询（建议 2–3s 一次）。
 
@@ -424,7 +534,7 @@ Content-Type: application/json
 
 ---
 
-## 9. 配送进度 `GET /app-api/device/printer/delivery/progress`
+## 11. 配送进度 `GET /app-api/device/printer/delivery/progress`
 
 **需登录**，仅配送订单使用，前端轮询。
 
@@ -460,7 +570,7 @@ Content-Type: application/json
 
 ---
 
-## 10. 打印回调 `POST /app-api/device/printer/callback`
+## 12. 打印回调 `POST /app-api/device/printer/callback`
 
 **链科云平台调用，前端不要调。** 无登录、无签名，后端靠 device_id / task_id / 状态机三重校验防伪造；始终返回成功避免链科重投。
 
@@ -468,11 +578,12 @@ Content-Type: application/json
 
 ## 对接提示
 
-- **下单前**：先 `shop/detail` 确认 `canOrder=true`，文件打印先 `preview` 展示页数和价格。
+- **下单前**：先 `shop/detail` 确认 `canOrder=true`；只需要页数/价格时调用 `page-count`，需要查看排版时调用 `preview` 后轮询 `preview-result`。
 - **查询**：订单列表使用 `order/list`，详情使用 `order/detail?orderNo=`；普通订单接口不会返回打印文件、纸张、颜色、页数等扩展信息。
 - **支付**：`order` 返回 `orderNo` 后调现有订单支付接口；未支付不会进入打印队列。
 - **支付状态**：使用打印订单列表/详情返回的 `paid` 判断是否展示支付按钮；支付后重新查询详情确认 `paid=1`。
-- **轮询**：`progress` 的 `finished=true` 即停止；`FAILED` 时展示 `failureReason`。
+- **预览轮询**：`preview-result` 的 `finished=true` 即停止；成功时展示 `previewImages`，失败时展示 `resultMsg`。
+- **打印轮询**：真实支付并创建打印任务后，使用 `progress`；其 `finished=true` 即停止，`FAILED` 时展示 `failureReason`。
 - **幂等**：下单重试、网络超时重发必须用同一个 `requestId`，后端按幂等键去重。
 - 本地启动后端后可在线查看 API 文档：`http://localhost:8888/doc.html`。
 

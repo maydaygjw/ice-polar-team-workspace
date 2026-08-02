@@ -21,7 +21,9 @@
 - API（app-api 新增）：
   - `GET /app-api/device/printer/shop/nearby` — 附近可打印门店列表（已初始化 printer 设备）
   - `GET /app-api/device/printer/shop/detail?shopId=` — 打印店详情（能力/在线/可下单，不回显 deviceKey）
-  - `POST /app-api/device/printer/preview` — 打印计价预览（与下单同一计价口径）
+  - `POST /app-api/device/printer/page-count` — 获取打印文件页数与计价
+  - `POST /app-api/device/printer/preview` — 提交打印文件预览图任务
+  - `GET /app-api/device/printer/preview-result` — 轮询每页打印预览图
   - `GET /app-api/device/printer/progress?orderNo=` — 打印进度（登录+归属校验）
   - `GET /app-api/device/printer/delivery/progress?orderNo=` — 配送进度（登录+归属校验）
   - `POST /app-api/device/printer/delivery/callback` — brick 配送状态回调（白名单免登录）

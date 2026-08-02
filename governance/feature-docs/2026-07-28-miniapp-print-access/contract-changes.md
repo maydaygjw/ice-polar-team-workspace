@@ -34,19 +34,39 @@ GET /app-api/printer/shop/detail?shopId=
 
 返回打印店详情：上述能力 + 设备型号（展示用，`device_model`）+ 是否可下单。**不回显 `deviceKey`**。
 
-### 2.2 规格/计价预览（功能2 C 端）
+### 2.2 获取文件页数与计价（功能2 C 端）
 
 ```text
-POST /app-api/printer/preview
+POST /app-api/device/printer/page-count
 ```
 
 请求：`shopId, fileUrl, fileExt, paperName, colorName, copies`（与 admin preview 同口径）。
 响应：`pageCount, basePrice, optionDelta, unitPrice, copies, totalPrice`。
 
-> 复用 `PrinterGateway.getFilePages` + `PrintSpecResolver` + `ProductOptionOrderApi.priceAndValidate`，与 admin `/admin-api/device/print-job/preview` 同一计价口径，仅下沉为 app-api（登录/租户上下文为 C 端用户）。
+> 仅调用 `PrinterGateway.getFilePages` 获取页数并完成计价，不提交链科预览图任务。
 > 纸张/颜色**不进 SKU**，走 Option；SKU 基础规格用既有 `product/detail`。
 
-### 2.3 实时打印进度（功能4）
+### 2.3 文件预览图（功能3 C 端）
+
+提交预览任务：
+
+```text
+POST /app-api/device/printer/preview
+```
+
+请求：`shopId, fileUrl, fileExt, paperName, colorName, copies`。
+响应：计价字段 + `taskId`。该任务调用链科 `POST /print/job` 并传 `isPreview=1`，只生成预览图，不真实打印、不落库。
+
+轮询预览图：
+
+```text
+GET /app-api/device/printer/preview-result?shopId=&taskId=
+```
+
+响应：`taskState, finished, previewImages[], taskTicket, resultCode, resultMsg`。
+`previewImages` 为每页带时效签名的图片 URL，仅在链科任务成功后返回。
+
+### 2.4 实时打印进度（功能4）
 
 ```text
 GET /app-api/device/printer/progress?orderNo=

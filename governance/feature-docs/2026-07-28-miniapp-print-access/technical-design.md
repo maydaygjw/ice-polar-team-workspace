@@ -61,7 +61,8 @@ CXCL_*终态              CANCELLED(终态)        记录配送失败,按既有�
 
 ### D6 C 端查询层（发现 / 预览 / 进度）
 - **发现** `GET /app-api/printer/shop/nearby|detail`：复用店铺派生查询，过滤"店铺下存在 `deviceType=printer` 且已初始化（有 `device_key`）的设备"；不回显 `deviceKey`。纸张/颜色能力读初始化生成的 Option。
-- **计价预览** `POST /app-api/printer/preview`：复用 admin `PrintJobPreviewService` 的计价段（`PrinterGateway.getFilePages` + `PrintSpecResolver` + `ProductOptionOrderApi.priceAndValidate`），下沉为 app 端（C 端登录/租户上下文）。计价口径与下单一致，前端不传可信价/页数。
+- **页数与计价** `POST /app-api/device/printer/page-count`：复用 `PrintJobPreviewService` 的计算段（`PrinterGateway.getFilePages` + `PrintSpecResolver` + `ProductOptionOrderApi.priceAndValidate`），只取页数和价格，不提交预览图任务。
+- **文件预览图** `POST /app-api/device/printer/preview` + `GET /app-api/device/printer/preview-result`：复用 admin 的 `isPreview=1` 提交/轮询链路，返回 `taskId` 和每页 `previewImages`，不真实打印、不落库。
 - **打印进度** `GET /app-api/device/printer/progress?orderNo=`：读 `DeviceOrderDO`(`status`+`failureReason`)+业务订单 `businessStatus` 聚合返回；前端轮询至终态。
 - **配送进度** `GET /app-api/order/delivery/progress?orderNo=`：读 `DeviceOrderDO.extra_params` 配送快照+配送事件时间线（骑手信息+归一化状态序列）。
 

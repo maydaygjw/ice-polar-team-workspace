@@ -112,6 +112,33 @@ async function waitForAppProgress(
   )
 }
 
+async function waitForAppPreviewResult(
+  request: APIRequestContext,
+  shop: string,
+  taskId: string,
+): Promise<{ finished: boolean; taskState: string; previewImages?: string[]; resultMsg?: string }> {
+  const timeoutMs = Number(process.env.APP_PRINT_PREVIEW_TIMEOUT_MS ?? '10000')
+  const deadline = Date.now() + timeoutMs
+  let lastResult: { finished: boolean; taskState: string; previewImages?: string[]; resultMsg?: string } | undefined
+
+  while (Date.now() < deadline) {
+    const response = await request.get(`${apiBase}/app-api/device/printer/preview-result`, {
+      headers: userHeaders(),
+      params: { shopId: shop, taskId },
+    })
+    lastResult = await successData<{
+      finished: boolean
+      taskState: string
+      previewImages?: string[]
+      resultMsg?: string
+    }>(response, '轮询 App 打印预览图')
+    if (lastResult.finished) return lastResult
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+
+  throw new Error(`App 打印预览图未完成: ${JSON.stringify(lastResult)}`)
+}
+
 test.describe('App / 打印 API', () => {
   test.describe.configure({ mode: 'serial' })
 
@@ -155,10 +182,10 @@ test.describe('App / 打印 API', () => {
     expect(detail.colorNames).toEqual(expect.arrayContaining(['黑白', '彩色']))
   })
 
-  test('APP-PRINTER-002 App 打印预览返回计价结果', async ({ request }) => {
+  test('APP-PRINTER-002 App 获取打印页数与计价', async ({ request }) => {
     const [paper, color] = await readPrintOptions(request)
-    const response = await request.post(`${apiBase}/app-api/device/printer/preview`, {
-      headers: tenantHeaders(),
+    const response = await request.post(`${apiBase}/app-api/device/printer/page-count`, {
+      headers: userHeaders(),
       data: {
         shopId: Number(shopId),
         fileUrl: process.env.PRINTER_TEST_FILE_URL ?? 'https://e2e.invalid/app-printer-preview.pdf',
@@ -168,23 +195,46 @@ test.describe('App / 打印 API', () => {
         copies: 1,
       },
     })
-    const preview = await successData<{
+    const pageCount = await successData<{
       pageCount: number
       basePrice: number
       unitPrice: number
       totalPrice: number
       paperName: string
       colorName: string
-    }>(response, 'App 打印预览')
-    expect(preview.pageCount).toBe(3)
-    expect(preview.basePrice).toBeGreaterThan(0)
-    expect(preview.unitPrice).toBeGreaterThan(0)
-    expect(preview.totalPrice).toBeGreaterThan(0)
-    expect(preview.paperName).toBe(paper.optionName)
-    expect(preview.colorName).toBe(color.optionName)
+    }>(response, 'App 获取打印页数与计价')
+    expect(pageCount.pageCount).toBe(3)
+    expect(pageCount.basePrice).toBeGreaterThan(0)
+    expect(pageCount.unitPrice).toBeGreaterThan(0)
+    expect(pageCount.totalPrice).toBeGreaterThan(0)
+    expect(pageCount.paperName).toBe(paper.optionName)
+    expect(pageCount.colorName).toBe(color.optionName)
   })
 
-  test('APP-PRINTER-003 创建打印订单并使用余额支付后由 scheduled 回调推进进度', async ({ request }) => {
+  test('APP-PRINTER-003 App 生成并轮询打印预览图', async ({ request }) => {
+    const [paper, color] = await readPrintOptions(request)
+    const response = await request.post(`${apiBase}/app-api/device/printer/preview`, {
+      headers: userHeaders(),
+      data: {
+        shopId: Number(shopId),
+        fileUrl: process.env.PRINTER_TEST_FILE_URL ?? 'https://e2e.invalid/app-printer-preview.pdf',
+        fileExt: 'pdf',
+        paperName: paper.optionName,
+        colorName: color.optionName,
+        copies: 1,
+      },
+    })
+    const preview = await successData<{ taskId: string; pageCount: number }>(response, 'App 提交打印预览')
+    expect(preview.taskId).toBeTruthy()
+    expect(preview.pageCount).toBe(3)
+
+    const result = await waitForAppPreviewResult(request, shopId!, preview.taskId)
+    expect(result.taskState).toBe('SUCCESS')
+    expect(result.finished).toBe(true)
+    expect(result.previewImages?.length).toBeGreaterThan(0)
+  })
+
+  test('APP-PRINTER-004 创建打印订单并使用余额支付后由 scheduled 回调推进进度', async ({ request }) => {
     requiredEnv('APP_TEST_USER_ID', appUserId)
     requiredEnv('APP_PRINT_PRODUCT_ID', productId)
 
