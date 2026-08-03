@@ -4,6 +4,8 @@
 >
 > 列表、详情、创建、支付及用户订单操作接口均使用登录态，请求头：`Authorization: Bearer <token>`。支付回调由支付平台调用；桌台、共享菜单和同城配送辅助接口按业务场景和网关配置使用。
 >
+> 支付参数、渠道返回值、支付渠道锁定、退款申请和回调边界见独立文档 [`payment.md`](./payment.md)。
+>
 > 接口前缀：`/app-api`。源码：`backend/yshop-module-mall/yshop-module-order-biz/.../controller/app/order/AppOrderController.java`
 
 ## 常用流程
@@ -240,6 +242,7 @@ Content-Type: application/json
 - 支付金额以后端订单的 `payPrice` 为准，前端不传金额。
 - 同一订单发起第三方支付后，支付渠道可能被锁定；切换渠道前应确认服务端返回结果。
 - 微信支付返回成功不等于业务订单已更新，必须重新查询详情确认 `paid = 1`。
+- 余额支付由服务端同步完成，不产生外部支付回调；成功后仍建议重新查询订单详情。
 
 ---
 

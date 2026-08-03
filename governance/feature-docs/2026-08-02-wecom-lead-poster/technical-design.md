@@ -208,9 +208,9 @@ Admin
 
 | 方法 | 路径 | 作用 |
 |---|---|---|
-| `GET` | `/app-api/wecom/lead-poster/get-by-business-region?businessRegionId={id}` | 查询指定商圈的启用海报 OSS 图片链接 |
+| `GET` | `/app-api/wecom/lead-poster/get-by-business-region?region_code={code}` | 按商圈代码查询启用海报 OSS 图片链接 |
 
-查询只匹配当前租户、`status=0` 且 `image_url` 非空的记录；多条记录按 `sort DESC, id DESC` 取一条。响应使用 `{code,data,msg}` 包装，`data` 为字符串形式的 OSS 图片 URL；接口公开匿名访问，不需要认证、登录态或后台权限。
+接口先按当前租户、启用状态和 `region_code` 对应的商圈代码解析商圈，再匹配该商圈下 `status=0` 且 `image_url` 非空的记录；多条记录按 `sort DESC, id DESC` 取一条。响应使用 `{code,data,msg}` 包装，`data` 为字符串形式的 OSS 图片 URL；接口公开匿名访问，不需要认证、登录态或后台权限。
 
 ## 9. 权限和数据范围
 

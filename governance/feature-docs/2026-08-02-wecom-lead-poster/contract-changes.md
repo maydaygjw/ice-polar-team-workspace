@@ -20,7 +20,7 @@
 
 ### 新增 APP 接口
 
-- `GET /app-api/wecom/lead-poster/get-by-business-region?businessRegionId={id}`：查询当前租户下指定商圈的启用海报，按排序取一条，返回最终海报 OSS 图片链接。
+- `GET /app-api/wecom/lead-poster/get-by-business-region?region_code={code}`：按当前租户下的商圈代码查询启用海报，按排序取一条，返回最终海报 OSS 图片链接。
 
 ### DTO 语义
 
