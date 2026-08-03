@@ -4,7 +4,7 @@
 
 本设计实现后台制作企业微信引流海报：同步企业微信已有的永久「联系我」二维码，上传背景图，在前端将二维码叠加到背景图并生成 `1125 × 1500` 的最终图片，保存到现有文件存储。
 
-本期影响 `backend` 和 `admin`，不新增小程序接口或页面，不实现 AI 图片生成。
+本期影响 `backend` 和 `admin`，新增 APP 按商圈查询海报图片接口，不新增小程序页面，不实现 AI 图片生成。
 
 ## 2. 关键决策
 
@@ -203,6 +203,14 @@ Admin
 | `PUT` | `/admin-api/mp/wecom-lead-poster/update-status?id={id}&status={status}` | 启用/停用 |
 
 海报保存请求至少包含：前端已上传的最终 `imageUrl`、`contactWayId`、`businessRegionId`、`backgroundUrl`、`qrX`、`qrY` 和 `qrSize`；模板版本由后端固定为 `frontend-v1`。前端预览不调用后端接口。
+
+### 8.3 APP 海报查询接口
+
+| 方法 | 路径 | 作用 |
+|---|---|---|
+| `GET` | `/app-api/wecom/lead-poster/get-by-business-region?businessRegionId={id}` | 查询指定商圈的启用海报 OSS 图片链接 |
+
+查询只匹配当前租户、`status=0` 且 `image_url` 非空的记录；多条记录按 `sort DESC, id DESC` 取一条。响应使用 `{code,data,msg}` 包装，`data` 为字符串形式的 OSS 图片 URL；接口公开匿名访问，不需要认证、登录态或后台权限。
 
 ## 9. 权限和数据范围
 

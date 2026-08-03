@@ -18,6 +18,10 @@
 - `GET /admin-api/mp/wecom-lead-poster/get?id={id}`：查询海报详情。
 - `PUT /admin-api/mp/wecom-lead-poster/update-status?id={id}&status={status}`：启用/停用海报。
 
+### 新增 APP 接口
+
+- `GET /app-api/wecom/lead-poster/get-by-business-region?businessRegionId={id}`：查询当前租户下指定商圈的启用海报，按排序取一条，返回最终海报 OSS 图片链接。
+
 ### DTO 语义
 
 - 联系我同步以 `accountId` 为输入；响应返回处理总数、新增数、更新数、失败数和失败原因。
@@ -25,8 +29,8 @@
 - 联系我更新以本地记录 ID 定位，`config_id` 由企业微信生成且不可修改；新增、编辑、删除均以企业微信接口成功为前提更新本地记录。
 - 海报保存请求包含最终图片地址、背景图地址、联系我记录 ID、商圈 ID 和二维码 `qrX`、`qrY`、`qrSize`；本期模板版本由后端固定为 `frontend-v1`。
 - 海报响应包含最终图片地址、商圈、联系我记录、状态、模板版本和二维码几何参数。
+- APP 海报查询响应的 `data` 直接返回最终海报 OSS 图片链接（字符串），不返回后台编辑字段。
 - 所有响应使用 `{code,data,msg}` 通用包装。
-- 本期不新增 `/app-api` 接口。
 
 ### 错误语义
 
@@ -73,6 +77,8 @@
 - `mp:wecom-contact-way:delete`
 
 海报必须校验租户、商圈启用状态和二维码所属企业微信账号；商圈不绘制到图片。
+
+APP 海报查询只返回当前租户、指定商圈下 `status=0` 且存在最终图片地址的海报；同一商圈多条时按 `sort DESC, id DESC` 取第一条。接口公开匿名访问，不需要认证、登录态或后台权限；返回的 OSS 图片地址必须可被客户端直接访问，不依赖后台登录态。
 
 ## 依赖
 
