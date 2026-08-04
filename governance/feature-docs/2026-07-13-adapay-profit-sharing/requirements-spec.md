@@ -172,7 +172,7 @@
 
 ### Edge Cases
 
-- 企业 Member 创建须按 Adapay `/v1/corp_members` 要求提供完整字段：`name`、`social_credit_code`、`business_scope`、`legal_person`、`legal_cert_id`、`legal_cert_id_expires`、`legal_mp`、`address`、`prov_code`、`area_code`、zip 附件等；`social_credit_code_expires` 为可选字段，长期或 OCR 未识别时不传。
+- 企业 Member 创建须按 Adapay `/v1/corp_members` 要求提供完整字段：`name`、`social_credit_code`、`business_scope`、`legal_person`、`legal_cert_id`、`legal_cert_id_expires`、`legal_mp`、`address`、`prov_code`、`area_code`、zip 附件等；`social_credit_code_expires` 为可选字段，长期固定传 `20991231`，OCR 未识别时可不传。
 - 法人身份证正反面上传后，系统自动 OCR 识别并回填 `legal_person`、`legal_cert_id`、`legal_cert_id_expires`；识别失败时允许手动填写。
 - 企业 Member 附件须为 zip 包，内含三证合一证件照、法人身份证正面照、法人身份证反面照、开户银行许可证照，中文文件名使用 UTF-8 URLEncode 编码；单包最大 9MB。
 - 结算账户开户省份、开户城市使用 Adapay 自定义四位编码，由后端级联接口提供；创建/更换结算账户时必填，未更换时不强制填写。

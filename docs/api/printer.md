@@ -398,6 +398,8 @@ Authorization: Bearer <token>
       "colorName": "黑白",
       "payPrice": 1.00,
       "paid": 0,
+      "refundStatus": 0,
+      "refundPrice": 0.00,
       "payTime": null,
       "operationStatus": "PROCESSING",
       "businessStatus": 0,
@@ -410,6 +412,13 @@ Authorization: Bearer <token>
 ```
 
 列表为空时返回 `data: []`。当 `paid=0` 时，可使用 `orderNo` 作为订单模块支付接口的 `uni` 参数。
+
+退款字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| refundStatus | int | `0` 正常、`1` 退款中、`2` 已退款、`3` 退款已拒绝 |
+| refundPrice | number | 已退款金额；未退款时通常为 `0` |
 
 ---
 
@@ -467,6 +476,8 @@ Authorization: Bearer <token>
     "taskId": null,
     "payPrice": 1.00,
     "paid": 0,
+    "refundStatus": 0,
+    "refundPrice": 0.00,
     "payTime": null,
     "operationStatus": "CREATED",
     "businessStatus": 0,
@@ -496,6 +507,8 @@ Content-Type: application/json
 ```
 
 支付完成后重新请求本接口确认 `paid=1`，再开始轮询打印进度。
+
+退款状态由订单模块返回：`refundStatus=1` 表示退款申请处理中，`refundStatus=2` 表示已退款，`refundStatus=3` 表示退款申请被拒绝。详情接口同时返回 `refundPrice`。
 
 ---
 
@@ -582,6 +595,7 @@ Content-Type: application/json
 - **查询**：订单列表使用 `order/list`，详情使用 `order/detail?orderNo=`；普通订单接口不会返回打印文件、纸张、颜色、页数等扩展信息。
 - **支付**：`order` 返回 `orderNo` 后调现有订单支付接口；未支付不会进入打印队列。
 - **支付状态**：使用打印订单列表/详情返回的 `paid` 判断是否展示支付按钮；支付后重新查询详情确认 `paid=1`。
+- **退款状态**：使用打印订单列表/详情返回的 `refundStatus` 展示退款中、已退款或退款已拒绝；`refundPrice` 为已退款金额。
 - **预览轮询**：`preview-result` 的 `finished=true` 即停止；成功时展示 `previewImages`，失败时展示 `resultMsg`。
 - **打印轮询**：真实支付并创建打印任务后，使用 `progress`；其 `finished=true` 即停止，`FAILED` 时展示 `failureReason`。
 - **幂等**：下单重试、网络超时重发必须用同一个 `requestId`，后端按幂等键去重。

@@ -380,7 +380,7 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 
 ## 企业 Member 有效期字段修订
 
-- `memberInfo.socialCreditCodeExpires` 改为可选字段，格式仍为 `yyyyMMdd`。企业营业执照标注“长期”或 OCR 未识别到有效期时，admin 不提交该字段；后端不得因缺少该字段拒绝创建，也不得向 Adapay 发送空值。
+- `memberInfo.socialCreditCodeExpires` 改为可选字段，格式仍为 `yyyyMMdd`。企业营业执照标注“长期”时固定提交 `20991231`；OCR 未识别到有效期且未选择长期时可不传，后端不得因缺少该字段拒绝创建。
 - `memberInfo.legalCertIdExpires` 仍为必填，统一使用 8 位数字格式 `yyyyMMdd`。身份证 OCR 返回带分隔符的日期时，admin/backend 在回填或返回 OCR 结果前转换为 8 位数字；无法转换为 8 位数字的结果不自动回填。
 
 - **向后兼容**：**否**。本次需求变更从 `ProfitSharingOrderRespVO` 中移除 `commissionAmount`、`shopAmount`；admin 分账结算记录列表需从 `items` 汇总展示平台/店铺金额。数据库层面通过迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` 将历史数据从主表迁移到明细表并删除旧字段。

@@ -41,6 +41,8 @@ Query 参数：
     "colorName": "黑白",
     "payPrice": 1.00,
     "paid": 0,
+    "refundStatus": 0,
+    "refundPrice": 0.00,
     "payTime": null,
     "operationStatus": "CREATED",
     "businessStatus": 0,
@@ -86,6 +88,8 @@ GET /app-api/device/printer/order/detail?orderNo=202607301200001
   "taskId": null,
   "payPrice": 1.00,
   "paid": 0,
+  "refundStatus": 0,
+  "refundPrice": 0.00,
   "payTime": null,
   "operationStatus": "CREATED",
   "businessStatus": 0,
@@ -100,12 +104,13 @@ GET /app-api/device/printer/order/detail?orderNo=202607301200001
 - 订单不存在、不是打印订单或不属于当前用户时，返回 `PRINT_ORDER_NOT_EXISTS`，不泄露其他用户订单是否存在。
 - 查询接口不发起支付。支付仍调用 `POST /app-api/order/pay`，请求体使用 `{ "uni": orderNo, "from": "routine", "paytype": "weixin" }`。
 - `paid=0` 时前端展示支付入口；支付完成后重新请求打印订单详情和打印进度。
+- `refundStatus`：`0=正常`、`1=退款中`、`2=已退款`、`3=退款已拒绝`；`refundPrice` 为已退款金额。
 
 ## 3. 字段来源
 
 | 响应字段 | 来源 |
 |---|---|
-| `orderNo`、`payPrice`、`paid`、`payTime`、`businessStatus`、`createTime` | 订单模块 `OrderApi.getOrderInfo(orderNo)` |
+| `orderNo`、`payPrice`、`paid`、`refundStatus`、`refundPrice`、`payTime`、`businessStatus`、`createTime` | 订单模块 `OrderApi.getOrderInfo(orderNo)` |
 | `productType`、`pageCount`、`photoCount`、`copies`、`file*`、`paperName`、`colorName`、`optionSelections` | `yshop_device_order.extra_params` |
 | `operationStatus`、`failureReason`、`taskId` | `yshop_device_order` |
 
