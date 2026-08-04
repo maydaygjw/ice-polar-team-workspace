@@ -110,7 +110,7 @@
 - `recipientType`: `[1, 2]`；`role`: `[1, 2, 3]`，`recipientType=1`（平台级）时必填，`recipientType=2`（店铺级）时不传/忽略
 - `memberType`: `[1, 2]`
 - `shopId`: `recipientType=2` 时必填，`recipientType=1` 时必须为 null
-- `memberInfo`: 个人需 `phone`/`realName`/`idCard`；企业需 `socialCreditCode`/`socialCreditCodeExpires`/`businessScope`/`legalPerson`/`legalCertId`/`legalCertIdExpires`/`legalMp`/`address`/`licensePhotoUrl`/`idCardFrontUrl`/`idCardBackUrl`/`bankLicensePhotoUrl`；后端将四张图片打包为 zip 并 URLEncode 中文文件名后上传 Adapay
+- `memberInfo`: 个人需 `phone`/`realName`/`idCard`；企业需 `socialCreditCode`/`businessScope`/`legalPerson`/`legalCertId`/`legalCertIdExpires`/`legalMp`/`address`/`licensePhotoUrl`/`idCardFrontUrl`/`idCardBackUrl`/`bankLicensePhotoUrl`，`socialCreditCodeExpires` 可选；后端将四张图片打包为 zip 并 URLEncode 中文文件名后上传 Adapay
 - `settleAccount`: 创建收款人时必填；更新收款人时可选，仅表示更换结算账户。传入时需包含 `cardNo`/`cardName`/`bankCode`/`adapayProvCode`/`adapayAreaCode`；`bankCode` 必须存在于 `yshop_pay_bank` 且状态启用，`adapayProvCode`/`adapayAreaCode` 必须存在于 `yshop_pay_adapay_region` 且状态启用。
 - `settleAccountSummary`: 响应侧脱敏摘要，可包含 `cardNoMask`/`cardNameMask`/`bankCode`/`bankName`/`accountType`/`adapayProvCode`/`adapayAreaCode`/`adapayProvName`/`adapayAreaName`；不得返回完整旧银行卡号
 - `recipientName`: 1-64 字符
@@ -377,6 +377,11 @@ INSERT IGNORE INTO system_role_menu (role_id, menu_id, creator, create_time, upd
 > 前端银行选择器使用远程搜索模式，不再全量加载。创建/更新收款人时后端强制校验 `bankCode`/`adapayProvCode`/`adapayAreaCode` 必须存在且启用；`adapayAreaCode` 的父级必须与 `adapayProvCode` 一致。
 
 ## 兼容性
+
+## 企业 Member 有效期字段修订
+
+- `memberInfo.socialCreditCodeExpires` 改为可选字段，格式仍为 `yyyyMMdd`。企业营业执照标注“长期”或 OCR 未识别到有效期时，admin 不提交该字段；后端不得因缺少该字段拒绝创建，也不得向 Adapay 发送空值。
+- `memberInfo.legalCertIdExpires` 仍为必填，统一使用 8 位数字格式 `yyyyMMdd`。身份证 OCR 返回带分隔符的日期时，admin/backend 在回填或返回 OCR 结果前转换为 8 位数字；无法转换为 8 位数字的结果不自动回填。
 
 - **向后兼容**：**否**。本次需求变更从 `ProfitSharingOrderRespVO` 中移除 `commissionAmount`、`shopAmount`；admin 分账结算记录列表需从 `items` 汇总展示平台/店铺金额。数据库层面通过迁移脚本 `sql/upgrade-2026-07-07-adapay-profit-sharing.sql` 将历史数据从主表迁移到明细表并删除旧字段。
 - **未启用分账的店铺**：行为不变。
