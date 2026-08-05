@@ -19,7 +19,7 @@
 
 - 父菜单：订单中心（`/order`）
 - 菜单：设备订单（`device-order`）
-- 前端组件：`mall/device/deviceOrder/index`
+- 前端组件：`order/storeOrder/device`
 - 菜单权限：`order:store-order:query`
 
 ## 数据约束
