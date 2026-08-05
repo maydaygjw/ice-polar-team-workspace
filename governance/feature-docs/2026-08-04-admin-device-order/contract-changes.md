@@ -2,28 +2,28 @@
 
 ## 范围
 
-在订单中心增加“设备订单”菜单，展示制冰机、打印机等通用设备操作订单。业务订单和设备订单仍是两类记录，设备订单只通过 `biz_order_id` 关联业务订单，不改变历史业务订单状态。
+在订单中心增加“设备订单”菜单，展示制冰机、打印机等设备产生的业务订单。设备下单统一写入订单模块，页面查询方式与外卖订单一致，并固定筛选 `orderType=device`；设备执行记录仍由设备模块内部使用，不作为业务订单列表的数据源。
 
 ## API
 
-本功能复用既有管理后台接口，不新增或修改响应字段：
+本功能复用订单模块既有管理后台接口，不新增订单查询接口：
 
-- `GET /admin-api/device/order/page`
-- `GET /admin-api/device/order/get?orderNo={orderNo}`
+- `GET /admin-api/order/store-order/page?orderType=device`
+- `GET /admin-api/order/store-order/get?id={id}`
 
-分页查询支持 `deviceCode`、`deviceType`、`operationType`、`bizOrderId`、`status`、`userId`，并由租户拦截器提供租户隔离。
+分页查询支持订单模块已有的订单号、用户电话、支付方式、订单状态和创建时间条件，并由订单模块现有租户与门店权限提供隔离。
 
-查询权限统一为 `device:order:query`，列表和详情接口均要求该权限。
+查询权限复用 `order:store-order:query`。
 
 ## 管理菜单
 
 - 父菜单：订单中心（`/order`）
 - 菜单：设备订单（`device-order`）
 - 前端组件：`mall/device/deviceOrder/index`
-- 菜单权限：`device:order:query`
+- 菜单权限：`order:store-order:query`
 
 ## 数据约束
 
-- 设备订单状态沿用 `CREATED/QUEUED/PROCESSING/SUCCEEDED/FAILED/CANCELLED`。
-- `extra_params` 作为设备类型私有快照，仅在详情中原样展示格式化内容。
+- 设备订单业务状态沿用订单模块已有状态语义。
+- 设备执行状态和 `extra_params` 仍属于设备订单记录，不能混入业务订单列表的查询语义。
 - 不新增数据库表或字段，不修改历史订单数据。
