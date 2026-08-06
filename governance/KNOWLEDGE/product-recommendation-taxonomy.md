@@ -2,13 +2,18 @@
 
 ## 文档定位
 
-本文档为餐饮、饮品商品推荐提供商品标准化和用户偏好归一化参考，不是最终数据库设计或 API 契约。
+本文档为餐饮、饮品商品推荐提供商品标准化和用户属性归一化参考，不是最终数据库设计或 API 契约。
 
-分类体系参考美团公开的美食知识图谱思路，将商品信息拆分为类目、标准商品名、基础属性和业务主题属性四类；具体分类根据本系统的餐饮、饮品业务进行裁剪和扩展。
+分类体系按以下顺序使用：
 
-参考：[美团技术团队：美团外卖美食知识图谱的迭代及应用](https://tech.meituan.com/2021/05/27/Food-Knowledge-Graph.html)
+1. **主类目分类标准**：定义商品所属的业务分类。
+2. **食材分类标准**：定义商品包含的主要食材及其层级。
+3. **商品标准属性库**：基于前两项进行精简归类，并补充商品自身的描述、经营和评价属性。
+4. **用户属性**：一部分属性映射到商品标准属性库，用于匹配推荐；另一部分描述用户自身特征和活跃度。
 
-## 一、主类目树
+## 一、主类目分类标准
+
+主类目用于商品的业务归类、召回覆盖和统计。商品可以有一个主类目和必要的层级类目，但不应通过主类目承载所有推荐语义。
 
 ```text
 餐饮商品
@@ -75,30 +80,9 @@
     └── 饮品套餐
 ```
 
-## 二、商品标准属性库
+## 二、食材分类标准
 
-商品不应只有一个主类目，应允许使用多个正交标签。
-
-| 中文属性 | English key | 10 个标准值（中文 / English） |
-|---|---|---|
-| 类目 | `category` | 快餐简餐 `fast_food_simple_meal`、中式正餐/地方菜 `chinese_local_cuisine`、面食米粉 `noodle_rice`、火锅串串 `hotpot_skewers`、烧烤炸物小吃 `bbq_fried_snacks`（烧烤、炸物、卤味）、汉堡披萨西餐 `burger_pizza_western`、日韩/异国料理 `japanese_korean_international`、饮品 `drinks`（奶茶、咖啡、果饮）、甜品烘焙 `desserts_bakery`、水果生鲜商超 `fresh_grocery_other` |
-| 核心食材 | `ingredients` | 谷物米面 `grains_rice_noodles`、猪肉 `pork`、牛羊肉 `beef_lamb`、禽肉 `poultry`、海鲜水产 `seafood_aquatic`、蛋奶乳制品 `egg_dairy`、蔬菜菌菇 `vegetables_mushrooms`、水果 `fruit`、豆制品坚果 `soy_nuts`、茶咖啡及饮品原料 `tea_coffee_beverage_base` |
-| 口味风味 | `taste_profile` | 咸香/酱香 `savory_sauce`、鲜香/清鲜 `fresh_umami`、香辣 `fragrant_spicy`、麻辣/椒麻 `mala_numbing_spicy`、酸辣 `sour_spicy`、酸甜 `sweet_sour`、甜香 `sweet_aroma`、清淡/原味 `light_original`、奶香/芝士 `creamy_cheesy`、果香/茶香/咖啡香 `fruity_tea_coffee` |
-| 价格区间 | `price_range` | 0–10 元 `0_10`、10–15 元 `10_15`、15–20 元 `15_20`、20–25 元 `20_25`、25–30 元 `25_30`、30–50 元 `30_50`、50–80 元 `50_80`、80–120 元 `80_120`、120–300 元 `120_300`、300 元以上 `300_plus` |
-| 消费场景 | `consumption_scene` | 早餐 `breakfast`、午餐 `lunch`、下午茶 `afternoon_tea`、晚餐 `dinner`、夜宵 `late_night`、独食简餐 `solo_meal`、办公工作餐 `office_meal`、家庭用餐 `family_meal`、聚餐多人 `group_dining`、约会庆祝 `date_celebration` |
-
-`standard_product_name` 仅用于商品标准化和同品聚合，不作为核心推荐属性。过敏原、饮食限制、库存、上下架、营业状态和配送资格属于硬性过滤条件，不参与普通推荐权重。
-
-商品名称和标准商品名分开保存：
-
-```text
-商家商品名：超大杯冰霸芒果芝芝
-标准商品名：芒果芝士茶
-标准类目：饮品 > 茶饮 > 水果茶
-标准标签：芒果、芝士、果香、甜、冷饮、下午茶
-```
-
-## 三、食材分类库
+食材分类用于描述商品的主要构成。一个商品可以关联多个食材，并区分主食材和辅助食材；食材名称、别名和同义词应统一映射到标准食材。
 
 ```text
 食材
@@ -141,88 +125,118 @@
     └── 香辛料
 ```
 
-## 四、用户偏好库
+商品名称或配方无法确认食材时，应保留“未知”及其置信度，不应仅凭名称强行推断。过敏原、饮食限制等安全相关信息优先使用商家确认或结构化配方数据。
 
-用户偏好不要只保存“喜欢某个商品”，而应映射到商品使用的标准标签：
+## 三、商品标准属性库
+
+商品标准属性库是对前两类标准的业务化精简：
+
+- `standard_category` 从主类目树映射为有限的标准类目，便于召回、统计和跨店铺比较。
+- `standard_ingredients` 从食材分类树映射为有限的核心食材组，支持多选，并保留主食材标记。
+- `taste_profile`、`price_range` 和 `consumption_scene` 与标准类目、核心食材组一样，属于商品标准分类，用于跨商品和用户属性匹配。
+- 商品名称、商品描述、上架时间、销量、折扣和评分均属于商品业务属性；它们可以用于检索、排序或展示，但不等同于标准分类。
+
+### 3.1 基于主类目和食材的精简分类
+
+| 属性 | English key | 标准值示例 |
+|---|---|---|
+| 标准类目 | `standard_category` | 快餐简餐 `fast_food_simple_meal`、中式正餐/地方菜 `chinese_local_cuisine`、面食米粉 `noodle_rice`、火锅串串 `hotpot_skewers`、烧烤炸物小吃 `bbq_fried_snacks`、汉堡披萨西餐 `burger_pizza_western`、日韩/异国料理 `japanese_korean_international`、饮品 `drinks`、甜品烘焙 `desserts_bakery`、水果生鲜商超 `fresh_grocery_other` |
+| 核心食材组 | `standard_ingredients` | 谷物米面 `grains_rice_noodles`、猪肉 `pork`、牛羊肉 `beef_lamb`、禽肉 `poultry`、海鲜水产 `seafood_aquatic`、蛋奶乳制品 `egg_dairy`、蔬菜菌菇 `vegetables_mushrooms`、水果 `fruit`、豆制品坚果 `soy_nuts`、茶咖啡及饮品原料 `tea_coffee_beverage_base` |
+| 口味风味 | `taste_profile` | 咸香/酱香 `savory_sauce`、鲜香/清鲜 `fresh_umami`、香辣 `fragrant_spicy`、麻辣/椒麻 `mala_numbing_spicy`、酸辣 `sour_spicy`、酸甜 `sweet_sour`、甜香 `sweet_aroma`、清淡/原味 `light_original`、奶香/芝士 `creamy_cheesy`、果香/茶香/咖啡香 `fruity_tea_coffee` |
+| 价格区间 | `price_range` | 0–10 元 `0_10`、10–15 元 `10_15`、15–20 元 `15_20`、20–25 元 `20_25`、25–30 元 `25_30`、30–50 元 `30_50`、50–80 元 `50_80`、80–120 元 `80_120`、120–300 元 `120_300`、300 元以上 `300_plus` |
+| 消费场景 | `consumption_scene` | 早餐 `breakfast`、午餐 `lunch`、下午茶 `afternoon_tea`、晚餐 `dinner`、夜宵 `late_night`、独食简餐 `solo_meal`、办公工作餐 `office_meal`、家庭用餐 `family_meal`、聚餐多人 `group_dining`、约会庆祝 `date_celebration` |
+
+上述标准分类用于商品与用户属性的统一匹配。具体的二级类目和食材叶子节点仍应回溯到前两节的标准 ID；商品可以同时拥有多个核心食材，并标记 `primary` 主食材和 `secondary` 辅助食材。
+
+### 3.2 商品业务属性
+
+| 中文属性 | English key | 类型/取值 | 主要用途 |
+|---|---|---|---|
+| 商品名称 | `product_name` | 商品实际填写的名称字符串 | 检索和展示 |
+| 商品描述 | `product_description` | 商品实际填写的描述文本 | 展示商品卖点和组成信息 |
+| 上架时间 | `listed_at` | 时间戳 | 新品识别、时间衰减和排序 |
+| 月销量 | `monthly_sales` | 非负整数，按约定统计窗口计算 | 热度排序和趋势判断 |
+| 是否折扣 | `is_discounted` | 布尔值 | 促销召回和排序 |
+| 店铺评分 | `shop_rating` | 数值，如 0–5 分 | 店铺质量排序和过滤 |
+| 商品评分 | `product_rating` | 数值，如 0–5 分 | 商品质量排序和过滤 |
+
+商品名称、商品描述、规格、价格和店铺信息应按商家实际填写保留；标准化只作用于类目、食材和推荐标签。例如：
+
+```text
+商品名称：超大杯冰霸芒果芝芝
+商品描述：冰饮芒果茶搭配芝士奶盖，突出芒果果香与奶香口感。
+标准类目：饮品 > 茶饮 > 水果茶
+核心食材组：水果、蛋奶乳制品、茶咖啡及饮品原料
+标准标签：芒果、芝士、果香、甜、冷饮、下午茶
+商品属性：上架时间、月销量、是否折扣、店铺评分、商品评分
+```
+
+商品 JSON 示例：
 
 ```json
 {
-  "positive_preferences": [
-    {"dimension": "category", "value": "茶饮", "weight": 0.8},
-    {"dimension": "ingredients", "value": "芒果", "weight": 0.7},
-    {"dimension": "taste_profile", "value": "甜香", "weight": 0.6}
+  "product_name": "超大杯冰霸芒果芝芝",
+  "product_description": "冰饮芒果茶搭配芝士奶盖，突出芒果果香与奶香口感。",
+  "standard_category": "drinks",
+  "standard_ingredients": [
+    "fruit",
+    "egg_dairy",
+    "tea_coffee_beverage_base"
   ],
-  "negative_preferences": [
-    {"dimension": "ingredients", "value": "花生", "weight": 0.9},
-    {"dimension": "taste_profile", "value": "香辣", "weight": 0.8}
+  "taste_profile": [
+    "sweet_aroma",
+    "fruity_tea_coffee",
+    "creamy_cheesy"
   ],
-  "constraints": [
-    {"dimension": "sugar", "value": "无糖或低糖"},
-    {"dimension": "price_range", "value": "15-25元"}
-  ]
+  "price_range": "10_15",
+  "consumption_scene": ["afternoon_tea", "office_meal"],
+  "listed_at": "2026-08-01T10:00:00+08:00",
+  "monthly_sales": 1280,
+  "is_discounted": true,
+  "shop_rating": 4.8,
+  "product_rating": 4.7
 }
 ```
 
-用户偏好来源可信度建议按以下顺序处理：
+### 3.3 用户自身属性
 
-```text
-主动选择偏好 > 购买 > 加购 > 收藏 > 点击 > 曝光
+用户自身属性不映射为商品标签，但可用于用户分群、活跃度判断、推荐频率控制和排序特征。
+
+| 中文属性 | English key | 类型/说明 |
+|---|---|---|
+| 性别 | `gender` | 枚举或未知；不得据此推断具体口味 |
+| 注册时间 | `registered_at` | 时间戳，可进一步计算注册天数 |
+| 月订单数 | `monthly_order_count` | 统计窗口内的订单数 |
+| 周订单数 | `weekly_order_count` | 统计窗口内的订单数 |
+| 总订单数 | `total_order_count` | 用户累计有效订单数 |
+| 当天订单数 | `today_order_count` | 当天有效订单数，可用于频控和场景判断 |
+
+示例：
+
+映射型属性只记录 `confidence`，表示系统对该属性判断的可信程度，取值范围为 `0`–`1`。
+
+```json
+{
+  "profile": {
+    "gender": "unknown",
+    "registered_at": "2026-01-15T10:00:00+08:00",
+    "monthly_order_count": 8,
+    "weekly_order_count": 3,
+    "total_order_count": 42,
+    "today_order_count": 1
+  },
+  "mapped_attributes": [
+    {"dimension": "standard_category", "value": "drinks", "sentiment": "positive", "confidence": 0.8},
+    {
+      "dimension": "standard_ingredients",
+      "value": [
+        {"value": "fruit", "sentiment": "positive", "confidence": 0.7},
+        {"value": "soy_nuts", "sentiment": "negative", "confidence": 0.9}
+      ]
+    },
+    {"dimension": "taste_profile", "value": "sweet_aroma", "sentiment": "positive", "confidence": 0.6},
+    {"dimension": "price_range", "value": "10_15", "sentiment": "positive", "confidence": 0.5},
+    {"dimension": "consumption_scene", "value": "afternoon_tea", "sentiment": "positive", "confidence": 0.6}
+  ]
+}
 ```
-
-每条偏好至少记录：
-
-- `source`：explicit / order / cart / favorite / click；
-- `weight`：偏好强度；
-- `confidence`：置信度；
-- `last_seen_at`：最近发生时间；
-- `decay_rate`：偏好衰减速度；
-- `positive / negative`：喜欢或排斥。
-
-## 五、标准化规则
-
-1. 商家原始名称、描述和规格必须保留，标准化结果单独维护。
-2. 一个商品可以有多个食材、口味、风味和场景标签。
-3. 同义词和别名应映射到同一个标准标签，例如“芝芝”“芝士”“奶盖”可以归入相应的芝士/奶盖标签体系。
-4. 商品标准标签与用户偏好必须引用同一套标签 ID，不能分别维护两套名称。
-5. 价格、库存、上下架、营业状态和配送资格属于实时业务属性，不属于商品语义标签。
-6. “低糖”“无糖”“纯素”“过敏原”等标签应尽量来自商家确认或结构化配方，不能仅凭商品名称推断。
-7. 分类库应支持新增、合并、拆分和停用分类，并保留版本号。
-8. 分类无法确定时保留未知标签和置信度，不强行归类。
-9. 一级类目用于召回覆盖和统计，二级类目用于区分盖饭、汤面、烧烤、奶茶、咖啡等具体商品形态；二级类目不限制数量。
-10. `ingredients` 采用多标签，同时区分主食材和辅助食材；不能只保留一个食材组。
-11. `taste_profile` 最多保留 2–3 个标签，优先使用具体味型；不再使用“浓郁”这类区分度低的泛标签。
-12. `price_range` 由原始 `unit_price` 或套餐价格计算，区间只用于展示和粗粒度匹配；推荐排序优先使用原始数值和用户价格偏好。
-13. `consumption_scene` 最多保留 2 个商品适用场景，不因为商品属于盖饭或饮品就自动填满午餐、晚餐和独食；当前时间、用户位置和用餐人数属于请求上下文。
-
-## 六、MVP 建议
-
-第一版只使用以下五个核心推荐属性：
-
-| 中文字段 | English key | 说明 | 推荐权重 |
-|---|---|---|---:|
-| 类目 | `category` | 主类目及层级类目 ID | 0.20 |
-| 核心食材 | `ingredients` | 一个或多个标准食材组 ID | 0.30 |
-| 口味风味 | `taste_profile` | 咸香/酱香、鲜香/清鲜、香辣、麻辣/椒麻、酸辣、酸甜、甜香、清淡/原味、奶香/芝士、果香/茶香/咖啡香 | 0.25 |
-| 价格区间 | `price_range` | 商品或套餐价格标准区间；排序同时使用原始价格 | 0.15 |
-| 消费场景 | `consumption_scene` | 早餐、午餐、下午茶、晚餐、夜宵、独食、办公、家庭、聚餐、约会 | 0.10 |
-
-五项推荐权重合计为 `1.00`。商品标准名仅用于归一化；过敏原、饮食限制和实时可售条件先作为硬性过滤处理。
-
-## 七、商品属性示例矩阵
-
-以下示例覆盖 10 个一级类目，并为每个类目补充一个二级类目。实际商品可以同时拥有多个核心食材、口味风味和消费场景标签。
-
-| 商品 | 类目 `category` | 核心食材 `ingredients` | 口味风味 `taste_profile` | 价格区间 `price_range` | 消费场景 `consumption_scene` |
-|---|---|---|---|---|---|
-| 香辣鸡腿饭 | 快餐简餐 `fast_food_simple_meal` > 盖饭 `rice_meal` | 谷物米面 `grains_rice_noodles`、禽肉 `poultry` | 咸香/酱香 `savory_sauce`、香辣 `fragrant_spicy` | 15–20 元 `15_20` | 午餐 `lunch`、办公工作餐 `office_meal` |
-| 宫保鸡丁 | 中式正餐/地方菜 `chinese_local_cuisine` > 川菜 `sichuan_cuisine` | 禽肉 `poultry`、豆制品坚果 `soy_nuts` | 咸香/酱香 `savory_sauce`、香辣 `fragrant_spicy` | 30–50 元 `30_50` | 晚餐 `dinner`、家庭用餐 `family_meal` |
-| 兰州牛肉面 | 面食米粉 `noodle_rice` > 汤面 `noodle_soup` | 谷物米面 `grains_rice_noodles`、牛羊肉 `beef_lamb` | 咸香/酱香 `savory_sauce`、鲜香/清鲜 `fresh_umami` | 10–15 元 `10_15` | 午餐 `lunch`、独食简餐 `solo_meal` |
-| 麻辣牛肉火锅套餐 | 火锅串串 `hotpot_skewers` > 火锅 `hotpot` | 牛羊肉 `beef_lamb`、蔬菜菌菇 `vegetables_mushrooms` | 麻辣/椒麻 `mala_numbing_spicy`、咸香/酱香 `savory_sauce` | 80–120 元 `80_120` | 聚餐多人 `group_dining`、家庭用餐 `family_meal` |
-| 烧烤拼盘 | 烧烤炸物小吃 `bbq_fried_snacks` > 烧烤 `barbecue` | 牛羊肉 `beef_lamb`、禽肉 `poultry` | 咸香/酱香 `savory_sauce`、麻辣/椒麻 `mala_numbing_spicy` | 50–80 元 `50_80` | 夜宵 `late_night`、聚餐多人 `group_dining` |
-| 鸡肉汉堡套餐 | 汉堡披萨西餐 `burger_pizza_western` > 汉堡 `burger` | 谷物米面 `grains_rice_noodles`、禽肉 `poultry`、蛋奶乳制品 `egg_dairy` | 咸香/酱香 `savory_sauce`、奶香/芝士 `creamy_cheesy` | 20–25 元 `20_25` | 独食简餐 `solo_meal`、办公工作餐 `office_meal` |
-| 日式照烧鸡饭 | 日韩/异国料理 `japanese_korean_international` > 日式料理 `japanese_cuisine` | 谷物米面 `grains_rice_noodles`、禽肉 `poultry` | 咸香/酱香 `savory_sauce`、鲜香/清鲜 `fresh_umami` | 30–50 元 `30_50` | 午餐 `lunch`、晚餐 `dinner` |
-| 芒果芝士奶茶 | 饮品 `drinks` > 奶茶 `milk_tea` | 水果 `fruit`、蛋奶乳制品 `egg_dairy`、茶咖啡及饮品原料 `tea_coffee_beverage_base` | 甜香 `sweet_aroma`、果香/茶香/咖啡香 `fruity_tea_coffee`、奶香/芝士 `creamy_cheesy` | 10–15 元 `10_15` | 下午茶 `afternoon_tea`、办公工作餐 `office_meal` |
-| 芒果千层 | 甜品烘焙 `desserts_bakery` > 蛋糕 `cake` | 水果 `fruit`、蛋奶乳制品 `egg_dairy`、谷物米面 `grains_rice_noodles` | 甜香 `sweet_aroma`、果香/茶香/咖啡香 `fruity_tea_coffee`、奶香/芝士 `creamy_cheesy` | 20–25 元 `20_25` | 下午茶 `afternoon_tea`、约会庆祝 `date_celebration` |
-| 精品水果拼盘 | 水果生鲜商超 `fresh_grocery_other` > 水果 `fresh_fruit` | 水果 `fruit` | 甜香 `sweet_aroma`、果香/茶香/咖啡香 `fruity_tea_coffee` | 30–50 元 `30_50` | 家庭用餐 `family_meal`、办公工作餐 `office_meal` |
-
-核心目标是：用户喜欢“芒果、果香、低糖、冷饮”，系统能够推荐其他符合这些标签的商品，而不是只能推荐用户以前买过的同一商品。
