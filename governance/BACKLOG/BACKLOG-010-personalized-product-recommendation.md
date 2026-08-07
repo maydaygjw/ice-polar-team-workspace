@@ -128,7 +128,19 @@ LLM 提取用户偏好
 
 ### 3. 组装商品 JSON
 
-商品 JSON 同时包含业务属性和标准特征，示例：
+商品 JSON 同时包含业务属性和算法评估属性。原始业务字段保持原名；由 LLM 或其他算法评估、归一化的字段统一增加 `e_` 字母前缀，`e` 代表 `eval`，用于区分原始业务数据和算法结果。
+
+算法评估字段包括：
+
+- `e_standard_category`；
+- `e_standard_ingredients`；
+- `e_taste_profile`；
+- `e_price_range`；
+- `e_consumption_scene`；
+- `e_feature_confidence`；
+- `e_feature_version`。
+
+示例：
 
 ```json
 {
@@ -139,28 +151,30 @@ LLM 提取用户偏好
   "product_name": "超大杯冰霸芒果芝芝",
   "product_description": "冰饮芒果茶搭配芝士奶盖",
   "single_price": 18.0,
-  "standard_category": "drinks",
-  "standard_ingredients": [
-    "fruit",
-    "egg_dairy",
-    "tea_coffee_beverage_base"
-  ],
-  "taste_profile": [
-    "sweet_aroma",
-    "fruity_tea_coffee",
-    "creamy_cheesy"
-  ],
-  "price_range": "15_20",
-  "consumption_scene": ["afternoon_tea", "office_meal"],
   "listed_at": "2026-08-01T10:00:00+08:00",
   "monthly_sales": 1280,
   "is_discounted": true,
   "shop_rating": 4.8,
   "product_rating": 4.7,
-  "feature_confidence": 0.92,
-  "feature_version": "taxonomy-v1"
+  "e_standard_category": "drinks",
+  "e_standard_ingredients": [
+    "fruit",
+    "egg_dairy",
+    "tea_coffee_beverage_base"
+  ],
+  "e_taste_profile": [
+    "sweet_aroma",
+    "fruity_tea_coffee",
+    "creamy_cheesy"
+  ],
+  "e_price_range": "15_20",
+  "e_consumption_scene": ["afternoon_tea", "office_meal"],
+  "e_feature_confidence": 0.92,
+  "e_feature_version": "taxonomy-v1"
 }
 ```
+
+后续匹配规则中的 `standard_category`、`standard_ingredients`、`taste_profile`、`price_range` 和 `consumption_scene` 表示逻辑维度；从商品 JSON 取值时对应使用带 `e_` 前缀的字段。
 
 ### 4. 用户信息提取
 
