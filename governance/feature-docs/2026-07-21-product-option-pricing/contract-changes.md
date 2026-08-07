@@ -17,7 +17,7 @@
 
 ### 门店选项库 — 选项（product-biz，admin）
 
-- `GET /admin-api/product/option/page`：分页查询门店选项（按 `shopId`、`name`、`status`）。
+- `GET /admin-api/product/option/page`：分页查询门店选项（按 `shopId`、`name`、`productName`、`status`）；`productName` 使用选项表冗余商品名称字段过滤。
 - `GET /admin-api/product/option/get?id=`：查询单个选项。
 - `GET /admin-api/product/option/list-by-shop?shopId=`：门店选项列表（指派/编辑用）。
 - `POST /admin-api/product/option/create`：新增选项，字段 `shopId,name,price,stock,status,sort`。
@@ -49,13 +49,13 @@
 
 ## DB
 
-升级脚本：`backend/sql/upgrade-2026-07-17-product-option-pricing.sql`（主表结构）、`backend/sql/upgrade-2026-07-18-option-group-unique-deleted.sql`（唯一键修复）、`backend/sql/upgrade-2026-07-18-option-group-display-name.sql`（display_name + product_id 增量），均含回滚语句。所有新表含 `tenant_id`、`create_time`、`update_time`、`deleted`。
+升级脚本：`backend/sql/upgrade-2026-07-17-product-option-pricing.sql`（主表结构）、`backend/sql/upgrade-2026-07-18-option-group-unique-deleted.sql`（唯一键修复）、`backend/sql/upgrade-2026-07-18-option-group-display-name.sql`（display_name + product_id 增量）、`backend/sql/upgrade-2026-08-07-option-product-name.sql`（商品名称冗余字段），均含回滚语句。所有新表含 `tenant_id`、`create_time`、`update_time`、`deleted`。
 
 - 废弃（DROP）旧平铺模型表：`yshop_store_topping`、`yshop_product_option_group`、`yshop_product_option`（test 已部署旧模型，重写脚本清理）。
 - `yshop_store_product` 新增列 `has_options` tinyint(1) NOT NULL DEFAULT 0。存量默认 0，行为不变。
 - `yshop_store_order_cart_info` 新增列 `option_snapshot` json NULL、`option_total_delta` decimal(10,2) NOT NULL DEFAULT 0。
 - 新增 `yshop_store_option_group`（门店选项分组）：`id,tenant_id,shop_id,name,required,multiple,min_select,max_select,sort` + 标准字段；索引 `(tenant_id,shop_id)`。
-- 新增 `yshop_store_option`（门店选项）：`id,tenant_id,shop_id,product_id,name,price,stock,status,sort` + 标准字段；索引 `(tenant_id,shop_id)`、`(product_id)`。`product_id` 为 NULL 表示门店共享，有值表示该商品私有（不出现在共享库、不被其他商品选）。
+- 新增 `yshop_store_option`（门店选项）：`id,tenant_id,shop_id,product_id,product_name,name,price,stock,status,sort` + 标准字段；索引 `(tenant_id,shop_id)`、`(product_id)`、`(product_name)`。`product_id` 为 NULL 表示门店共享，有值表示该商品私有（不出现在共享库、不被其他商品选）；`product_name` 为管理端检索用冗余字段。
 - 新增 `yshop_store_option_group_item`（分组-选项多对多）：`id,tenant_id,group_id,option_id,is_default,sort` + 标准字段；索引 `(tenant_id,group_id)`、`(option_id)`；唯一约束 `(group_id,option_id)`。
 - 新增 `yshop_product_option_group_ref`（商品-分组引用）：`id,tenant_id,product_id,option_group_id,display_name,sort` + 标准字段；索引 `(tenant_id,product_id)`、`(option_group_id)`；唯一约束 `(product_id,option_group_id)`。`display_name` 为商品级分组显示名（覆盖共享组名，解决多店同义分组区分场景）。
 - 回滚：DROP 四张新表；`ALTER TABLE ... DROP COLUMN has_options / option_snapshot / option_total_delta`；删除「选项库」菜单。
