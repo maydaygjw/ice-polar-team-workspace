@@ -1,0 +1,26 @@
+{
+  "feature": "wecom-welcome-template",
+  "scope": "admin-api",
+  "sendWelcomeMessage": false,
+  "paths": {
+    "page": "GET /admin-api/mp/wecom-welcome-template/page",
+    "get": "GET /admin-api/mp/wecom-welcome-template/get",
+    "create": "POST /admin-api/mp/wecom-welcome-template/create",
+    "update": "PUT /admin-api/mp/wecom-welcome-template/update",
+    "delete": "DELETE /admin-api/mp/wecom-welcome-template/delete",
+    "updateStatus": "PUT /admin-api/mp/wecom-welcome-template/update-status",
+    "uploadImage": "POST /admin-api/mp/wecom-welcome-template/upload-image"
+  },
+  "template": {
+    "scope": ["tenantId", "accountId", "businessRegionId"],
+    "contentOrder": ["text", "image"],
+    "textPlaceholder": "%NICKNAME%",
+    "imageUpload": "multipart/form-data",
+    "imageLimit": "JPG/PNG, 5 bytes to 2 MB",
+    "remoteImageField": "wecomImageUrl"
+  },
+  "wecomApis": {
+    "uploadImage": "/cgi-bin/media/uploadimg",
+    "sendWelcomeMessage": null
+  }
+}
