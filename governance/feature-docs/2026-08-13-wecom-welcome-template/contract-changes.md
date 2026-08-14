@@ -13,6 +13,8 @@
 - `POST /admin-api/mp/wecom-welcome-template/upload-image`，multipart：`accountId`、`attachmentType`、`file`
 - `GET /admin-api/mp/wecom-welcome-template/default-mini-app`，返回当前租户默认小程序主账户的只读信息。
 
+欢迎语表单复用现有图片空间（`Materials`）选择图片；选择结果作为 `localImageUrl` 传入创建/更新接口。
+
 创建/更新请求：
 
 ```json
@@ -29,7 +31,7 @@
 }
 ```
 
-`attachmentType` 只允许 `IMAGE`、`MINI_PROGRAM`。`IMAGE` 必须填写 `localImageUrl` 和 `wecomImageUrl`；`MINI_PROGRAM` 必须填写 `localImageUrl`、`miniAppAppId` 和 `miniAppPage`，且 `wecomImageUrl` 为空。小程序卡片标题由模板 `name` 生成，封面只在发送事件内上传临时素材。
+`attachmentType` 只允许 `IMAGE`、`MINI_PROGRAM`。`IMAGE` 必须填写 `localImageUrl`；如果 `wecomImageUrl` 为空，后端从图片空间读取本地图片并上传企业微信永久图片素材后再保存返回的 URL。`MINI_PROGRAM` 必须填写 `localImageUrl`、`miniAppAppId` 和 `miniAppPage`，且 `wecomImageUrl` 为空。小程序卡片标题由模板 `name` 生成，封面只在发送事件内上传临时素材。
 
 响应至少包含：
 
