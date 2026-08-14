@@ -41930,6 +41930,53 @@
                 }
             }
         },
+        "/admin-api/member/user/update-status": {
+            "put": {
+                "tags": [
+                    "\u7ba1\u7406\u540e\u53f0 - \u7528\u6237"
+                ],
+                "summary": "\u66f4\u65b0\u4f1a\u5458\u72b6\u6001",
+                "operationId": "updateUserStatus",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "id",
+                                    "status"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "description": "\u4f1a\u5458\u7f16\u53f7"
+                                    },
+                                    "status": {
+                                        "type": "integer",
+                                        "format": "int32",
+                                        "description": "\u4f1a\u5458\u72b6\u6001\uff1a0-\u6b63\u5e38\uff0c1-\u62c9\u9ed1"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CommonResultBoolean"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin-api/member/user/delete": {
             "delete": {
                 "tags": [
