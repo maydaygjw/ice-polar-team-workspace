@@ -2,23 +2,23 @@
 
 ## 计划
 
-- 后端单元测试：模板校验、商圈校验、企业微信请求组装、外部失败保留原记录。
+- 后端单元测试：模板校验、商圈校验、图片/小程序附件分支、企业微信请求组装、外部失败保留原记录。
 - 后端接口测试：租户隔离、权限、重复模板、图片上传和 CRUD。
-- 管理端验证：列表筛选、表单校验、图片预览、保存失败保留状态、启用/停用和删除确认。
-- E2E：在测试环境使用固定测试租户和企业微信配置验证完整管理链路；不触发客户欢迎语发送。
+- 管理端验证：列表筛选、表单校验、图片/小程序切换、默认小程序账户展示、path 校验、保存失败保留状态、启用/停用和删除确认。
+- E2E：在测试环境使用固定测试租户和企业微信配置验证完整管理及发送链路。
 
 ## 执行结果
 
 - Backend：`mvn -pl yshop-module-mp/yshop-module-mp-biz -am -DskipTests compile` 通过。
-- Backend：`mvn -pl yshop-module-mp/yshop-module-mp-biz -am -Dtest=WecomWelcomeTemplateServiceImplTest -Dsurefire.failIfNoSpecifiedTests=false test` 通过，3 个用例通过。
-- Admin：`pnpm run build:local` 通过。
-- Admin：`pnpm run ts:check` 未能作为全量门禁通过。当前基线已有大量自动导入声明和类型生成错误；本次新增页面仅出现同类全局自动导入错误，未出现本功能 API/组件的业务类型错误。
+- Backend：`mvn -pl yshop-module-mp/yshop-module-mp-biz -am -Dtest=WecomWelcomeTemplateServiceImplTest,WecomWelcomeMessageProcessorTest -Dsurefire.failIfNoSpecifiedTests=false test` 通过，10 个用例通过。
+- Admin：`pnpm build:prod` 通过。
+- Admin：`pnpm ts:check` 未能作为全量门禁通过。仓库基线已有大量全局类型错误；过滤检查本次欢迎语 API/页面未新增错误。
 
 ## 待补验证
 
-- 已完成测试环境数据库升级；仍需使用真实企业微信账号验证 `media/uploadimg` 图片上传，以及本地欢迎语模板新增/编辑/删除。
-- 管理端通过真实权限账号验证菜单、上传、预览、启停和删除。
-- 后续发送功能开发时，再验证 `welcome_code` 回调与单次发送时效；本期明确不覆盖。
+- 仍需使用真实企业微信账号验证 `media/uploadimg`、`media/upload?type=image` 和 `send_welcome_msg` 的真实返回。
+- 管理端通过真实权限账号验证默认小程序账户、path、图片/小程序二选一和启停删除。
+- 仍需验证临时封面素材在发送前重新上传后，企业微信客户侧能展示小程序卡片。
 
 ## Test 部署记录（2026-08-13）
 

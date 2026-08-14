@@ -1,7 +1,7 @@
 {
   "feature": "wecom-welcome-template",
   "scope": "admin-api",
-  "sendWelcomeMessage": false,
+  "sendWelcomeMessage": true,
   "paths": {
     "page": "GET /admin-api/mp/wecom-welcome-template/page",
     "get": "GET /admin-api/mp/wecom-welcome-template/get",
@@ -9,18 +9,21 @@
     "update": "PUT /admin-api/mp/wecom-welcome-template/update",
     "delete": "DELETE /admin-api/mp/wecom-welcome-template/delete",
     "updateStatus": "PUT /admin-api/mp/wecom-welcome-template/update-status",
-    "uploadImage": "POST /admin-api/mp/wecom-welcome-template/upload-image"
+    "uploadImage": "POST /admin-api/mp/wecom-welcome-template/upload-image",
+    "defaultMiniApp": "GET /admin-api/mp/wecom-welcome-template/default-mini-app"
   },
   "template": {
     "scope": ["tenantId", "accountId", "businessRegionId"],
-    "contentOrder": ["text", "image"],
+    "contentOrder": ["text", "image|mini_program"],
     "textPlaceholder": "%NICKNAME%",
     "imageUpload": "multipart/form-data",
     "imageLimit": "JPG/PNG, 5 bytes to 2 MB",
-    "remoteImageField": "wecomImageUrl"
+    "remoteImageField": "wecomImageUrl",
+    "miniProgramFields": ["miniAppAppId", "miniAppPage"]
   },
   "wecomApis": {
     "uploadImage": "/cgi-bin/media/uploadimg",
-    "sendWelcomeMessage": null
+    "uploadMiniProgramCover": "/cgi-bin/media/upload?type=image",
+    "sendWelcomeMessage": "/cgi-bin/externalcontact/send_welcome_msg"
   }
 }

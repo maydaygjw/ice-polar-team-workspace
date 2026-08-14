@@ -1,5 +1,5 @@
 feature: wecom-welcome-template
-status: implementation
+status: verification
 risk: high
 targets: [backend, admin]
 contract: true
