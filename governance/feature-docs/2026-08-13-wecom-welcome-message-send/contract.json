@@ -1,0 +1,28 @@
+{
+  "feature": "wecom-welcome-message-send",
+  "scope": "backend-callback",
+  "callback": {
+    "path": "POST /mp/wecom/callback/{accountId}",
+    "event": "change_external_contact",
+    "changeType": "add_external_contact",
+    "asyncResponse": "success"
+  },
+  "message": {
+    "transport": "redis-stream",
+    "fields": ["accountId", "userId", "externalUserId", "state", "welcomeCode", "eventTime", "receivedAt"]
+  },
+  "externalApi": {
+    "sendWelcomeMessage": "/cgi-bin/externalcontact/send_welcome_msg",
+    "contentOrder": ["text", "image"],
+    "imageField": "pic_url"
+  },
+  "idempotency": {
+    "key": ["tenantId", "accountId", "sha256(welcomeCode)"],
+    "statuses": ["PROCESSING", "SENT", "SKIPPED", "FAILED", "UNKNOWN"],
+    "externalMaxCallsPerWelcomeCode": 1,
+    "welcomeCodeValiditySeconds": 20,
+    "consumerFailureAck": true,
+    "ambiguousExternalResult": "UNKNOWN"
+  },
+  "adminApiChanges": false
+}

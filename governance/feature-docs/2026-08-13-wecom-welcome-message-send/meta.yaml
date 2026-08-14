@@ -1,0 +1,8 @@
+feature: wecom-welcome-message-send
+status: verification
+risk: high
+targets: [backend]
+contract: true
+ui: false
+e2e: true
+blocked: false
