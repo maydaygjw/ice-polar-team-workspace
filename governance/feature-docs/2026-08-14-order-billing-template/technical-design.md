@@ -62,6 +62,8 @@ percentage theoretical = round(base * percentage / 100, 2, HALF_UP)
 attribute theoretical  = round(orderAttribute, 2, HALF_UP)
 ```
 
+模板明细参数按计费项类型条件生效：`ORDER_PERCENTAGE` 必须提供 `baseType` 和 `percentage`；`ORDER_ATTRIBUTE` 不提供这两个参数，直接将计费项绑定的订单属性值作为理论金额输入。管理端隐藏无关控件，服务端按计费项类型拒绝不匹配的参数，避免同一明细同时存在两套金额口径。
+
 1. 先计算所有模板明细的理论金额。
 2. 非商家明细按 `sort ASC, line_id ASC` 分配：`actual = min(theoretical, remaining)`。
 3. 当 `actual < theoretical` 时记录差异；当前剩余归零后，后续非商家明细的实际金额为 0。

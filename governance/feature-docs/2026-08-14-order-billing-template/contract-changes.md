@@ -59,8 +59,8 @@
 | 字段 | 类型 | 必填 | 约束 |
 |---|---|---|---|
 | `billingItemId` | Long | 是 | 启用中的本租户计费项，模板内唯一。 |
-| `baseType` | String | 条件 | 比例项必填：`BEFORE_COUPON` / `AFTER_COUPON`；属性项为空。 |
-| `percentage` | Decimal | 条件 | 比例项必填，0–100，最多 4 位小数。 |
+| `baseType` | String | 条件 | 比例项必填：`BEFORE_COUPON` / `AFTER_COUPON`；属性项必须为空且请求不得传值。 |
+| `percentage` | Decimal | 条件 | 比例项必填，0–100，最多 4 位小数；属性项必须为空且请求不得传值。 |
 | `recipientMode` | String | 是 | `FIXED_RECIPIENT` / `CURRENT_MERCHANT`。 |
 | `recipientId` | Long | 条件 | `FIXED_RECIPIENT` 时必填且为启用中的本租户收款人。 |
 | `sort` | Integer | 是 | 0–9999；同值按明细 ID 升序。 |
@@ -154,6 +154,8 @@
 | `recipient_mode` | varchar(32) NOT NULL | 收款主体类型：固定收款人或当前商家。 |
 | `recipient_id` | bigint NULL | 固定收款人 ID。 |
 | `sorted` | int NOT NULL DEFAULT 0 | 金额分配顺序。 |
+
+约束：服务端根据 `billingItemId` 对应计费项的 `calculation_type` 做条件校验。`ORDER_ATTRIBUTE` 明细不接受 `base_type` 或 `percentage`，计算时直接读取计费项绑定的订单属性金额；这两个字段在数据库中保持 `NULL`。
 
 ### `yshop_pay_receivable_payable_order`
 
@@ -276,6 +278,7 @@
 | `BILLING_ORDER_ATTRIBUTE_INVALID` | 字段不存在、不是金额类型或标识符不合法。 |
 | `BILLING_TEMPLATE_DEFAULT_EXISTS` | 本租户已有启用的全局默认模板。 |
 | `BILLING_TEMPLATE_ITEM_DUPLICATED` | 同一模板重复引用计费项。 |
+| `BILLING_TEMPLATE_LINE_CONFIG_INVALID` | 计费项类型与模板明细参数不匹配；订单属性项不得设置券前/券后或比例。 |
 | `BILLING_TEMPLATE_RECIPIENT_INVALID` | 固定收款人不存在、已停用或跨租户。 |
 | `BILLING_TEMPLATE_NOT_MATCHED` | 未命中商圈模板且无有效全局默认模板。 |
 | `BILLING_ORDER_AMOUNT_INVALID` | 订单金额缺失或可计算金额为负。 |
