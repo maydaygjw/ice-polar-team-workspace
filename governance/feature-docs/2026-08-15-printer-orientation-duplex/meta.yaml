@@ -1,0 +1,8 @@
+feature: printer-orientation-duplex
+status: implementing
+risk: medium
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: false
+blocked: false
