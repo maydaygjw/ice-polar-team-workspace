@@ -24,6 +24,11 @@ boolean fallback(Long receivablePayableOrderId);
 
 在应收应付菜单下新增 `pay:receivable-payable:settle`，与已有查询、重算权限分离。
 
+## 设备订单确认收货
+
+打印设备订单列表复用既有管理端接口 `GET /admin-api/order/store-order/take?id={orderId}`，不新增重复的收货接口。
+设备订单聚合响应的 `orderInfo.id` 提供业务订单主键，`orderInfo.status` 表示业务订单状态，`paymentInfo.paid` 表示支付状态；当 `orderInfo.status=1` 且 `paymentInfo.paid=1` 时，管理端显示“确认收货”操作。接口继续走订单模块既有确认收货流程，由该流程生成应收应付，不直接执行分账。
+
 ## N/A
 
 - DB 表结构：N/A。
