@@ -47,22 +47,7 @@
 - [ ] 安装 Redis CLI，用于连接外部 Redis 实例和排查缓存
 - [ ] 确认应用服务器可访问外部 MySQL 与 Redis 的网络和端口（如安全组、白名单）
 - [ ] 将 `application-*.yaml` 或对应环境配置放置到正确位置，确保数据库与 Redis 连接信息指向外部实例
-- [ ] 生产环境创建 `/etc/holun/yshop-prod.env`，权限 `0600`、所有者 `root:root`，内容按 `governance/ENVIRONMENTS/prod.secrets.env.example` 配置
-- [ ] 生产 `yshop.service` 配置 `EnvironmentFile=/etc/holun/yshop-prod.env` 和 `Environment=SPRING_PROFILES_ACTIVE=prod`，确保服务器重启后不会回退到 `local`
-
-生产 systemd 单元至少应包含以下关键项（路径按服务器实际安装位置调整）：
-
-```ini
-[Service]
-WorkingDirectory=/opt/holun/yshop-drink/yshop-server
-EnvironmentFile=/etc/holun/yshop-prod.env
-Environment=SPRING_PROFILES_ACTIVE=prod
-ExecStart=/usr/bin/java -jar /opt/holun/yshop-drink/yshop-server/target/yshop-server.jar --spring.profiles.active=prod
-Restart=on-failure
-```
-
-修改后执行 `systemctl daemon-reload`，并通过 `systemctl show yshop.service -p EnvironmentFiles -p Environment`
-确认配置已加载；不要在输出中记录或提交密钥值。
+- [ ] 生产 `yshop.service` 配置 `Environment=SPRING_PROFILES_ACTIVE=prod`，确保服务器重启后不会回退到 `local`
 
 ---
 

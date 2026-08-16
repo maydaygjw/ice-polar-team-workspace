@@ -2,7 +2,7 @@
 
 This directory holds per-environment configuration files for deployment and operational playbooks.
 
-Each `.env` file contains environment metadata such as server hosts, code paths, ports, and build commands. Production runtime values that are not kept in the application profile are loaded on the server from the environment file referenced by `YSHOP_SECRET_ENV_FILE`; they must not be committed here.
+Each `.env` file contains environment metadata such as server hosts, code paths, ports, and build commands. Current production application settings follow the dev/test arrangement and are loaded from `application-prod.yaml`; future secret-manager migration may use a separate server-side environment file.
 
 ## Usage
 
@@ -21,8 +21,7 @@ Then execute the commands in the playbook; the `${VAR}` placeholders will resolv
 3. Do not commit secrets to the file. The current production exception is that DB/Redis passwords and OCR credentials remain in `application-prod.yaml` to match the existing dev/test arrangement; this will be unified in the later security remediation.
 4. Update `governance/PLAYBOOKS/deployment.md` only if the new environment requires different procedural steps; otherwise no SOP changes are needed.
 
-For production, create the secret file on the server with mode `600` and owner `root:root`.
-Use `prod.secrets.env.example` as the variable checklist; do not copy real values into the repository.
+`prod.secrets.env.example` is reserved for the later secret-manager migration; it is not required by the current production startup path.
 
 ## Existing Environments
 
