@@ -49,7 +49,7 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
       systemctl set-environment ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true
     else
       systemctl unset-environment ADAPAY_DEBUG AI_IMAGE_ENABLED DASHSCOPE_API_KEY || true
-      systemctl set-environment SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE}"
+      systemctl set-environment SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-}"
     fi
     systemctl start yshop.service
   else
@@ -57,7 +57,7 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
     if [ \"${ENV_NAME}\" = \"test\" ]; then
       ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true nohup java -jar target/${YSHOP_JAR} --spring.profiles.active=dev > ${YSHOP_START_PATH}/app.log 2>&1 &
     else
-      nohup java -jar target/${YSHOP_JAR} --spring.profiles.active="${SPRING_PROFILES_ACTIVE}" > ${YSHOP_START_PATH}/app.log 2>&1 &
+      nohup java -jar target/${YSHOP_JAR} --spring.profiles.active="${SPRING_PROFILES_ACTIVE:-}" > ${YSHOP_START_PATH}/app.log 2>&1 &
     fi
   fi
 "

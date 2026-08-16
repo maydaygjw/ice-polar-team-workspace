@@ -1,338 +1,144 @@
 # Deployment Playbook
 
-> 所有环境部署步骤和回滚流程的统一手册。
-> **本文件不包含任何真实服务器信息。** 执行前必须加载目标环境配置。
-> Agent 执行部署前必须读取此文件。
+> 统一部署和回滚流程。执行前必须加载目标环境配置；禁止在文档、脚本或命令中写入真实凭据。
 
-## 使用前准备
-
-1. 根据目标环境加载对应配置文件：
-
-   ```bash
-   source governance/SCRIPTS/deploy-helper.sh && load_env test
-   ```
-
-   > **环境变量作用域**：`load_env` 通过 `source` 方式把变量注入**当前 shell**。后续所有步骤必须在**同一个 shell 会话**中执行；若切换终端、脚本或后台任务，请先重新执行上述命令。
-
-2. 确认已配置 SSH key 登录，禁止在脚本中硬编码密码。
-3. 如果是新服务器 / 首次搭建环境，请先按 `governance/PLAYBOOKS/environment-provisioning.md` 完成基础软件、运行时和目录初始化。
-4. 确认已阅读本 playbook 中对应服务的部署步骤和健康检查。
-
----
-
-## 环境概览
-
-| 环境 | 用途 | 配置文件 |
-|------|------|----------|
-| 测试环境 | 功能验证、集成测试 | `governance/ENVIRONMENTS/test.env` |
-| 生产环境 | 线上服务 | `governance/ENVIRONMENTS/prod.env` |
-
----
-
-## 测试环境数据库
-
-测试环境使用 `application-dev.yaml`（`backend/yshop-server/src/main/resources/application-dev.yaml`）中配置的 MySQL 实例。
-
-| 属性 | 值 |
-|------|-----|
-| 数据库引擎 | MySQL 8.0 |
-| 宿主机 | `${DB_HOST}` |
-| 端口 | `${DB_PORT}` |
-| 数据库名 | `${DB_NAME}` |
-| 用户名 | `${DB_USER}` |
-| 密码 | 见 `application-dev.yaml` 中 `spring.datasource.dynamic.datasource.master.password` |
-| JDBC URL | 见 `application-dev.yaml` 中 `spring.datasource.dynamic.datasource.master.url` |
-
-> 连接方式：通过 SSH 登录宿主机后，使用 `mysql -h ${DB_HOST} -P ${DB_PORT} -u ${DB_USER} -p ${DB_NAME}` 连接，或从本地通过 `ssh -L` 隧道连接。
-
-## 数据库迁移
-
-1. **命名与执行顺序**：升级脚本统一使用 `sql/upgrade-YYYY-MM-DD-{feature}.sql`；按日期和功能依赖顺序执行。若历史脚本未执行，必须先补齐，再执行本次脚本。
-2. **字段级 patch**：新增字段、修改字段长度/注释等 `ALTER TABLE` 操作，**无需重启后端服务**。MyBatis Plus 会在运行时动态映射字段。
-3. **必须重启的场景**：
-   - 新增/修改了 Java 代码逻辑、配置、枚举、错误码。
-   - 修改了表结构导致旧代码无法运行（例如代码引用了一个不存在的字段）。
-   - 新增表后首次被代码访问（只要表已存在且字段兼容，则无需重启）。
-
----
-
-## yshop（后端）
-
-**基本信息**
-
-| 属性 | 值 |
-|------|-----|
-| 应用名称 | yshop |
-| 技术栈 | Java 17 + Maven + Spring Boot |
-| 关联服务器 | `${SERVER_HOST}` |
-| 部署用户 | `${DEPLOY_USER}` |
-| 代码路径 | `${YSHOP_CODE_PATH}` |
-| 启动路径 | `${YSHOP_START_PATH}` |
-| JAR 文件 | `${YSHOP_JAR}` |
-
-**启动配置**
-
-- **Spring Profile**：测试环境启动时必须指定 `--spring.profiles.active=dev`（使用 `application-dev.yaml` 的数据库和日志配置）
-- **生产 Profile**：生产环境必须使用 `SPRING_PROFILES_ACTIVE=prod`；`start-yshop.sh` 会在 systemd 和裸进程两种路径中强制传递/注入该 Profile，禁止回退到 `local`
-- **日志级别**：`co.yixiang.yshop.module.device` 为 `DEBUG`（用于排查链科云打印等远程调用），其他业务模块 MyBatis Mapper 为 `DEBUG`，其余为 `INFO`
-- **环境变量**：测试环境启动时注入 `ADAPAY_DEBUG=true` 和 `AI_IMAGE_ENABLED=true`
-- **生产配置**：当前生产按 dev/test 方式由 `application-prod.yaml` 直接提供 DB、Redis、DMS、管理后台、H5 和 OCR 配置；启动脚本只强制传递 `SPRING_PROFILES_ACTIVE=prod`。后续统一密钥整改时再启用服务器端 secret 文件。
-- **生产 MQ**：当前未使用 RocketMQ、RabbitMQ、Kafka；`application-prod.yaml` 已排除三者自动配置，WebSocket 使用本地发送模式。
-
-**部署步骤**
-
-> 以下命令均假设已执行 `source governance/SCRIPTS/deploy-helper.sh && load_env <env>`，且在同一 shell 会话中运行。
+## 通用要求
 
 ```bash
-# 1. 拉取最新代码
-ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && git pull origin master"
+source governance/SCRIPTS/deploy-helper.sh && load_env test   # 或 prod
+```
 
-# 2. 备份当前 JAR
-ssh ${DEPLOY_USER}@${SERVER_HOST} "
-  if [ -f ${YSHOP_START_PATH}/target/${YSHOP_JAR} ]; then
-    cp ${YSHOP_START_PATH}/target/${YSHOP_JAR} ${YSHOP_START_PATH}/target/${YSHOP_JAR}.bak.\$(date +%Y%m%d%H%M%S)
+- 先测试、后生产；生产操作必须获得明确授权并避开业务高峰。
+- 测试和生产统一使用 JDK 21；首次部署先执行 `environment-provisioning.md`。
+- 部署前备份当前制品，部署后检查进程、日志、端口、commit 和关键接口。
+- 生产禁止执行 Maven 构建、下载依赖或手工修改 JAR。
+- 数据库迁移必须单独确认；只部署应用时不自动执行 SQL。
+
+## yshop 后端
+
+### 发布规则
+
+- 生产只使用测试环境当前运行且验证通过的 JAR。
+- 测试 JAR 必须同时满足：测试服务健康、JDK 21、完整 Git commit 可读、`application-prod.yaml` 已包含正确生产配置。
+- `application-prod.yaml` 不得保留本机数据库、Redis、DMS、MQ 默认地址或可替换环境变量占位配置。
+- 测试 JAR 下载和生产上传必须通过 SHA-256 校验；任何校验失败立即停止。
+- 生产必须以 `SPRING_PROFILES_ACTIVE=prod` 启动。当前生产不使用 RocketMQ、RabbitMQ、Kafka。
+
+### 发布步骤
+
+以下命令在同一 shell 中执行。测试环境实际由裸进程管理时，用进程和端口检查，不要求 systemd。
+
+```bash
+set -e
+source governance/SCRIPTS/deploy-helper.sh && load_env test
+TEST_HOST="$SERVER_HOST"; TEST_USER="$DEPLOY_USER"
+TEST_PATH="$YSHOP_START_PATH"; TEST_JAR="$YSHOP_JAR"; TEST_PORT="$YSHOP_PORT"
+
+# 1. 验证测试服务和 JAR
+ssh "$TEST_USER@$TEST_HOST" "
+  java -version 2>&1 | grep -q 'version \"21' \\
+  && ss -tlnp | grep -q ':${TEST_PORT}' \\
+  && ps -ef | grep '[j]ava -jar target/${TEST_JAR}' \\
+  && test -s '${TEST_PATH}/target/${TEST_JAR}'
+"
+ARTIFACT_COMMIT="$(ssh "$TEST_USER@$TEST_HOST" \
+  "unzip -p '${TEST_PATH}/target/${TEST_JAR}' BOOT-INF/classes/git.properties 2>/dev/null | sed -n 's/^git.commit.id.full=//p' | head -1")"
+test -n "$ARTIFACT_COMMIT"
+
+# 2. 确认 JAR 内的生产配置不是默认配置（命中即停止）
+ssh "$TEST_USER@$TEST_HOST" "
+  if unzip -p '${TEST_PATH}/target/${TEST_JAR}' BOOT-INF/classes/application-prod.yaml | \
+     grep -Eq '127\\.0\\.0\\.1:3306|YSHOP_DB_URL:|REDIS_HOST:127\\.0\\.0\\.1|DMS_HOST:.*127\\.0\\.0\\.1|ROCKETMQ_NAME_SERVER:127\\.0\\.0\\.1|RABBITMQ_HOST:127\\.0\\.0\\.1|KAFKA_BOOTSTRAP_SERVERS:127\\.0\\.0\\.1'; then
+    echo 'application-prod.yaml contains default production endpoints' >&2
+    exit 1
   fi
 "
 
-# 3. 停止旧进程（脚本自动识别 systemd/裸进程并轮询等待退出；原理见下方「注意」）
+# 3. 下载测试 JAR并计算校验值
+ARTIFACT_DIR="$(mktemp -d /tmp/yshop-release.XXXXXX)"
+ARTIFACT_FILE="$ARTIFACT_DIR/$TEST_JAR"
+scp "$TEST_USER@$TEST_HOST:$TEST_PATH/target/$TEST_JAR" "$ARTIFACT_FILE"
+ARTIFACT_SHA256="$(shasum -a 256 "$ARTIFACT_FILE" | awk '{print $1}')"
+
+# 4. 加载生产环境，确认生产服务使用 JDK 21
+source governance/SCRIPTS/deploy-helper.sh && load_env prod
+ssh "$DEPLOY_USER@$SERVER_HOST" "
+  test -x /usr/lib/jvm/java-21-openjdk/bin/java
+  systemctl cat yshop.service | grep -q '/usr/lib/jvm/java-21-openjdk/bin/java'
+"
+
+# 5. 上传临时文件并校验 SHA-256
+REMOTE_INCOMING="$YSHOP_START_PATH/target/.$YSHOP_JAR.$ARTIFACT_COMMIT.incoming"
+scp "$ARTIFACT_FILE" "$DEPLOY_USER@$SERVER_HOST:$REMOTE_INCOMING"
+REMOTE_SHA256="$(ssh "$DEPLOY_USER@$SERVER_HOST" "sha256sum '$REMOTE_INCOMING' | awk '{print \$1}'")"
+test "$ARTIFACT_SHA256" = "$REMOTE_SHA256"
+
+# 6. 备份、停止、替换并启动
+ssh "$DEPLOY_USER@$SERVER_HOST" "
+  cp '$YSHOP_START_PATH/target/$YSHOP_JAR' '$YSHOP_START_PATH/target/$YSHOP_JAR.bak.\$(date +%Y%m%d%H%M%S)'
+"
 bash governance/SCRIPTS/stop-yshop.sh
-
-# 4. 对比远端 commit 与 JAR 内嵌 commit，决定是否需要重新打包
-if ssh ${DEPLOY_USER}@${SERVER_HOST} "bash -s" < governance/SCRIPTS/check-jar-up-to-date.sh ${YSHOP_CODE_PATH} ${YSHOP_START_PATH} ${YSHOP_JAR}; then
-  echo "JAR is up-to-date, skipping build."
-else
-  # 5. 增量打包（不 clean，只编译变更模块及其上游依赖）
-  ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${YSHOP_CODE_PATH} && mvn -pl yshop-server -am package -DskipTests"
-fi
-
-# 6. 启动服务；测试环境会在脚本内注入 ADAPAY_DEBUG=true
+ssh "$DEPLOY_USER@$SERVER_HOST" "
+  mv '$REMOTE_INCOMING' '$YSHOP_START_PATH/target/$YSHOP_JAR'
+  unzip -p '$YSHOP_START_PATH/target/$YSHOP_JAR' BOOT-INF/classes/git.properties | grep -q '^git.commit.id.full=$ARTIFACT_COMMIT$'
+"
 bash governance/SCRIPTS/start-yshop.sh
 
-# 7. 验证服务是否启动（用 [j]ava 前缀排除 grep/SSH shell 自身的误匹配）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[j]ava -jar target/${YSHOP_JAR}'"
-
-# 8. 等待 Spring Boot 启动完成并验证端口（最多等 120s）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "
-  for i in \$(seq 1 120); do
-    if ss -tlnp | grep -q \":${YSHOP_PORT}\b\"; then
-      echo 'Port ${YSHOP_PORT} is listening'
-      break
-    fi
-    sleep 1
-  done
+# 7. 健康检查：最多等待 120 秒
+for i in $(seq 1 120); do
+  if ssh "$DEPLOY_USER@$SERVER_HOST" "ss -tlnp | grep -q ':$YSHOP_PORT'"; then break; fi
+  sleep 1
+done
+ssh "$DEPLOY_USER@$SERVER_HOST" "
+  systemctl is-active yshop.service
+  curl -fsS --max-time 5 http://127.0.0.1:$YSHOP_PORT/ >/dev/null
+  journalctl -u yshop.service --no-pager -n 30
 "
-# 检查启动结果
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${YSHOP_PORT}\b\""
 ```
 
-> **注意**：
-> - 执行本章节任何命令前，必须先 `source governance/SCRIPTS/deploy-helper.sh && load_env <env>`；每个独立的 shell/终端/脚本入口都要重新加载。
-> - 若启动失败并提示端口被占用，说明旧进程未停干净，执行 `fuser -k ${YSHOP_PORT}/tcp` 后重试。
-> - 测试环境启动 yshop 时必须通过 `governance/SCRIPTS/start-yshop.sh` 注入 `ADAPAY_DEBUG=true`；生产环境不得开启。
-> - 生产环境由 `systemd` 管理，必须通过 `systemctl start/stop yshop.service` 启停。
-> - 生产 `yshop.service` 必须设置或允许注入 `SPRING_PROFILES_ACTIVE=prod`；当前 DB、Redis 和外部服务地址由 `application-prod.yaml` 提供。
-> - **禁止**同时使用 `systemctl stop` 和 `pkill`。`Restart=on-failure` 的 systemd 服务在收到进程退出信号后会立刻重新拉起，此时再 `pkill` 反而会触发重启，导致短暂端口 8080 被占用，Spring Boot 启动失败。
-> - 停止旧进程后，应**轮询等待进程完全退出**（推荐方式见 `governance/SCRIPTS/stop-yshop.sh`），而非固定 `sleep 3`。
+### 回滚
 
-**健康检查**
+新 JAR 启动失败、端口未监听或健康检查失败时，立即停止服务，恢复部署前最新的 `.bak.<timestamp>` JAR，再执行 `start-yshop.sh` 并重新检查日志和接口。禁止改为在生产重新构建。
+
+## 管理后台
 
 ```bash
-# 检查当前 JAR 对应的 git commit id
-ssh ${DEPLOY_USER}@${SERVER_HOST} "unzip -p ${YSHOP_START_PATH}/target/${YSHOP_JAR} BOOT-INF/classes/git.properties 2>/dev/null | grep '^git.commit.id'"
-
-# 检查进程存活（用 [j]ava 前缀排除 grep/SSH shell 自身的误匹配）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep '[j]ava -jar target/${YSHOP_JAR}'"
-
-# 检查 systemd 服务状态（生产环境）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "systemctl status yshop.service --no-pager | head -15"
-
-# 检查日志（最近 50 行）— 优先查 systemd journal（生产环境日志可能不走文件回写）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "journalctl -u yshop.service --no-pager -n 30"
-
-# 检查端口监听
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${YSHOP_PORT}\b\""
-```
-
----
-
-## yshop-drink-vue（管理后台）
-
-**基本信息**
-
-| 属性 | 值 |
-|------|-----|
-| 应用名称 | yshop-drink-vue |
-| 技术栈 | Vue3 + Vite + pnpm |
-| 关联服务器 | `${SERVER_HOST}` |
-| 部署用户 | `${DEPLOY_USER}` |
-| 代码路径 | `${YSHOP_CODE_PATH}` |
-| 构建输出目录 | `dist/` |
-| Nginx 静态资源目录 | `${ADMIN_REMOTE_PATH}` |
-
-**部署步骤**
-
-```bash
-# 1. 本地构建（在 ${ADMIN_LOCAL_PATH}/ 目录下执行）
-cd ${ADMIN_LOCAL_PATH} && ${ADMIN_BUILD_CMD}
-
-# 2. 将构建产物打包为压缩包，减少小文件 SSH 传输 overhead
-#    macOS 上必须加 COPYFILE_DISABLE=1，否则会把 AppleDouble 元数据文件（._*）打进包里污染远端目录
-cd ${ADMIN_LOCAL_PATH}/dist
-COPYFILE_DISABLE=1 tar czf ../dist.tar.gz .
-
-# 3. 上传压缩包到服务器临时目录
-scp ${ADMIN_LOCAL_PATH}/dist.tar.gz ${DEPLOY_USER}@${SERVER_HOST}:${ADMIN_REMOTE_PATH}/../dist.tar.gz
-
-# 4. 在服务器上解压并整体替换 Nginx 静态资源目录
-ssh ${DEPLOY_USER}@${SERVER_HOST} "
-  cd ${ADMIN_REMOTE_PATH}/.. && \
-  rm -rf ${ADMIN_REMOTE_PATH} && \
-  mkdir -p ${ADMIN_REMOTE_PATH} && \
-  tar xzf dist.tar.gz -C ${ADMIN_REMOTE_PATH} && \
-  rm -f dist.tar.gz
+source governance/SCRIPTS/deploy-helper.sh && load_env prod
+cd "$ADMIN_LOCAL_PATH" && $ADMIN_BUILD_CMD
+cd dist && COPYFILE_DISABLE=1 tar czf ../dist.tar.gz .
+scp "$ADMIN_LOCAL_PATH/dist.tar.gz" "$DEPLOY_USER@$SERVER_HOST:$ADMIN_REMOTE_PATH/../dist.tar.gz"
+ssh "$DEPLOY_USER@$SERVER_HOST" "
+  cd '$ADMIN_REMOTE_PATH/..'
+  mv '$ADMIN_REMOTE_PATH' '${ADMIN_REMOTE_PATH}.bak' 2>/dev/null || true
+  mkdir -p '$ADMIN_REMOTE_PATH'
+  tar xzf dist.tar.gz -C '$ADMIN_REMOTE_PATH'
+  nginx -t && systemctl reload nginx
 "
-
-# 5. 验证文件已上传
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ls -la ${ADMIN_REMOTE_PATH}/ | head -20"
 ```
 
-> **说明**：
-> - 测试环境使用 `${ADMIN_BUILD_CMD}` 构建。如需构建生产环境版本，将对应环境的 `ADMIN_BUILD_CMD` 改为 `pnpm build:prod`。
-> - 使用 `tar.gz` 整体替换，避免 `scp -r` 逐个文件传输 1000+ 小文件的 SSH 握手开销；同时保证每次部署目录与本地 `dist/` 完全一致。
-> - macOS 打包务必带 `COPYFILE_DISABLE=1`，否则 `._*` AppleDouble 文件会混入远端 dist；若发现残留，用 `find ${ADMIN_REMOTE_PATH} -name '._*' -delete` 清理。
+部署后检查 `${ADMIN_REMOTE_PATH}` 文件和 Nginx 状态；失败时恢复 `.bak` 目录。
 
-**健康检查**
+## icepolar-dms
 
 ```bash
-# 检查静态资源目录
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ls -la ${ADMIN_REMOTE_PATH}/ | head -20"
-
-# 检查 Nginx 服务状态（如已配置）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "systemctl status nginx"
+source governance/SCRIPTS/deploy-helper.sh && load_env prod
+ssh "$DEPLOY_USER@$SERVER_HOST" "cd '$DMS_CODE_PATH' && git pull && source venv/bin/activate && pip install -r requirements.txt"
+ssh "$DEPLOY_USER@$SERVER_HOST" "cd '$DMS_CODE_PATH' && ./scripts/stop_main.sh || true && nohup ./scripts/start_main.sh -p '$DMS_PORT' --no-reload >/dev/null 2>&1 &"
+ssh "$DEPLOY_USER@$SERVER_HOST" "ss -tlnp | grep ':$DMS_PORT'"
 ```
-
----
-
-## icepolarminiapp（小程序）
-
-> TODO: 待补充
-
----
-
-## icepolar-dms（设备管理系统）
-
-**基本信息**
-
-| 属性 | 值 |
-|------|-----|
-| 应用名称 | icepolar-dms |
-| 技术栈 | Python + FastAPI |
-| 关联服务器 | `${SERVER_HOST}` |
-| 部署用户 | `${DEPLOY_USER}` |
-| 代码路径 | `${DMS_CODE_PATH}` |
-| 主服务启动脚本 | `${DMS_CODE_PATH}/scripts/start_main.sh` |
-| 模拟器启动脚本 | `${DMS_CODE_PATH}/scripts/start_simulator.sh` |
-| 启动端口 | `${DMS_PORT}` |
-
-**部署步骤**
-
-```bash
-# 1. 拉取最新代码
-ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${DMS_CODE_PATH} && git pull"
-
-# 2. 进入虚拟环境并安装/更新依赖
-ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${DMS_CODE_PATH} && source venv/bin/activate && pip install -r requirements.txt"
-
-# 3. 停止旧进程
-ssh ${DEPLOY_USER}@${SERVER_HOST} "kill \$(ps -ef | grep 'start_main.sh' | grep -v grep | awk '{print \$2}')" 2>/dev/null || true
-ssh ${DEPLOY_USER}@${SERVER_HOST} "kill \$(ps -ef | grep 'uvicorn app.main:app' | grep -v grep | awk '{print \$2}')" 2>/dev/null || true
-
-# 4. 进入虚拟环境并通过启动脚本启动主服务
-ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${DMS_CODE_PATH} && source venv/bin/activate && nohup ./scripts/start_main.sh -p ${DMS_PORT} --no-reload > /dev/null 2>&1 &"
-
-# 5. 验证服务是否启动
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep 'start_main.sh' | grep -v grep"
-```
-
-**健康检查**
-
-```bash
-# 检查进程存活
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep 'start_main.sh' | grep -v grep"
-
-# 检查日志（最近 50 行）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "tail -n 50 ${DMS_CODE_PATH}/scripts/main.log"
-
-# 检查端口监听
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${DMS_PORT}\b\""
-```
-
-**模拟器**
-
-```bash
-# 启动模拟器（按需）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "cd ${DMS_CODE_PATH} && source venv/bin/activate && nohup ./scripts/start_simulator.sh > /dev/null 2>&1 &"
-
-# 检查模拟器进程
-ssh ${DEPLOY_USER}@${SERVER_HOST} "ps -ef | grep 'start_simulator.sh' | grep -v grep"
-
-# 检查模拟器日志
-ssh ${DEPLOY_USER}@${SERVER_HOST} "tail -n 50 ${DMS_CODE_PATH}/scripts/simulator.log"
-```
-
----
 
 ## mock-external-server
 
-链科 Mock 部署在 `rprod18:/opt/holun/mock-external-server`，由
-`mock-external-server.service` 管理，监听 `127.0.0.1:8085`。首次初始化请先执行
-[`environment-provisioning.md`](environment-provisioning.md) 的对应章节。
-
-**发布**
-
-代码必须先提交并推送到 Gitee，生产机只执行 `pull`，不接收本地打包文件。提交完成后执行：
+代码提交并推送后，按 [`environment-provisioning.md`](environment-provisioning.md) 初始化，使用专用脚本部署和回滚：
 
 ```bash
-cd mock-external-server
-python3 -m pytest -q
-git add -A
-git commit -m "feat(mock): update external mock server"
-git push origin master
-cd ..
-
 source governance/SCRIPTS/deploy-helper.sh && load_env dev
 bash governance/SCRIPTS/deploy-mock-external-server.sh
+KNOWN_GOOD_COMMIT="replace-with-known-good-commit"
+bash governance/SCRIPTS/rollback-mock-external-server.sh "$KNOWN_GOOD_COMMIT"
 ```
 
-**健康检查**
+## 其他
 
-```bash
-ssh root@rprod18 "systemctl is-active mock-external-server.service && curl -fsS http://127.0.0.1:8085/health"
-ssh root@rprod18 "curl -fsS http://127.0.0.1:8085/api/external_api/printer_list"
-```
-
-生产管理接口应保持关闭；故障排查日志：
-
-```bash
-ssh root@rprod18 "journalctl -u mock-external-server.service --no-pager -n 50"
-```
-
-**回滚**
-
-```bash
-source governance/SCRIPTS/deploy-helper.sh && load_env dev
-bash governance/SCRIPTS/rollback-mock-external-server.sh <known-good-commit>
-```
-
-回滚完成后，下一次正常部署前执行 `git -C /opt/holun/mock-external-server switch master`，再按提交后的版本重新拉取。
-
----
-
-## 通用规则
-
-1. **测试优先** — 任何变更必须先部署到测试环境验证通过
-2. **禁止高峰期部署** — 生产环境部署需避开业务高峰时段
-3. **保留回滚能力** — 部署前备份当前运行的 JAR/构建产物
-4. **部署后验证** — 检查进程、日志、端口、git commit id、关键 API 响应
-5. **凭证管理** — 禁止在脚本中硬编码密码或密钥，使用 SSH key 或环境变量注入
-6. **增量编译** — 对比 JAR 内嵌的 git commit id 与远端 HEAD，相同则跳过打包；不同时用 `mvn -pl yshop-server -am package`（不加 `clean`）增量编译
+- `icepolarminiapp`：TODO，待补充发布流程。
+- 生产 MQ 当前未使用；启用前必须补充中间件部署、配置和回滚方案。

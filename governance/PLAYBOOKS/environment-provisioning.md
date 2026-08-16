@@ -22,8 +22,8 @@
 
 | 组件 | 用途 | 当前版本要求 |
 |------|------|-------------|
-| OpenJDK 17 | yshop 后端运行与打包 | 17 |
-| Maven 3.8+ | yshop 后端构建 | 3.8.x |
+| OpenJDK 21 | yshop 后端运行；测试环境打包 | 21 |
+| Maven 3.8+ | 测试环境 yshop 后端构建；生产不构建 | 3.8.x |
 | Node.js 18+ | yshop-drink-vue 构建 | 18.x |
 | pnpm 8+ | yshop-drink-vue 包管理 | 8.x |
 | Python 3.10+ | icepolar-dms 运行 | 3.10+ |
@@ -37,7 +37,7 @@
 
 ## 3. yshop 后端专用
 
-- [ ] 安装 OpenJDK 17
+- [ ] 安装 OpenJDK 21
 - [ ] 安装 Maven 3.8+
 - [ ] 创建代码目录 `${YSHOP_CODE_PATH}`
 - [ ] 配置 SSH key 登录 Gitee，确保可拉取仓库
