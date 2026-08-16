@@ -47,7 +47,7 @@
 - 新增 `business_region_destination` 表。
 - 字段：`id`、`tenant_id`、`business_region_id`、`dept_id`、`name`、`code`、`address`、`detail_address`、`lng`、`lat`、`tags`、`sort`、`creator`、`create_time`、`updater`、`update_time`、`deleted`。
 - 索引：`(tenant_id, business_region_id, sort)` 和 `(tenant_id, business_region_id, code)`。
-- 迁移文件：`backend/sql/upgrade-2026-08-05-business-region-destination.sql`。
+- 迁移文件：初始表结构使用已锁定的 `backend/sql/upgrade-2026-08-05-business-region-destination.sql`；历史环境补充 `detail_address` 字段使用 `backend/sql/upgrade-2026-08-17-business-region-destination-detail-address.sql`。
 - 回滚：删除该表及其索引；该操作会删除目的地维护数据，仅允许在部署回滚场景执行。
 
 ## 权限与数据范围
