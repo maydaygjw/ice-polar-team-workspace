@@ -75,8 +75,10 @@ POST /admin-api/device/print-job/retry-separator?orderNo={deviceOrderNo}
     "retryCount": 0,
     "snapshot": {
       "orderNo": "202608150001",
+      "orderSequence": 27,
       "shopName": "打印店",
       "fileName": "合同.docx",
+      "userAddress": "江苏省南通市崇川区测试路1号",
       "pageCount": 5,
       "copies": 2
     }
@@ -88,6 +90,7 @@ POST /admin-api/device/print-job/retry-separator?orderNo={deviceOrderNo}
 
 - `eligible=true` 只由服务端为文件打印订单写入；客户端不能控制是否跳过分隔页。
 - `enabled` 是正文任务提交时读取租户参数后的结果，配置缺失时为 `false`。
+- `orderSequence` 和 `userAddress` 是业务订单创建时写入的展示快照，分隔页重试不重新读取业务订单。
 - `snapshot` 只保存下单时已确认的业务字段，不保存 `deviceKey`、ApiKey 或其他凭证。
 - `documentTaskId` 保存正文任务 ID；`taskId` 列保存当前活动任务 ID。
 - `objectKey` 和 `expiresAt` 指向分隔页临时 OSS 对象；不长期保存带签名的读取 URL。

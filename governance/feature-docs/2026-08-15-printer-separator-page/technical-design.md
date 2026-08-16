@@ -116,13 +116,15 @@ yshop-module-device-biz-print/src/main/resources/templates/printer/separator-v1.
 
 ```text
 orderNo       业务订单编号
+orderSequence 订单每日序号
 shopName      门店名称
 fileName      文件名
+userAddress   收货地址
 pageCount     正文页数
 copies        打印份数
 ```
 
-第一版模板读取以上全部字段。`orderNo` 使用 `DeviceOrderDO.bizOrderId`；管理端直接创建且没有业务订单号时，使用设备订单 `orderNo` 作为兼容回退。文本字段缺失时渲染为“-”，数值字段缺失时渲染为 `0` 或“-”。
+第一版模板读取以上全部字段。`orderNo` 使用 `DeviceOrderDO.bizOrderId`；管理端直接创建且没有业务订单号时，使用设备订单 `orderNo` 作为兼容回退。`orderSequence` 和 `userAddress` 从业务订单读取后写入订单创建时的快照。文本字段缺失时渲染为“-”，数值字段缺失时渲染为 `0` 或“-”。
 
 ### 4.3 临时 OSS 文件
 
