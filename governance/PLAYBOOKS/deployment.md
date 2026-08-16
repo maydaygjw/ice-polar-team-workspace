@@ -73,8 +73,11 @@
 **启动配置**
 
 - **Spring Profile**：测试环境启动时必须指定 `--spring.profiles.active=dev`（使用 `application-dev.yaml` 的数据库和日志配置）
+- **生产 Profile**：生产环境必须使用 `SPRING_PROFILES_ACTIVE=prod`；`start-yshop.sh` 会在 systemd 和裸进程两种路径中强制传递/注入该 Profile，禁止回退到 `local`
 - **日志级别**：`co.yixiang.yshop.module.device` 为 `DEBUG`（用于排查链科云打印等远程调用），其他业务模块 MyBatis Mapper 为 `DEBUG`，其余为 `INFO`
 - **环境变量**：测试环境启动时注入 `ADAPAY_DEBUG=true` 和 `AI_IMAGE_ENABLED=true`
+- **生产密钥**：服务器必须存在 `${YSHOP_SECRET_ENV_FILE}`，权限为 `root:root`、`0600`；变量清单见 `governance/ENVIRONMENTS/prod.secrets.env.example`。启动脚本会在启动前校验 DMS、管理后台、H5 及其他外部配置，缺项直接失败。DB/Redis 密码和 OCR 当前按现有 dev/test 方式直接写在 `application-prod.yaml`，后续统一整改。
+- **生产 MQ**：当前未使用 RocketMQ、RabbitMQ、Kafka；`application-prod.yaml` 已排除三者自动配置，WebSocket 使用本地发送模式。
 
 **部署步骤**
 
@@ -127,6 +130,7 @@ ssh ${DEPLOY_USER}@${SERVER_HOST} "ss -tlnp | grep \":${YSHOP_PORT}\b\""
 > - 若启动失败并提示端口被占用，说明旧进程未停干净，执行 `fuser -k ${YSHOP_PORT}/tcp` 后重试。
 > - 测试环境启动 yshop 时必须通过 `governance/SCRIPTS/start-yshop.sh` 注入 `ADAPAY_DEBUG=true`；生产环境不得开启。
 > - 生产环境由 `systemd` 管理，必须通过 `systemctl start/stop yshop.service` 启停。
+> - 生产 `yshop.service` 必须允许继承 `systemctl set-environment` / `import-environment` 注入的应用变量；如 unit 使用固定 `EnvironmentFile`，应指向 `${YSHOP_SECRET_ENV_FILE}`，并设置 `Environment=SPRING_PROFILES_ACTIVE=prod`。
 > - **禁止**同时使用 `systemctl stop` 和 `pkill`。`Restart=on-failure` 的 systemd 服务在收到进程退出信号后会立刻重新拉起，此时再 `pkill` 反而会触发重启，导致短暂端口 8080 被占用，Spring Boot 启动失败。
 > - 停止旧进程后，应**轮询等待进程完全退出**（推荐方式见 `governance/SCRIPTS/stop-yshop.sh`），而非固定 `sleep 3`。
 
