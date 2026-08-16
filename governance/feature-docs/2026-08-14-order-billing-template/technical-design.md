@@ -86,7 +86,7 @@ attribute theoretical  = round(orderAttribute, 2, HALF_UP)
 2. 校验所有非零主体均有启用且已绑定结算账户的收款人；商家未绑定时保持待配置，不调用 AdaPay。
 3. 创建或更新现有 `yshop_adapay_profit_sharing_order`，`calculation_type` 新增“通用计费模板”。
 4. 每个主体汇总映射为一条 `yshop_adapay_profit_sharing_order_item`，保存通用主体汇总关联和收款人快照。
-5. 手续费承担主体对应明细的 `fee_flag=1`，其余为 0。
+5. 模板明细勾选项对应的收款主体汇总为手续费承担方，写入 `fee_bearer=1` 并映射到 AdaPay 明细的 `fee_flag=1`；同一收款人的多条明细先合并再保留一个标记，其余主体为 0。
 6. 后续仍使用现有 AdaPay 延迟分账状态机、日终任务、重试和失败回退机制。
 
 旧 `role` 与 `fee_bearer_role` 保留供历史数据展示；新模型以收款人/主体汇总 ID 为路由依据，不再依赖固定四角色枚举。

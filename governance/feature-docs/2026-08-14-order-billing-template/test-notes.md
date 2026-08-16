@@ -2,15 +2,17 @@
 
 ## 当前状态
 
-本次交付范围仅为需求、设计、契约、UI/UX 和测试计划文档，未修改 backend/admin 实现，因此未执行功能测试、构建或 E2E。
+本次增量交付实现计费模板明细手续费承担方配置、单选约束和主体汇总归并；数据库迁移与功能 E2E 仍需在测试环境验证。
 
 | 验证项 | 结果 | 说明 |
 |---|---|---|
 | 文档结构 | 通过 | 需求、技术设计、契约、UI/UX 与测试计划已分离并完成交叉审校。 |
 | Meta YAML 解析 | 通过 | `meta.yaml` 可被 Ruby YAML 解析。 |
 | Markdown 行尾空白检查 | 通过 | 本功能文档未发现行尾空白。 |
-| Backend 测试 | 未执行 | 无实现变更。 |
-| Admin 类型检查/构建 | 未执行 | 无实现变更。 |
+| Backend pay 模块编译 | 通过 | `mvn -pl yshop-module-pay/yshop-module-pay-biz -am -DskipTests compile`。 |
+| Backend pay 模块测试 | 基线失败 | 本次改动未引入编译错误；仓库既有 `YuePayServiceTest` 3 个 NPE 和 `ProfitRecipientServiceImplTest` 1 个断言失败。 |
+| Admin ESLint（本次文件） | 通过 | `pnpm exec eslint src/api/pay/billingTemplate.ts src/views/finance/billing-template/index.vue`。 |
+| Admin 类型检查 | 基线失败 | `pnpm ts:check` 报告仓库既有全局类型、组件和 canvas 模块错误，未出现本次修改文件错误。 |
 | E2E | 未执行 | 用例尚未实现。 |
 
 ## 实现阶段待记录

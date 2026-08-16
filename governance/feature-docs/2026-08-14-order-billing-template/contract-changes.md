@@ -49,8 +49,6 @@
 | `businessRegionId` | Long | 条件 | 非默认模板必填；必须属于本租户。 |
 | `shopTagId` | Long | 否 | 必须属于本租户；默认模板必须为空。 |
 | `priority` | Integer | 是 | 0–9999，数值越大优先级越高。 |
-| `feeBearerMode` | String | 是 | `FIXED_RECIPIENT` / `CURRENT_MERCHANT`。 |
-| `feeBearerRecipientId` | Long | 条件 | `FIXED_RECIPIENT` 时必填且收款人有效。 |
 | `status` | Integer | 是 | `0=停用, 1=启用`。 |
 | `lines` | Array | 是 | 至少一条，整单校验后原子保存。 |
 
@@ -63,6 +61,7 @@
 | `percentage` | Decimal | 条件 | 比例项必填，0–100，最多 4 位小数；属性项必须为空且请求不得传值。 |
 | `recipientMode` | String | 是 | `FIXED_RECIPIENT` / `CURRENT_MERCHANT`。 |
 | `recipientId` | Long | 条件 | `FIXED_RECIPIENT` 时必填且为启用中的本租户收款人。 |
+| `feeBearer` | Integer | 否 | `0=否, 1=是`；同一模板最多一条明细可为 `1`，多条明细合并为同一收款主体时由主体汇总承担手续费。 |
 | `sort` | Integer | 是 | 0–9999；同值按明细 ID 升序。 |
 
 ### 管理后台：应收应付
@@ -105,7 +104,7 @@
 
 ## 数据库契约
 
-迁移脚本：`backend/sql/upgrade-2026-08-14-order-billing-template.sql`。新业务表均包含 `tenant_id`、审计字段和逻辑删除字段；金额使用 `decimal(12,2)`，比例使用 `decimal(7,4)`。
+迁移脚本：`backend/sql/upgrade-2026-08-14-order-billing-template.sql`、`backend/sql/upgrade-2026-08-16-billing-template-fee-bearer.sql`。新业务表均包含 `tenant_id`、审计字段和逻辑删除字段；金额使用 `decimal(12,2)`，比例使用 `decimal(7,4)`。
 
 ### `yshop_pay_billing_item`
 
@@ -133,8 +132,6 @@
 | `business_region_id` | bigint NULL | 商圈 ID；默认模板为空。 |
 | `shop_tag_id` | bigint NULL | 可选门店标签 ID。 |
 | `priority` | int NOT NULL DEFAULT 0 | 匹配优先级，数值越大越优先。 |
-| `fee_bearer_mode` | varchar(32) NOT NULL | 手续费承担方类型：固定收款人或当前商家。 |
-| `fee_bearer_recipient_id` | bigint NULL | 固定手续费承担收款人 ID。 |
 | `status` | tinyint NOT NULL DEFAULT 1 | 0=停用，1=启用。 |
 
 每个租户最多有一个启用的全局默认模板。
@@ -153,6 +150,7 @@
 | `percentage` | decimal(7,4) NULL | 计费比例，订单比例类型必填。 |
 | `recipient_mode` | varchar(32) NOT NULL | 收款主体类型：固定收款人或当前商家。 |
 | `recipient_id` | bigint NULL | 固定收款人 ID。 |
+| `fee_bearer` | varchar(32) NOT NULL DEFAULT '0' | 是否由该明细对应的收款方承担支付通道手续费：0=否，1=是。 |
 | `sorted` | int NOT NULL DEFAULT 0 | 金额分配顺序。 |
 
 约束：服务端根据 `billingItemId` 对应计费项的 `calculation_type` 做条件校验。`ORDER_ATTRIBUTE` 明细不接受 `base_type` 或 `percentage`，计算时直接读取计费项绑定的订单属性金额；这两个字段在数据库中保持 `NULL`。
