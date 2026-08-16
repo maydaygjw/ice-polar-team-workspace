@@ -2,7 +2,7 @@
 
 > 前端对接文档。所有接口统一返回 `CommonResult`：`{ code, msg, data }`，`code = 0` 表示成功，非 0 时 `msg` 为错误文案，直接 toast 即可。
 >
-> 除「城市列表」外均需登录，请求头：`Authorization: Bearer <token>`。
+> 除「城市列表」和「商圈目的地列表」外，其他地址接口均需登录；地址写操作只能操作当前登录用户自己的地址。登录请求头：`Authorization: Bearer <token>`。
 >
 > 源码：`backend/yshop-module-member/.../controller/app/address/AppUserAddressController.java`
 
@@ -13,6 +13,7 @@
 | POST | `/app-api/address/del/{id}` | 删除地址 | ✅ |
 | POST | `/app-api/address/default/set/{id}` | 设置默认地址 | ✅ |
 | GET | `/app-api/address/city_list` | 城市列表（省市区三级树） | ❌ |
+| GET | `/app-api/business-region/destination/list` | 商圈目的地列表 | ❌ |
 
 ---
 
@@ -46,7 +47,8 @@
       "detail": "文三路 100 号 1 幢 502",
       "longitude": "120.15507",
       "latitude": "30.27415",
-      "isDefault": 1
+      "isDefault": 1,
+      "destinationId": 10001
     }
   ]
 }
@@ -77,6 +79,8 @@
 | longitude | string | 否 | 经度 |
 | latitude | string | 否 | 纬度 |
 | isDefault | int | 否 | 1 = 默认，0 = 否 |
+| businessRegionId | long | 否 | 当前地址关联的商圈；用于校验目的地是否必填 |
+| destinationId | long | 否 | 关联的商圈目的地；商圈启用目的地时必填 |
 
 **请求样例**
 
@@ -93,7 +97,9 @@
   "postCode": "310000",
   "longitude": "120.15507",
   "latitude": "30.27415",
-  "isDefault": 1
+  "isDefault": 1,
+  "businessRegionId": 1001,
+  "destinationId": 10001
 }
 ```
 
@@ -107,6 +113,17 @@
 
 1. 传 `isDefault=1` 时，后端先把该用户所有地址置为非默认再保存，默认地址唯一。
 2. 修改走 `updateById`：字段传 null 不会覆盖旧值（无法清空）；`province/city/district` 不传则保留旧值。
+3. 当 `businessRegionId` 对应商圈启用目的地时，`destinationId` 必须填写，且必须属于该商圈；订单使用地址时后端还会再次校验。
+
+## 商圈目的地列表 `GET /app-api/business-region/destination/list`
+
+**Query 参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| businessRegionId | long | 是 | 商圈编号 |
+
+返回该商圈下的目的地列表。会员端应先读取商圈的 `enableDestination` 参数，启用时展示目的地选择，并将选中的 `destinationId` 与地址一起提交。
 
 ---
 

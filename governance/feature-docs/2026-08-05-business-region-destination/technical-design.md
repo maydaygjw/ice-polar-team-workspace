@@ -12,6 +12,7 @@
 - Controller 采用 `/business-region/destination/*`，沿用商圈管理权限 `store:business-region:{query,create,update,delete}`，避免新增侧边栏菜单权限和角色授权迁移。
 - 前端目的地页作为隐藏静态路由，由商圈列表按钮带 `businessRegionId` 查询参数打开，因此显示为后台标签页但不出现在侧边栏。
 - 代码、标签均为可选文本；排序默认 0，列表按排序升序、ID 降序排列。
+- `address` 保存地图取点返回的地址；`detailAddress` 为可选人工填写的详细地址，仅用于记录，不参与地图取点。
 
 ## 风险与兼容
 
