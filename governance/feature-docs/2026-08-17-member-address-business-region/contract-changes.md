@@ -20,6 +20,14 @@
 
 地址列表响应增加 `businessRegionId`，继续返回 `destinationId`。
 
+地址列表接口支持按商圈过滤，并返回目的地完整信息：
+
+```text
+GET /app-api/address/list?page=1&limit=50&businessRegionId={id}
+```
+
+地址项保留 `destinationId`，并新增 `destination` 对象，包含目的地的 `id`、`businessRegionId`、`name`、`code`、`address`、`detailAddress`、`lng`、`lat`、`tags`、`sort` 字段。未传 `businessRegionId` 时保持查询当前用户全部地址。
+
 ## 管理端接口
 
 `/admin-api/member/user-address/get`、`/page`、`/create`、`/update` 的地址 DTO 增加 `businessRegionId`。
