@@ -18,5 +18,5 @@
 
 ## 交付说明
 
-- 未执行 commit、push 或 PR。
+- 已完成本地 commit；未执行 push 或创建 PR。
 - 部署前需执行 `backend/sql/upgrade-2026-08-17-wecom-customer-group-tags.sql`。
