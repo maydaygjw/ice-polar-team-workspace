@@ -28,10 +28,11 @@
 打印店复用现有「门店管理」，打印机复用现有「商品管理」，均不新增界面。
 - 打印任务管理（`/admin-api/mall/device/print-job/...`）：分页列表、详情、`POST .../query`（主动查链科状态）、`POST .../cancel`、`POST .../retry`。
 - 权限：`device:print-job:*`（待对齐现有 device 权限命名）。
+- 新建/预览文件扩展名：`pdf/doc/docx/png/jpg/jpeg/gif/bmp/tiff`；图片按 1 页计价，PDF/Office 文档由链科解析页数。
 
 ### App（下单计价，新增）
 - 打印下单请求新增：`fileKey`/文件标识、SKU 基础规格、纸张/颜色等 `optionSelections`、份数。
-- 后端调用链科文件页数接口获取 `pageCount`，失败时拒绝创建订单。
+- 文件打印支持 `pdf/doc/docx/png/jpg/jpeg/gif/bmp/tiff`；图片按 1 页计价，PDF/Office 文档调用链科文件页数接口获取 `pageCount`，失败时拒绝创建订单。
 - 计价：打印专属计价器，价格 =（SKU 基础单价 + Option 加价）× 页数 × 份数；不影响普通商品价格接口。
 
 ## 3. DB
