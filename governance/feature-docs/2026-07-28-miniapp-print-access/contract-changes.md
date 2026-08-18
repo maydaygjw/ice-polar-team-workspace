@@ -98,9 +98,9 @@ backend 组装 `OrderVO`，映射规则：
 
 | OrderVO 字段 | 来源 | 备注 |
 |---|---|---|
-| `merchantUserId` | **门店配送商户号**(`StoreShopDO.deliveryMerchantNo`) | 不写死；发布单时按 deviceCode(=shopCode）查店铺实时取。未配置时不发单 |
+| `merchantUserId` | **订单目的地代码**(`business_region_destination.code`) | 通过订单收货地址的 `destinationId` 查询目的地实时取得；未配置目的地或代码时不发单 |
 | `bizRegionCode` | **店铺商圈 id**(`StoreShopDO.businessRegionId`) | 不写死；yshop 无独立 regionCode 字段，用商圈主键，与 brick RegionVO id 已打通一致 |
-| `destinationId` | **下单人收货地址 id**(`StoreOrderDO.addressId` → `UserAddressDO.id`) | 不写死；与 brick DestinationVO id 已打通一致 |
+| `destinationId` | **下单人收货地址关联的目的地 id**(`UserAddressDO.destinationId`) | 不写死；与 brick DestinationVO id 已打通一致 |
 | `destinationId` | 用户收货楼宇 | 必须能查 DestinationVO |
 | `totalFee` | 业务订单金额 | |
 | `clientPhone` / `clientContact` / `expressAddress` | 订单收货信息 | |
@@ -170,7 +170,7 @@ GET /app-api/order/delivery/progress?orderNo=
 
 - `yshop_device_order`：`extra_params` JSON 扩展（不新增列），存放配送快照：
   `deliveryOrderId`(平台 id)、`deliveryUid`、`deliveryStatus`、`riderName`、`riderMobile`、`destinationId`、`bizRegionCode`、`deliveryEvents[]`(幂等去重键+状态时间线，或独立事件表，实现时二选一)。
-- `merchantUserId`/`bizRegionCode`/`destinationId`：发布单时从店铺/订单实时取（门店配送商户号、businessRegionId、收货地址 id）；`merchantUserId` 不允许使用店铺主键兜底，未配置时不发单。
+- `merchantUserId`/`bizRegionCode`/`destinationId`：发布单时从订单关联的目的地与店铺实时取（目的地 code、businessRegionId、目的地 id）；`merchantUserId` 不允许使用店铺主键或门店配送商户号兜底，未配置目的地 code 时不发单。
 - 均含租户/审计字段；不破坏存量列；不新增唯一约束。
 
 ## 5. MQ / 状态推送

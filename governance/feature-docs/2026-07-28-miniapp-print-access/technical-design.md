@@ -27,7 +27,7 @@ brick 配送与链科打印同属"打印订单履约"外部系统，且触发点
 
 ### D2 出向：发布配送单（brick publishById）
 `DeviceOrder` SUCCEEDED → `PrintDeliveryGateway.dispatch` → `BrickDeliveryGateway.publish`。
-- 组装 `OrderVO`：`merchantUserId`=现有商家 ID、`bizRegionCode`=现有商圈号、`orderSourceType=YXG`、`uid`=业务订单号、`sourceId`=订单日序号、`sourceIdList=[{sourceId,"YXG"}]`、`totalFee`、`clientPhone/Contact/expressAddress`、`callback_url`=配置拼接的本系统回调地址。
+- 组装 `OrderVO`：`merchantUserId`=订单目的地 code、`bizRegionCode`=现有商圈号、`destinationId`=订单地址关联的目的地 ID、`orderSourceType=YXG`、`uid`=业务订单号、`sourceId`=订单日序号、`sourceIdList=[{sourceId,"YXG"}]`、`totalFee`、`clientPhone/Contact/expressAddress`、`callback_url`=配置拼接的本系统回调地址。
 - **三条铁律落到代码**：`sourceIdList` 非空才发；顶层 `sourceId`=`sourceIdList[0].sourceId`；查重 key=`merchantName+orderSourceType+sourceId+uid`。
 - 复用 `HttpClientUtils`，新增 `access-token` 请求头（配置 `holun.delivery.token`，仅服务端）。
 - 响应 `code="200"`（字符串）为成功；解析 `data[]` 取平台 `id`/`uid` 落库到 `DeviceOrderDO.extra_params`。
@@ -38,7 +38,7 @@ brick 配送与链科打印同属"打印订单履约"外部系统，且触发点
 - 与链科 `AppPrintCallbackController` 同模式：try-catch 全包裹、始终返回 200、异常只记日志（brick 不重试，抛出即丢状态）。
 - **先落库/入队再异步推进**：回调入口只做"解析+幂等去重+落库配送事件"，`businessStatus` 推进异步执行，避免阻塞响应。
 - **幂等**：以 `platformOrderId(id) + orderState` 为去重键；重复/乱序直接返回成功不转移。
-- 校验：`uid` 匹配本地配送单（`DeviceOrderDO.extra_params.deliveryUid`）；`merchantUserId` 属本地商家。
+- 校验：`uid` 匹配本地配送单（`DeviceOrderDO.extra_params.deliveryUid`）；`merchantUserId` 使用订单目的地 code，并与 brick 目的地主数据一致。
 - yaml 白名单新增该路径免登录（配送平台无租户上下文，靠 `uid` 校验+路径防护）。
 
 ### D4 状态映射（brick orderState → 业务 businessStatus）
@@ -94,7 +94,7 @@ C 端轮询:
   `deliveryOrderId`、`deliveryUid`、`deliveryStatus`、`riderName`、`riderMobile`、`destinationId`、`bizRegionCode`、`deliveryEvents[]`(状态+时间，幂等去重兼时间线)。
   > 事件量小（单订单 ≤ ~8 条），先存 `extra_params.deliveryEvents`；若后续需独立查询/轨迹再抽事件表。
 - 白名单：`application.yaml` 新增 `/app-api/device/printer/delivery/callback` 免登录（随代码，非 SQL）。
-- 不改店铺表（merchantUserId/bizRegionCode 用现有商家/商圈）；不新增表/列/唯一约束；不动 ICE_MAKER 路径。
+- 不改店铺表（bizRegionCode 用现有商圈；merchantUserId/destinationId 用订单关联目的地）；不新增表/列/唯一约束；不动 ICE_MAKER 路径。
 
 ## 5. 风险
 
