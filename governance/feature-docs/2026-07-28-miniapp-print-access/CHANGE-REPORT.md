@@ -29,7 +29,7 @@
   - `POST /app-api/device/printer/delivery/callback` — brick 配送状态回调（白名单免登录）
 - 外部系统：霍伦 brick `POST /order/order/publishById`（出向，`access-token` 走配置 `BRICK_DELIVERY_TOKEN`）；配送状态 HTTP 回调（入向）。
 - DB：无新增表/列；配送快照存 `yshop_device_order.extra_params` JSON；无升级 SQL。
-- 配置：新增 `yshop.delivery.brick.*`（host/token/orderSourceType=YXG/callbackBaseUrl）；token 走环境变量。**merchantUserId/bizRegionCode/destinationId 不配置**，发布单时从店铺/订单关联目的地实时取（目的地 code、businessRegionId、目的地 id），需与 brick 主数据一致。
+- 配置：新增 `yshop.delivery.brick.*`（host/token/orderSourceType=YXG/callbackBaseUrl）；token 走环境变量。**merchantUserId/bizRegionCode/destinationId 不配置**，发布单时从店铺/订单关联目的地实时取（deliveryMerchantNo、businessRegionId、目的地 id），需与 brick 主数据一致。
 - MQ：无新增；复用 `DeviceOrder` 状态推进 + 本地事件。
 
 ## Verification
