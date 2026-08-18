@@ -1,0 +1,8 @@
+feature: wecom-material-management
+status: done
+risk: medium
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: true
+blocked: false
