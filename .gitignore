@@ -28,3 +28,6 @@ governance/ENVIRONMENTS/cert/
 governance/ENVIRONMENTS/*.secrets.env
 .worktrees/
 .playwright-cli/
+
+# Generated backend API contract snapshot
+governance/CONTRACT/backend-api.json
