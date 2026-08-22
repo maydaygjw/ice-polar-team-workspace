@@ -1,0 +1,8 @@
+feature: wecom-shared-callback-routing
+status: done
+risk: high
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: false
+blocked: false
