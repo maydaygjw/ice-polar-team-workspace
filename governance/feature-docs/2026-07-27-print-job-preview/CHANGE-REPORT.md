@@ -2,7 +2,7 @@
 
 ## 业务结果
 
-管理后台「打印任务」页新增「新建打印任务」入口，提供**打印预览**：选店铺、上传 PDF/Word、选纸张/颜色/份数后，返回文件页数与计价（基础价/Option 加价/应付总额）。**本期不真实打印**——不提交链科、不创建订单/设备订单、不产生 taskId，确认即关闭，不留记录。
+管理后台「打印任务」页新增「新建打印任务」入口，提供**打印文件预览图**：选店铺、上传文件、选纸张/颜色/份数后，提交异步预览任务并展示文件图片。**本期预览不计算页数、不计价、不真实打印**——不创建订单/设备订单；页数和价格由独立计价接口负责。
 
 顺带完成 product 域重构：`ProductApi.regenerateProductOptions` 去除打印语义，「纸张/颜色」概念收回 device 调用方。
 
@@ -20,14 +20,13 @@
 
 ## 验证结果
 
-- `mvn -pl yshop-server -am package -DskipTests`: pass
+- `mvn -pl yshop-module-device/yshop-module-device-biz-print -am -Dtest=PrintJobPreviewServiceTest -Dsurefire.failIfNoSpecifiedTests=false test`: pass
 - `pnpm build:prod`: pass
-- `vue-tsc --noEmit`（printJob 相关）: pass
-- 单测：编译通过；本机 Mockito 环境限制未运行通过（基线同病），建议 CI 补跑
+- `pnpm ts:check`：打印任务相关文件无错误；存在既有 `printJob/index.vue` 类型错误
 
 ## 残余风险
 
-- 预览价源取店铺文件打印类目首个有效商品（K1）；Option 未命中按 0 计价（K2）。详见 review-report.md。
+- 页数/计价仍取店铺文件打印类目首个有效商品（K1）；Option 未命中按 0 计价（K2），仅影响独立计价接口。详见 review-report.md。
 
 ## 建议 PR
 

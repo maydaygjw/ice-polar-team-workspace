@@ -2,11 +2,11 @@
 
 ## API 变更（admin）
 
-新增（不真实打印，纯预览计算）：
+新增（不真实打印；页数/计价与图片预览分离）：
 
 | 方法 | 路径 | 说明 | 权限 |
 |------|------|------|------|
-| POST | `/admin-api/device/print-job/preview` | 打印预览：取页数 + 计价，并提交链科预览图任务，返回 `taskId` | `device:print-job:create` |
+| POST | `/admin-api/device/print-job/preview` | 图片预览：校验设备规格并提交链科预览图任务，不取页数、不计价，返回 `taskId` | `device:print-job:create` |
 | GET | `/admin-api/device/print-job/preview-result` | 轮询预览图：按 `taskId` 返回 `taskState`/`previewImages[]`/`taskTicket` | `device:print-job:create` |
 
 ### 请求 `PrintJobPreviewReqVO`
@@ -18,18 +18,20 @@
 | `fileExt` | String | 是 | 文件扩展名：`pdf`/`doc`/`docx` |
 | `paperName` | String | 是 | 纸张 Option 名（用于解析 dmPaperSize 与 Option 加价） |
 | `colorName` | String | 是 | 颜色 Option 名（用于解析 dmColor 与 Option 加价） |
+| `orientationName` / `duplexName` | String | 否 | 方向/双面 Option 名 |
 | `copies` | Integer | 是 | 份数，≥1 |
+| `jpPageRange` | String | 否 | 预览页码范围，如 `1,2,3,4,5-10`；空=全部页，`-1`=奇数页，`-2`=偶数页 |
 
 ### 响应 `PrintJobPreviewRespVO`
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `pageCount` | Integer | 文件实际页数（链科 file_pages） |
-| `unitPrice` | BigDecimal | 单价 = SKU 基础价 + Option 加价 |
-| `basePrice` | BigDecimal | SKU 基础单价 |
-| `optionDelta` | BigDecimal | Option 加价合计 |
+| `pageCount` | Integer | 文件实际页数；图片预览接口不返回，由独立计价接口提供 |
+| `unitPrice` | BigDecimal | 单价；图片预览接口不返回 |
+| `basePrice` | BigDecimal | SKU 基础单价；图片预览接口不返回 |
+| `optionDelta` | BigDecimal | Option 加价合计；图片预览接口不返回 |
 | `copies` | Integer | 份数 |
-| `totalPrice` | BigDecimal | 应付 = unitPrice × pageCount × copies |
+| `totalPrice` | BigDecimal | 应付 = unitPrice × pageCount × copies；图片预览接口不返回 |
 | `deviceModel` | String | 打印机型号（展示用） |
 | `paperName` / `colorName` | String | 回显所选规格 |
 | `taskId` | String | 链科预览图任务 ID（isPreview=1 提交返回），用于轮询 preview-result |
@@ -48,7 +50,7 @@
 | `taskTicket` | String | 链科预览任务凭证（仅返回前端，不落库） |
 | `resultCode` / `resultMsg` | Integer/String | 失败时链科 task_result.code/msg（如 502 设备端下载文件失败） |
 
-复用：`PrinterGateway.getFilePages`、`PrintSpecResolver`(dmPaperSize/dmColor)、`ProductOptionOrderApi.priceAndValidate`（Option 计价）。
+图片预览复用：`PrintSpecResolver`（dmPaperSize/dmColor）；页数/计价接口单独复用 `PrinterGateway.getFilePages` 与 `ProductOptionOrderApi.priceAndValidate`。
 抽取：`PrinterOrderService` 打印计价段抽为可复用方法，下单与预览共用同一口径。
 
 ## DB 变更
@@ -63,7 +65,9 @@
 
 ## MQ / 外部系统
 
-- 调用链科 `file_pages`（已封装）取页数计价。
+- `/admin-api/device/print-job/preview` 不调用链科 `file_pages`，只提交 `isPreview=1` 预览任务。
+- `jpPageRange` 原样透传链科，用于限制预览页码范围。
+- 页数/计价由独立的 C 端 `/app-api/device/printer/page-count` 提供。
 - 预览图：调用链科 `POST /print/job`（`isPreview=1`）提交预览任务 + `GET /print/job` 轮询取 `img_list`（已实测），仍不真实打印、不下发打印机。
 - 不触发 MQ、不注册回调。
 

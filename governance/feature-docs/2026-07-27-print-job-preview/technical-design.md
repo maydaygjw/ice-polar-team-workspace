@@ -34,20 +34,21 @@
 
 ### D4 价源：店铺文件打印类目首个有效商品
 
-预览需挂到一个打印商品取 SKU 基础价与 Option 加价（计价必须有价源）。取「店铺文件打印类目首个有效商品」（`listProductsByCategoryNames(shopId, ["文件打印"])` 首个）。记录为已知缺口 K1：多文件打印商品时价可能因商品不同而异，后续可扩展为指定商品。
+计价需挂到一个打印商品取 SKU 基础价与 Option 加价（计价必须有价源）。取「店铺文件打印类目首个有效商品」（`listProductsByCategoryNames(shopId, ["文件打印"])` 首个）。记录为已知缺口 K1：多文件打印商品时价可能因商品不同而异，后续可扩展为指定商品。
 
-### D5 不真实打印 → 无状态、无落库
+### D5 图片预览与计价分离 → 无状态、无落库
 
-预览纯计算：仅读设备/商品/Option + 调链科 file_pages，**无任何 insert/update**，不创建设备订单/业务订单、不提交链科、不注册回调、不触发 MQ。因此无需幂等、无需退款、无需回调地址。
+图片预览只读设备和打印规格，并提交链科 `isPreview=1` 异步任务；页数/价格由独立计价接口仅读设备/商品/Option + 调链科 `file_pages` 计算。两条链路均**无任何 insert/update**，不创建设备订单/业务订单、不注册回调、不触发 MQ。因此无需幂等、无需退款、无需回调地址。
 
 ### D6 预览图走链科 isPreview 异步任务（提交 + 轮询）
 
-需求增量：预览不仅要页数+计价，还要把**文件每页的预览图**展示给用户核对。
+需求增量：预览需要把**文件每页的预览图**展示给用户核对；页数和计价不属于图片预览链路。
 
 链科机制（已实测）：`POST /print/job` 带 `isPreview=1` 立即返回 `task_id`（只生成预览中间文件，不真实打印）；轮询 `GET /print/job?task_id=` 至 `task_state=SUCCESS`，从 `task_result.data.img_list` 取每页 JPG（`preview.liankenet.com`，带 `auth_key` 时效签名），`task_result.data.taskTicket` 为可复用预览凭证。失败时 `task_result.code!=200`（如设备端下载不到文件 → 502）。
 
 因此拆为两步：
-- **提交**：`POST /preview` 在原计价基础上，额外 `submitJob(isPreview=1)` 提交预览任务，返回 `taskId` + 计价结果。
+- **提交**：`POST /preview` 只校验文件/设备/打印规格并调用 `submitJob(isPreview=1)` 提交预览任务，返回 `taskId`；不调用 `file_pages`，不计算价格。
+- **计价**：页数和价格由独立的 `page-count` 接口负责，避免大文件图片预览被页数查询阻断。
 - **轮询**：新增 `GET /preview-result?taskId=`，返回 `taskState` / `previewImages[]` / `taskTicket` / 失败原因；前端轮询至出图。
 
 关键约束：
@@ -72,5 +73,5 @@
 ## 风险
 
 - R1（K1）多文件打印商品时价源取值可能不唯一 → 见 D4，后续扩展指定商品。
-- R2（K2）Option 名称未命中按 0 计价并记 warn，不阻断预览；如需严格可改失败。
-- R3 链科 file_pages 为测试期免费服务、无 SLA；预览失败仅提示，不影响其他链路。
+- R2（K2）Option 名称未命中按 0 计价并记 warn，不阻断页数/计价；如需严格可改失败。
+- R3 链科 `file_pages` 为测试期免费服务、无 SLA；页数/计价失败仅影响计价，不影响图片预览链路。

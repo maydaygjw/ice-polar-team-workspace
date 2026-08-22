@@ -174,7 +174,7 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 
 ## 5. 提交文件预览 `POST /app-api/device/printer/preview`
 
-**需登录**。该接口生成链科异步预览任务，不真实打印、不创建订单、不扣款。响应会同时返回页数和计价结果，以及用于轮询图片的 `taskId`。
+**需登录**。该接口生成链科异步预览任务，不真实打印、不创建订单、不扣款。页数和计价由独立的 `page-count` 接口返回。
 
 ### Body
 
@@ -187,7 +187,8 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
   "fileExt": "pdf",
   "paperName": "A4 210 x 297 毫米",
   "colorName": "黑白",
-  "copies": 2
+  "copies": 2,
+  "jpPageRange": "1-10"
 }
 ```
 
@@ -198,12 +199,7 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
   "code": 0,
   "msg": "",
   "data": {
-    "pageCount": 5,
-    "basePrice": 0.10,
-    "optionDelta": 0.00,
-    "unitPrice": 0.10,
     "copies": 2,
-    "totalPrice": 1.00,
     "deviceModel": "POS-80C",
     "paperName": "A4 210 x 297 毫米",
     "colorName": "黑白",
@@ -212,7 +208,8 @@ curl -X POST 'https://<host>/app-api/infra/file/upload' \
 }
 ```
 
-- `taskId` 为空表示链科预览任务提交失败；此时仍可能返回页数和计价结果，但不能继续获取预览图。
+- `jpPageRange` 支持 `1,2,3,4,5-10`；空值表示全部页，`-1` 表示奇数页，`-2` 表示偶数页。
+- `taskId` 为空表示链科预览任务提交失败；页数和计价不由该接口返回。
 - 预览任务只生成中间预览图，不会下发打印机。
 - 生成完成后使用下一节接口轮询 `previewImages`。
 

@@ -54,8 +54,8 @@ POST /app-api/device/printer/page-count
 POST /app-api/device/printer/preview
 ```
 
-请求：`shopId, fileUrl, fileExt, paperName, colorName, copies`。
-响应：计价字段 + `taskId`。该任务调用链科 `POST /print/job` 并传 `isPreview=1`，只生成预览图，不真实打印、不落库。
+请求：`shopId, fileUrl, fileExt, paperName, colorName, copies, jpPageRange`。
+响应：打印规格 + `taskId`。`jpPageRange` 支持 `1,2,3,4,5-10`、`-1` 奇数页、`-2` 偶数页；该任务调用链科 `POST /print/job` 并传 `isPreview=1`，只生成预览图，不真实打印、不落库。
 
 轮询预览图：
 
