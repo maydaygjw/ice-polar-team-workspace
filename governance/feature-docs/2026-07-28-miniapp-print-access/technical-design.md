@@ -27,7 +27,7 @@ brick 配送与链科打印同属"打印订单履约"外部系统，且触发点
 
 ### D2 出向：发布配送单（brick publishById）
 `DeviceOrder` SUCCEEDED → `PrintDeliveryGateway.dispatch` → `BrickDeliveryGateway.publish`。
-- 组装 `OrderVO`：`merchantUserId`=门店配送商户号、`bizRegionCode`=现有商圈号、`destinationId`=订单地址关联的目的地 ID、`orderSourceType=YXG`、`uid`=业务订单号、`sourceId`=订单日序号、`sourceIdList=[{sourceId,"YXG"}]`、`totalFee`、`clientPhone/Contact/expressAddress`、`callback_url`=配置拼接的本系统回调地址。
+- 组装 `OrderVO`：`merchantUserId`=门店配送商户号、`bizRegionCode`=本地商圈记录的跨系统 `code`（店铺上的 `businessRegionId` 仅用于本地查询）、`destinationId`=本地目的地记录的跨系统 `code`（地址上的 `destinationId` 仅用于本地查询）、`destinationName`=订单快照中的目的地名称、`orderSourceType=YXG`、`uid`=8 位大写 UUID 派生值（`[0-9A-F]`，与业务订单号解耦）、`sourceId`=订单日序号、`sourceIdList=[{sourceId,"YXG"}]`、`totalFee`、`clientPhone/Contact/expressAddress`、`expressTime`=“今日(yyyy/MM/dd) 尽快送达”、`memo`=“姓名 电话 完整地址\n送达时间：今日(yyyy/MM/dd) 尽快送达。”、`callback_url`=配置拼接的本系统回调地址。
 - **三条铁律落到代码**：`sourceIdList` 非空才发；顶层 `sourceId`=`sourceIdList[0].sourceId`；查重 key=`merchantName+orderSourceType+sourceId+uid`。
 - 复用 `HttpClientUtils`，新增 `access-token` 请求头（配置 `holun.delivery.token`，仅服务端）。
 - 响应 `code="200"`（字符串）为成功；解析 `data[]` 取平台 `id`/`uid` 落库到 `DeviceOrderDO.extra_params`。
@@ -46,8 +46,10 @@ brick 配送与链科打印同属"打印订单履约"外部系统，且触发点
 
 ```
 brick orderState        DeliveryStatus(本地)   业务 businessStatus
-NEW/PACKED/ASSIGNED     DELIVERING            1 配送中(已 pushOrderToDelivering)
-TAKEN                   DELIVERING            1 配送中
+TB_SEND/NEW/RESEND/PACKED PENDING              1 配送中
+NOTIFY_NEW/NOTIFY_WAIT  PENDING               保持当前业务状态
+ASSIGNED/NOTIFY_ASSIGNED DELIVERING           1 配送中(已 pushOrderToDelivering)
+TAKEN/NOTIFY_TAKEN/NOTIFY_DELIVERY DELIVERING 1 配送中
 DLVRD/STAGED_DLVRD      DELIVERED             2 已送达/待评价  ← 推进
 CMPL/STAGED_CMPL        COMPLETED(终态)        2(若用户已收货/评价则由既有逻辑推进 3)
 CXCL_*终态              CANCELLED(终态)        记录配送失败,按既有退款/售后流程,不自动推进 2
@@ -73,7 +75,7 @@ CXCL_*终态              CANCELLED(终态)        记录配送失败,按既有�
 打印完成: PrintShopService.applyTaskState(SUCCEEDED)
   → orderApi.pushOrderToDelivering(bizOrderId)      [业务 1 配送中]
   → PrintDeliveryGateway.dispatch (BrickDeliveryGateway.publish)
-      → 组 OrderVO(YXG, uid=orderNo, sourceId=sourceIdList[0]) → brick publishById
+      → 组 OrderVO(YXG, uid=8位大写UUID, sourceId=sourceIdList[0]) → brick publishById
       → 成功: 平台 id/uid 落 DeviceOrderDO.extra_params.delivery{OrderId,Uid,Status=PENDING}
       → 失败: 记日志+人工入口,不阻塞
 brick 状态回调 POST /app-api/device/printer/delivery/callback

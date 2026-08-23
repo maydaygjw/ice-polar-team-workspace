@@ -99,17 +99,20 @@ backend 组装 `OrderVO`，映射规则：
 | OrderVO 字段 | 来源 | 备注 |
 |---|---|---|
 | `merchantUserId` | **门店配送商户号**(`StoreShopDO.deliveryMerchantNo`) | 不写死；发布单时按店铺实时取。未配置时不发单 |
-| `bizRegionCode` | **店铺商圈 id**(`StoreShopDO.businessRegionId`) | 不写死；yshop 无独立 regionCode 字段，用商圈主键，与 brick RegionVO id 已打通一致 |
-| `destinationId` | **下单人收货地址关联的目的地 id**(`UserAddressDO.destinationId`) | 不写死；与 brick DestinationVO id 已打通一致 |
+| `bizRegionCode` | **本地商圈记录的跨系统 code**(`BusinessRegionInfoDTO.code`) | 店铺上的 `StoreShopDO.businessRegionId` 仅用于本地查询；下发值必须能被 brick metadata 服务按商圈标识查到 |
+| `destinationId` | **本地目的地记录的跨系统 code**(`BusinessRegionDestinationInfoDTO.code`) | 地址上的 `UserAddressDO.destinationId` 仅用于本地查询；下发值必须能被 brick metadata 服务按目的地标识查到 |
 | `destinationId` | 用户收货楼宇 | 必须能查 DestinationVO |
+| `destinationName` | 订单收货目的地名称 | 展示用名称，与 `destinationId` 的跨系统 code 同时下发 |
 | `totalFee` | 业务订单金额 | |
 | `clientPhone` / `clientContact` / `expressAddress` | 订单收货信息 | |
+| `memo` | 收件人、电话、完整地址、送达时间 | 格式：`姓名 电话 地址\n送达时间：今日(yyyy/MM/dd) 尽快送达。` |
 | `sourceId` | 订单日序号 | **必须与 `sourceIdList[0].sourceId` 一致**（查重 key 用顶层值） |
-| `uid` | 订单唯一标识（orderNo 或条码） | 参与查重 key |
+| `uid` | 配送平台专用唯一标识（8 位大写 UUID 派生值，字符集 `[0-9A-F]`） | 参与查重 key；与业务 `orderNo` 解耦 |
 | `orderSourceType` | **`YXG`** | 打印件配送固定来源类型 |
 | `sourceIdList` | `[{sourceId, orderSourceType:"YXG"}]` | **发单入口，空则一单不发且仍返回 success** |
 | `callback_url` | 配置拼接的本系统回调地址（见 §3.2） | **要求 brick 对 YXG 走 HTTP 回调**（见 §3.2 前置约定） |
-| `deliverToRoom` / `delayTime` / `expressTime` / `memo` | 订单配置/备注 | 可选 |
+| `deliverToRoom` / `delayTime` | 订单配置 | 可选 |
+| `expressTime` | 订单预计送达日期 | 格式：`今日(yyyy/MM/dd) 尽快送达` |
 
 触发时机：`DeviceOrder` → `SUCCEEDED`（打印完成），经 `PrintDeliveryGateway` 调用。
 关键坑点（必须遵守）：`sourceIdList` 非空才发单；顶层 `sourceId` 与 `sourceIdList[0].sourceId` 一致；`quantity`/`orderState` 服务端覆盖（发几单由 `sourceIdList` 长度决定）；查重 key=`merchantName+orderSourceType+sourceId+uid`。
@@ -135,16 +138,22 @@ POST /app-api/device/printer/delivery/callback
 
 | orderState | 含义 | 业务推进 |
 |---|---|---|
-| `NEW`/`PACKED`/`ASSIGNED` | 待打包/打包完成/已派单 | 保持 `businessStatus=1`（配送中） |
+| `TB_SEND`/`NEW`/`RESEND`/`PACKED` | 待发单/待打包/重新打包/打包完成 | 保持 `businessStatus=1`（配送中） |
+| `NOTIFY_NEW`/`NOTIFY_WAIT` | 新订单/待出餐（模拟通知） | 本地态 `PENDING`，不推进业务订单 |
+| `ASSIGNED`/`NOTIFY_ASSIGNED` | 已派单 | `1` 配送中 |
 | `TAKEN` | 骑手已收单（取货） | `1` 配送中 |
+| `NOTIFY_TAKEN`/`NOTIFY_DELIVERY` | 已取单/配送中（模拟通知） | `1` 配送中 |
 | `DLVRD` / `STAGED_DLVRD` | 已送达 | **`businessStatus=2`**（已送达/待评价） |
 | `CMPL` / `STAGED_CMPL` | 完成（终态） | `2`（若用户已确认收货/评价则由既有逻辑推进 3） |
 | `CXCL_*`（终态取消） | 取消 | 记录配送失败，按既有退款/售后流程处理，不自动推进 2 |
 
 | orderState | 含义 | 业务推进 |
 |---|---|---|
-| `NEW`/`PACKED`/`ASSIGNED` | 待打包/打包完成/已派单 | 保持 `businessStatus=1`（配送中） |
+| `TB_SEND`/`NEW`/`RESEND`/`PACKED` | 待发单/待打包/重新打包/打包完成 | 保持 `businessStatus=1`（配送中） |
+| `NOTIFY_NEW`/`NOTIFY_WAIT` | 新订单/待出餐（模拟通知） | 本地态 `PENDING`，不推进业务订单 |
+| `ASSIGNED`/`NOTIFY_ASSIGNED` | 已派单 | `1` 配送中 |
 | `TAKEN` | 骑手已收单（取货） | `1` 配送中 |
+| `NOTIFY_TAKEN`/`NOTIFY_DELIVERY` | 已取单/配送中（模拟通知） | `1` 配送中 |
 | `DLVRD` / `STAGED_DLVRD` | 已送达 | **`businessStatus=2`**（已送达/待评价） |
 | `CMPL` / `STAGED_CMPL` | 完成（终态） | `2`（若用户已确认收货/评价则由既有逻辑推进 3） |
 | `CXCL_*`（终态取消） | 取消 | 记录配送失败，按既有退款/售后流程处理，不自动推进 2 |
@@ -170,7 +179,7 @@ GET /app-api/order/delivery/progress?orderNo=
 
 - `yshop_device_order`：`extra_params` JSON 扩展（不新增列），存放配送快照：
   `deliveryOrderId`(平台 id)、`deliveryUid`、`deliveryStatus`、`riderName`、`riderMobile`、`destinationId`、`bizRegionCode`、`deliveryEvents[]`(幂等去重键+状态时间线，或独立事件表，实现时二选一)。
-- `merchantUserId`/`bizRegionCode`/`destinationId`：发布单时从店铺与订单关联目的地实时取（deliveryMerchantNo、businessRegionId、目的地 id）；`merchantUserId` 不允许使用店铺主键兜底，未配置门店配送商户号时不发单。
+- `merchantUserId`/`bizRegionCode`/`destinationId`：发布单时从店铺与订单关联目的地实时取（deliveryMerchantNo、商圈 code、目的地 code）；店铺/地址上的本地 id 仅用于本地查询，`bizRegionCode` 与 `destinationId` 下发值必须使用跨系统 code。`merchantUserId` 不允许使用店铺主键兜底，未配置门店配送商户号时不发单。
 - 均含租户/审计字段；不破坏存量列；不新增唯一约束。
 
 ## 5. MQ / 状态推送
