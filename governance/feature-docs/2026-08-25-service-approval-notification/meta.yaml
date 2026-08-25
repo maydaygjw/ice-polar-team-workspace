@@ -1,0 +1,8 @@
+feature: service-approval-notification
+status: done
+risk: medium
+targets: [backend]
+contract: true
+ui: false
+e2e: false
+blocked: false
