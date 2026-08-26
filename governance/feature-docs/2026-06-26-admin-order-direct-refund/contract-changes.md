@@ -12,6 +12,10 @@
 
 变更点：移除「订单已发货或已完成，无法取消退款」(`ErrorCode 202507011`) 的拦截。
 
+补充：`订单 → 服务订单`页面的「退款」按钮仅在
+`paid==1 && refund_status==0 && is_system_del==0` 时显示，不判断 `status`；
+后端 `cancelAndRefund` 仍复用全额退款链路，并允许任意订单状态下 `refund_status==0` 的管理员主动退款。
+
 ### 错误码（复用现有）
 - `STORE_ORDER_NOT_EXISTS` — 订单不存在
 - `ORDER_STATUS_ERROR` — 订单未支付

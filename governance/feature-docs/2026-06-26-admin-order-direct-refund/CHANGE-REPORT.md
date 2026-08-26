@@ -10,6 +10,7 @@
 
 **admin** (`feat/admin-order-direct-refund`)
 - `views/mall/order/storeOrder/index.vue` — 放宽现有「取消并退款」下拉项可见条件（去掉 `statusStr==='未发货'`），单项覆盖所有已支付未退款未删除订单
+- `views/mall/order/storeOrder/site.vue` — 服务订单页增加 `paid===1 && refundStatus===0 && isSystemDel===0` 时显示的「退款」按钮，不判断 status
 - `api/...index.ts` — 无变更（复用 `cancelAndRefundStoreOrder`）
 
 ## API 变更
@@ -20,7 +21,7 @@
 - UI：「取消并退款」可见条件 `paid===1 && refundStatus===0 && isSystemDel===0`，不限发货状态；退款中订单仍走独立「确认退款」按钮。
 
 ## 校验
-- 后端：订单不存在 / 未支付 / 已退款 均拦截（复用现有错误码）。
+- 后端：订单不存在 / 未支付 / 已退款 / 非可退款状态均拦截（复用现有错误码）；普通用户申请退款确认仍要求 `refundStatus==1`。
 - 退款链路：复用 `orderRefund`（微信/支付宝/余额 + 退库存 + 流水冲回 + 抽成回滚）。
 
 ## 风险
