@@ -71,11 +71,11 @@
   2. 下载支付确认账单（`PaymentConfirm` 类型）和分账流水账单（`Div` 类型）。
   3. 本地查询昨天分账成功的记录（`yshop_adapay_profit_sharing_order.sharing_status=SUCCESS(2)`，以 `sharing_time` 为准）。
   4. 支付确认账单按 `adapay_confirm_id` 关联本地 `adapay_confirm_id`。
-  5. 分账流水账单按 `adapay_payment_id` + `adapay_confirm_id` 分组汇总后，与本地 `profit_sharing_order_item` 各角色金额汇总比较。
+  5. 分账流水账单按 `adapay_payment_id` + `adapay_confirm_id` + `div_user(MemberId)` 分组汇总后，与本地按收款人 MemberId 汇总的 `profit_sharing_order_item` 金额比较；角色仅供查看。
   6. 写入对账汇总表和明细表，标记 `reconciliation_type=PROFIT_SHARING`。
 - 业务规则：
   - 日期筛选使用 `profit_sharing_order.sharing_time`（实际分账成功时间），而非 `create_time`。
-  - 分账流水每笔订单有 ≥2 行（平台+至少一个店铺收款人），需要按 `adapay_payment_id` + `adapay_confirm_id` 分组汇总后与本地各角色明细之和比较。
+  - 分账流水每笔订单有 ≥2 行，需要按 `adapay_payment_id` + `adapay_confirm_id` + `div_user(MemberId)` 分组汇总后与本地各收款人明细之和比较；同一 MemberId 跨多个角色时合并金额，角色仅作为展示信息。
   - 存在 PENDING/PROCESSING 状态的分账记录时，汇总 `reconciliation_result=INCOMPLETE`。
 
 **UC-3: 管理员查看对账结果**

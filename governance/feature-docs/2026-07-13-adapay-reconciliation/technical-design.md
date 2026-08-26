@@ -20,21 +20,21 @@
 
 Adapay 日终账单包含所有商户的交易。实现中使用 `getTenantAppId()` 从 `merchant_details` 获取当前租户的 `appid`，对 Charge/PaymentConfirm CSV 按 `app_id` 列过滤。Div CSV 无 `app_id` 列，通过已匹配的 `payment_id` 集合间接过滤。
 
-### 3. 分账角色区分：fee_bearer 而非 div_user
+### 3. 分账收款人区分：MemberId 为主，fee_bearer 仅展示角色
 
-Div CSV 中 `div_user` 是 Adapay 实际的 MemberId（如 `m_154_2_91320507MACNTT2938_0`），不是 `"0"`。正确区分平台/店铺角色的方式是 `fee_bearer` 列：`Y`=平台（承担手续费），`N`=店铺。
+Div CSV 中 `div_user` 是 Adapay 实际的 MemberId（如 `m_154_2_91320507MACNTT2938_0`）。分账金额按 `payment_id + confirm_id + div_user` 对账，`fee_bearer` 只用于推导平台/店铺等展示角色，不参与匹配。
 
 ### 4. 分账对账三阶段明细
 
 `matchProfitSharings` 产出三种明细，全部写入同一张 detail 表：
 
 - **Phase 1 - 确认汇总**：PaymentConfirm 行 vs 本地 `pay_price`，比较确认金额
-- **Phase 2 - 角色对账**：按 `fee_bearer` 将 Div 分组为平台/店铺，逐一比较各角色金额。同时通过 `ProfitSharingOrderItem` + `ProfitRecipientMapper` 关联收款人 `member_id` 和 `recipient_name`
+- **Phase 2 - 收款人对账**：按 `payment_id + confirm_id + MemberId` 汇总 Div 与本地分账明细金额；同一 MemberId 跨多个角色时合并为一条，同时保留角色供查看
 - **Phase 3 - 本地独有**：本地有分账记录但账单无对应 Confirm
 
 ### 5. 收款人信息字段
 
-明细表新增 3 列：`recipient_member_id`、`recipient_name`、`role`（SQL: `upgrade-2026-07-12-adapay-reconciliation.sql`）。仅 Phase 2 角色对账明细填充这些字段。
+明细表新增 4 列：`recipient_member_id`、`recipient_name`、`role`、`role_desc`（SQL: `upgrade-2026-07-12-adapay-reconciliation.sql` 和 `upgrade-2026-08-26-adapay-reconciliation-member-match.sql`）。`recipient_member_id` 是分账金额匹配字段；`role`/`role_desc` 仅供查看。
 
 ### 6. 账单下载接口
 
@@ -299,6 +299,10 @@ CREATE TABLE yshop_adapay_reconciliation_detail (
     match_result          TINYINT COMMENT '0=对平 1=金额差异 2=仅账单有 3=仅本地有 4=状态不一致',
     amount_diff           DECIMAL(12,2) COMMENT '金额差异(bill-local)，单位元',
     remark                VARCHAR(500),
+    recipient_member_id   VARCHAR(64) COMMENT '收款人MemberId，对账主维度',
+    recipient_name        VARCHAR(64) COMMENT '收款人名称',
+    role                  INT COMMENT '分账角色，仅供展示',
+    role_desc             VARCHAR(128) COMMENT '多角色展示文本，仅供展示',
 
     creator               VARCHAR(64) DEFAULT 'system',
     create_time           DATETIME DEFAULT CURRENT_TIMESTAMP,

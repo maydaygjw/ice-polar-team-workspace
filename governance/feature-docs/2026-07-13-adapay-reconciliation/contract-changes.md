@@ -100,10 +100,11 @@ ReconciliationDetailRespVO {
     BigDecimal amountDiff;
     String remark;
 
-    // 分账收款人信息（仅 PROFIT_SHARING 角色对账明细）
+    // 分账收款人信息（以 MemberId 对账，角色仅供查看）
     String recipientMemberId;
     String recipientName;
-    Integer role;
+    Integer role;                // 单一角色时展示
+    String roleDesc;             // 多角色时展示，如“平台、店铺”；仅展示，不参与匹配
 }
 
 // 重新对账请求
@@ -150,6 +151,7 @@ ReconciliationRetriggerRespVO {
 - `sql/upgrade-2026-07-12-adapay-reconciliation.sql` — 租户管理员授权
 - `sql/upgrade-2026-07-12-adapay-reconciliation.sql` — 原始账单内容列（LONGTEXT）
 - `sql/upgrade-2026-07-12-adapay-reconciliation.sql` — 收款人信息列
+- `sql/upgrade-2026-08-26-adapay-reconciliation-member-match.sql` — 按 MemberId 对账及多角色展示列
 
 ## 枚举
 
