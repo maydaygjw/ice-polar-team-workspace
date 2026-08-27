@@ -4,7 +4,7 @@
 >
 > 列表、详情、创建、支付及用户订单操作接口均使用登录态，请求头：`Authorization: Bearer <token>`。支付回调由支付平台调用；桌台、共享菜单和同城配送辅助接口按业务场景和网关配置使用。
 >
-> 支付参数、渠道返回值、支付渠道锁定、退款申请和回调边界见独立文档 [`payment.md`](./payment.md)。
+> 支付参数、渠道返回值、支付渠道锁定、拼单支付、退款申请和回调边界见独立文档 [`payment.md`](./payment.md)。
 >
 > 接口前缀：`/app-api`。源码：`backend/yshop-module-mall/yshop-module-order-biz/.../controller/app/order/AppOrderController.java`
 
@@ -15,6 +15,18 @@
 ```text
 确认商品/价格 → 创建订单 → 查询订单 → 发起支付 → 查询订单确认 paid=1
 ```
+
+拼单订单：
+
+```text
+创建订单（groupEnabled=true）
+  → 发起人使用 Adapay 支付 1 份
+  → 分享同一个订单标识给其他已登录用户
+  → 参与人使用 Adapay 支付 1 份或多份
+  → 查询订单确认 groupPaidCount=groupTotalCount、groupStatus=2、paid=1
+```
+
+拼单订单在全部份数支付成功前不会进入后续履约流程。拼单支付仅允许已登录用户，游客不能支付；本期不新增小程序拼单页或分享页，客户端入口由后续小程序需求接入。
 
 打印/设备订单：
 
@@ -102,6 +114,11 @@ Authorization: Bearer <token>
       "payType": null,
       "status": 0,
       "createTime": "2026-07-30 12:00:00",
+      "groupStatus": 0,
+      "groupTotalCount": null,
+      "groupPaidCount": null,
+      "groupStartTime": null,
+      "groupExpireTime": null,
       "cartInfo": []
     }
   ]
@@ -144,6 +161,11 @@ Authorization: Bearer <token>
     "payType": null,
     "status": 0,
     "refundStatus": 0,
+    "groupStatus": 1,
+    "groupTotalCount": 3,
+    "groupPaidCount": 1,
+    "groupStartTime": "2026-07-30 12:01:00",
+    "groupExpireTime": "2026-07-30 13:01:00",
     "createTime": "2026-07-30 12:00:00",
     "cartInfo": []
   }
@@ -160,9 +182,14 @@ Authorization: Bearer <token>
 | payPrice | number | 实际应支付金额，以服务端返回值为准 |
 | status | int | 订单业务状态，具体展示文案可使用 `statusDto` |
 | refundStatus | int | 退款状态：`0` 未退款、`1` 申请中、`2` 已退款、`3` 已拒绝 |
+| groupStatus | int | 拼单状态：`0`/`null` 非拼单，`1` 拼单中，`2` 已拼满 |
+| groupTotalCount | int | 拼单总份数，包含发起人，范围为 2～10；非拼单为空 |
+| groupPaidCount | int | 已成功支付份数；非拼单为空或 0 |
+| groupStartTime | string | 首份支付成功时间；拼单首份支付前为空 |
+| groupExpireTime | string | 拼单截止时间；由租户分钟参数在首份支付成功时确定 |
 | cartInfo | array | 订单商品快照 |
 
-订单不存在或不属于当前用户时返回错误，不要根据客户端传入的金额自行支付。
+订单不存在时返回错误，不要根据客户端传入的金额自行支付。拼单支付参与人不要求是发起人，但必须使用登录态。
 
 ---
 
@@ -178,6 +205,7 @@ Authorization: Bearer <token>
 | from | string | 否 | 支付来源。小程序传 `routine`，公众号传 `wechat`，H5 传 `h5` |
 | paytype | string | **是** | 支付方式：`weixin` 微信、`yue` 余额、`alipay` 支付宝、`adapay` Adapay；以当前租户配置为准 |
 | authCode | string | 否 | 付款码支付时使用，普通小程序支付不传 |
+| shareCount | int | 否 | 本次拼单支付份数，默认 1；普通订单忽略。拼单时必须为正整数，且不能超过剩余份数 |
 
 ### 微信小程序支付
 
@@ -236,12 +264,48 @@ Content-Type: application/json
 }
 ```
 
+### 拼单 Adapay 支付
+
+拼单支付必须传 `paytype=adapay`，并要求请求用户已登录。发起人首笔支付只能支付 1 份；其他已登录用户可以支付 1 份或多份，同一用户也可以再次支付。多份支付合并为一笔 Adapay 支付，`shareCount` 表示本次支付份数。
+
+```json
+{
+  "uni": "202607301200001",
+  "from": "routine",
+  "paytype": "adapay",
+  "shareCount": 2
+}
+```
+
+拼单支付成功创建后，响应中的 `data` 会返回原有的 Adapay 支付结果和本次支付尝试信息：
+
+> 返回中的 `data.data.order_no` 是本次 AdaPay 支付单号，也就是服务端生成的三段式 `outPayNo`；系统主订单号仍是请求中的 `uni`（或订单详情中的 `orderId`）。客户端后续请求继续使用主订单号，不要把 `order_no` 当作主订单号回传。
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "data": {
+      "order_no": "202607301200001-2-1",
+      "pay_amt": "0.66"
+    },
+    "groupMemberNo": 2,
+    "payAttemptNo": 1,
+    "shareCount": 2,
+    "payAmount": 0.66
+  }
+}
+```
+
+`data.data.order_no` 是本次 AdaPay 支付的三段式外部支付单号。`groupMemberNo` 是该订单内支付人的序号，发起人固定为 `1`；`payAttemptNo` 是该支付人的支付尝试序号，从 `1` 递增。支付失败或取消后重试会生成新的三段式支付单号，前端始终继续传系统主订单号 `uni`，不要自行拼接或修改支付单号。
+
 ### 支付注意事项
 
-- 只有 `paid = 0` 的订单允许支付；已支付订单重复支付会返回错误。
+- 普通订单只有 `paid = 0` 时允许支付；拼单订单在 `groupStatus = 1` 且未过期、仍有剩余份数时允许继续支付，全部拼满后才变为 `paid = 1`。
 - 支付金额以后端订单的 `payPrice` 为准，前端不传金额。
 - 同一订单发起第三方支付后，支付渠道可能被锁定；切换渠道前应确认服务端返回结果。
-- 微信支付返回成功不等于业务订单已更新，必须重新查询详情确认 `paid = 1`。
+- Adapay 返回成功不等于用户付款成功，必须重新查询详情确认普通订单 `paid = 1`，或拼单订单 `groupStatus = 2` 且 `groupPaidCount = groupTotalCount`。
 - 余额支付由服务端同步完成，不产生外部支付回调；成功后仍建议重新查询订单详情。
 
 ---
@@ -263,6 +327,8 @@ Content-Type: application/json
 | mobile | string | 否 | 联系手机号 |
 | couponId | string | 否 | 优惠券 ID |
 | payType | string | 否 | 下单时选择的支付方式 |
+| groupEnabled | boolean | 否 | 是否选择拼单；为 `true` 时必须同时传 `groupTotalCount`，且门店和租户均已启用 |
+| groupTotalCount | int | 否 | 拼单总份数，包含发起人，范围为 2～10；订单创建后不可修改 |
 | remark | string | 否 | 订单备注，最多 200 个字符 |
 | optionSelections | array[] | 否 | 商品选项选择，和商品顺序一一对应；有选项加价时必须传 |
 | boxFeeSelected | int[] | 否 | 餐盒选择：`0` 不选、`1` 选择；仅外卖/设备订单生效 |
@@ -300,6 +366,8 @@ Content-Type: application/json
 ```
 
 创建接口只负责创建订单；除余额等同步支付方式外，仍需使用 `/app-api/order/pay` 发起支付。
+
+拼单订单创建时应传 `groupEnabled=true`、`groupTotalCount` 和 `payType=adapay`。创建成功后订单为 `groupStatus=1`、`groupPaidCount=0`；发起人首份支付成功后才开始计算拼单有效期。拼单人数不能修改，如需调整必须由发起人先取消原订单后重新创建。
 
 ---
 
@@ -340,6 +408,8 @@ Content-Type: application/json
 ```
 
 取消会按服务端规则回退库存、积分和优惠券。只允许取消符合状态要求的订单。
+
+拼单订单只有发起人可以取消。若已有支付成功的拼单份数，取消时会关闭未支付尝试，并将所有已支付份数分别原路退回；订单随后关闭。拼单未满时不能由其他参与人取消。
 
 **响应样例**
 
@@ -387,6 +457,8 @@ Content-Type: application/json
 ```
 
 `text` 和 `uni` 必填，图片和补充说明可选；是否允许退款由订单状态和服务端规则决定。
+
+拼单订单沿用现有可退款状态规则，但用户侧只有发起人可以申请退款。退款按整单处理，所有成功支付尝试分别退回各自的原支付人；参与人不能单独申请退款。
 
 **响应样例**
 
@@ -789,13 +861,14 @@ Content-Type: application/json
 /app-api/order/notify/payBack{detailsId}.json
 ```
 
-该接口由微信、支付宝等支付渠道调用，前端不要请求，也不要把它当作订单支付状态查询接口。前端支付完成后应调用订单详情接口，以 `paid` 字段确认最终业务状态。
+该接口由 Adapay（以及普通订单仍配置的其他支付渠道）调用，前端不要请求，也不要把它当作订单支付状态查询接口。前端支付完成后应调用订单详情接口：普通订单以 `paid` 确认，拼单订单同时确认 `groupStatus` 和 `groupPaidCount`。
 
 ## 前端对接要点
 
 - 列表、详情和支付必须使用当前登录用户的 Token。
 - 打印订单列表使用 `orderType=device`；待支付筛选使用 `type=0`。
 - 支付使用 `orderId` 作为 `uni`，金额和商品信息以服务端订单为准。
-- 微信支付成功回调后，重新请求 `/app-api/order/detail/{orderId}`，确认 `paid=1` 后再跳转制作/打印进度页。
+- Adapay 支付完成或取消后，重新请求 `/app-api/order/detail/{orderId}`；拼单只有在 `groupStatus=2` 且 `groupPaidCount=groupTotalCount` 后才跳转制作/打印进度页。
+- 拼单订单的支付请求必须携带登录态；分享链接本身不代表支付授权。
 - 订单列表没有数据时返回 `data: []`，不要把空列表当成接口错误。
 - 不要在客户端根据 `totalPrice` 或预览金额自行改写支付金额。
