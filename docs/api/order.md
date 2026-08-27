@@ -197,116 +197,17 @@ Authorization: Bearer <token>
 
 创建订单后使用此接口发起支付。打印订单也使用此接口，不要直接调用支付服务内部接口。
 
-### Body 参数
+### Body 参数简表
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:---:|------|
 | uni | string | **是** | 订单号，推荐传订单列表/详情返回的 `orderId`；也支持订单 `unique` |
 | from | string | 否 | 支付来源。小程序传 `routine`，公众号传 `wechat`，H5 传 `h5` |
-| paytype | string | **是** | 支付方式：`weixin` 微信、`yue` 余额、`alipay` 支付宝、`adapay` Adapay；以当前租户配置为准 |
-| authCode | string | 否 | 付款码支付时使用，普通小程序支付不传 |
-| shareCount | int | 否 | 本次拼单支付份数，默认 1；普通订单忽略。拼单时必须为正整数，且不能超过剩余份数 |
+| paytype | string | **是** | 支付方式，以当前租户配置为准；拼单订单固定使用 `adapay` |
+| authCode | string | 否 | 付款码支付时使用 |
+| shareCount | int | 否 | 本次拼单支付份数，默认 1；普通订单忽略 |
 
-### 微信小程序支付
-
-```http
-POST /app-api/order/pay
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-```json
-{
-  "uni": "202607301200001",
-  "from": "routine",
-  "paytype": "weixin"
-}
-```
-
-**响应样例**
-
-```json
-{
-  "code": 0,
-  "msg": "",
-  "data": {
-    "timeStamp": "1785384000",
-    "nonceStr": "4f3c9d8e7a6b5c4d",
-    "package": "prepay_id=wx202607301200001",
-    "signType": "RSA",
-    "paySign": "签名内容"
-  },
-  "trade_type": "JSAPI"
-}
-```
-
-`data` 中的字段由微信支付配置决定，前端直接展开传给 `wx.requestPayment`。支付完成后重新查询订单详情，确认 `paid = 1`。
-
-### 余额支付
-
-```json
-{
-  "uni": "202607301200001",
-  "from": "routine",
-  "paytype": "yue"
-}
-```
-
-成功响应示例：
-
-```json
-{
-  "code": 0,
-  "msg": "",
-  "data": {
-    "status": "ok"
-  }
-}
-```
-
-### 拼单 Adapay 支付
-
-拼单支付必须传 `paytype=adapay`，并要求请求用户已登录。发起人首笔支付只能支付 1 份；其他已登录用户可以支付 1 份或多份，同一用户也可以再次支付。多份支付合并为一笔 Adapay 支付，`shareCount` 表示本次支付份数。
-
-```json
-{
-  "uni": "202607301200001",
-  "from": "routine",
-  "paytype": "adapay",
-  "shareCount": 2
-}
-```
-
-拼单支付成功创建后，响应中的 `data` 会返回原有的 Adapay 支付结果和本次支付尝试信息：
-
-> 返回中的 `data.data.order_no` 是本次 AdaPay 支付单号，也就是服务端生成的三段式 `outPayNo`；系统主订单号仍是请求中的 `uni`（或订单详情中的 `orderId`）。客户端后续请求继续使用主订单号，不要把 `order_no` 当作主订单号回传。
-
-```json
-{
-  "code": 0,
-  "msg": "",
-  "data": {
-    "data": {
-      "order_no": "202607301200001-2-1",
-      "pay_amt": "0.66"
-    },
-    "groupMemberNo": 2,
-    "payAttemptNo": 1,
-    "shareCount": 2,
-    "payAmount": 0.66
-  }
-}
-```
-
-`data.data.order_no` 是本次 AdaPay 支付的三段式外部支付单号。`groupMemberNo` 是该订单内支付人的序号，发起人固定为 `1`；`payAttemptNo` 是该支付人的支付尝试序号，从 `1` 递增。支付失败或取消后重试会生成新的三段式支付单号，前端始终继续传系统主订单号 `uni`，不要自行拼接或修改支付单号。
-
-### 支付注意事项
-
-- 普通订单只有 `paid = 0` 时允许支付；拼单订单在 `groupStatus = 1` 且未过期、仍有剩余份数时允许继续支付，全部拼满后才变为 `paid = 1`。
-- 支付金额以后端订单的 `payPrice` 为准，前端不传金额。
-- 同一订单发起第三方支付后，支付渠道可能被锁定；切换渠道前应确认服务端返回结果。
-- Adapay 返回成功不等于用户付款成功，必须重新查询详情确认普通订单 `paid = 1`，或拼单订单 `groupStatus = 2` 且 `groupPaidCount = groupTotalCount`。
-- 余额支付由服务端同步完成，不产生外部支付回调；成功后仍建议重新查询订单详情。
+支付渠道返回值、拼单支付、支付状态确认和重试规则见 [`payment.md`](./payment.md)。前端支付完成后必须重新查询订单详情，不能仅依据支付 SDK 的返回结果判断订单已支付。
 
 ---
 
@@ -441,30 +342,7 @@ Content-Type: application/json
 
 ### 申请退款 `POST /app-api/order/refund`
 
-```http
-POST /app-api/order/refund
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-```json
-{
-  "uni": "202607301200001",
-  "text": "商品未按预期完成",
-  "refundReasonWapExplain": "请协助处理",
-  "refundReasonWapImg": "https://cdn.example.com/refund.jpg"
-}
-```
-
-`text` 和 `uni` 必填，图片和补充说明可选；是否允许退款由订单状态和服务端规则决定。
-
-拼单订单沿用现有可退款状态规则，但用户侧只有发起人可以申请退款。退款按整单处理，所有成功支付尝试分别退回各自的原支付人；参与人不能单独申请退款。
-
-**响应样例**
-
-```json
-{ "code": 0, "msg": "", "data": true }
-```
+订单退款请求、退款资格、拼单整单退款及各支付人的原路退款规则见 [`payment.md`](./payment.md)。
 
 ---
 
@@ -857,18 +735,11 @@ Content-Type: application/json
 
 ## 9. 支付回调（服务端接口）
 
-```text
-/app-api/order/notify/payBack{detailsId}.json
-```
-
-该接口由 Adapay（以及普通订单仍配置的其他支付渠道）调用，前端不要请求，也不要把它当作订单支付状态查询接口。前端支付完成后应调用订单详情接口：普通订单以 `paid` 确认，拼单订单同时确认 `groupStatus` 和 `groupPaidCount`。
+支付平台回调地址为 `/app-api/order/notify/payBack{detailsId}.json`，由支付平台调用，前端不要请求。回调处理、幂等和拼单支付尝试归集规则见 [`payment.md`](./payment.md)。
 
 ## 前端对接要点
 
-- 列表、详情和支付必须使用当前登录用户的 Token。
+- 列表、详情和订单操作必须使用当前登录用户的 Token。
 - 打印订单列表使用 `orderType=device`；待支付筛选使用 `type=0`。
-- 支付使用 `orderId` 作为 `uni`，金额和商品信息以服务端订单为准。
-- Adapay 支付完成或取消后，重新请求 `/app-api/order/detail/{orderId}`；拼单只有在 `groupStatus=2` 且 `groupPaidCount=groupTotalCount` 后才跳转制作/打印进度页。
-- 拼单订单的支付请求必须携带登录态；分享链接本身不代表支付授权。
+- 支付和退款对接请参阅 [`payment.md`](./payment.md)，金额和支付状态以服务端订单数据为准。
 - 订单列表没有数据时返回 `data: []`，不要把空列表当成接口错误。
-- 不要在客户端根据 `totalPrice` 或预览金额自行改写支付金额。
