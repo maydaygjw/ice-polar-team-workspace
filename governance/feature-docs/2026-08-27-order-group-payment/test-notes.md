@@ -6,6 +6,9 @@
 - AdaPay 支付单号定向测试：`mvn -pl yshop-module-pay/yshop-module-pay-biz -am -Dtest=PayOutOrderNoServiceTest -Dsurefire.failIfNoSpecifiedTests=false test`
 - 管理端构建：`pnpm build:dev`
 - backend/admin `git diff --check`
+- 后端服务订单拼单明细定向测试：`mvn -pl yshop-module-site/yshop-module-site-biz -am -Dtest=AppSiteOrderServiceImplTest -Dsurefire.failIfNoSpecifiedTests=false test`（9 个测试通过）
+- 管理端开发构建：`pnpm build:dev`（通过）
+- 本次新增的管理端服务订单明细字段未出现在 `pnpm ts:check` 的错误列表中；类型检查仍受仓库既有全局类型错误影响。
 
 ## 基线问题
 

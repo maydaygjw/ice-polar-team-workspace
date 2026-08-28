@@ -96,6 +96,20 @@
 
 本期只冻结字段语义，不实现 `miniapp` 调用。
 
+### 管理端服务订单详情接口
+
+现有 `GET /site/order/get` 响应在服务订单为拼单且存在成功支付记录时增加：
+
+- `groupPaymentDetails`：拼单支付明细数组
+- `groupPaymentDetails[].paymentKey`：支付记录展示标识
+- `groupPaymentDetails[].groupMemberNo`：拼单成员序号
+- `groupPaymentDetails[].payerNickname`：付款人昵称
+- `groupPaymentDetails[].shareCount`：支付份数
+- `groupPaymentDetails[].payAmount`：支付金额
+- `groupPaymentDetails[].payTime`：支付时间
+
+非拼单订单或没有成功支付记录时返回空数组或不展示，由管理端按空数组处理。
+
 ## 4. 支付回调契约
 
 AdaPay 回调必须携带：

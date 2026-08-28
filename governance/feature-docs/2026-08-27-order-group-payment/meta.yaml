@@ -1,5 +1,5 @@
 feature: order-group-payment
-status: review
+status: done
 risk: high
 targets: [backend, admin]
 contract: true
