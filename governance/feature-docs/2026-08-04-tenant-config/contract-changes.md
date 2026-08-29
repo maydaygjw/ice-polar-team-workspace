@@ -28,6 +28,16 @@
 
 响应字段：`id`、`tenantId`、`category`、`name`、`key`、`value`、`type`、`visible`、`remark`、`createTime`。
 
+### App 查询参数值
+
+`GET /app-api/infra/tenant-config/value?category={category}&key={key}`，请求头携带 `tenant-id: {tenantId}`。
+
+- 从请求头 `tenant-id` 读取租户编号，不在 query/body 中接收 `tenantId`。
+- 已登录用户请求时，租户过滤器会校验请求头租户编号与用户所属租户一致，禁止越权。
+- `category` 和 `key` 均为必填，并按当前租户精确匹配。
+- 仅允许返回 `visible=true` 的参数；参数不存在时返回 `data: null`。
+- 响应数据为参数值字符串。
+
 ### 参数详情
 
 `GET /admin-api/infra/tenant-config/get?id={id}&tenantId={tenantId}`
