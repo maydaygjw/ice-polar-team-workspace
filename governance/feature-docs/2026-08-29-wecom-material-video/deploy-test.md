@@ -19,4 +19,7 @@
 
 ## 未完成项
 
-数据库迁移脚本 `backend/sql/upgrade-2026-08-29-wecom-material-video.sql` 尚未执行。根据部署规范，需获得单独授权并确认回滚方案后，才能执行迁移并进行视频素材上传、群发和新客户欢迎语的功能烟测。
+- 数据库迁移脚本 `backend/sql/upgrade-2026-08-29-wecom-material-video.sql` 已于 2026-08-29 17:22（Asia/Shanghai）执行。
+- 迁移后校验：`mp_wecom_material.local_video_url` 为 `varchar(500)`、可空，字段注释为“视频文件服务地址”。
+- 迁移后后端公网健康检查仍返回 `200`。
+- 尚未使用真实企业微信素材执行上传、群发和新客户欢迎语功能烟测。
