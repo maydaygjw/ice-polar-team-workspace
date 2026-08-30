@@ -18,9 +18,9 @@
 
 ## 商品导入写入契约
 
-- SKU 规格 DTO 保持现有价格、原价、库存、图片和 `details`；镜像解析器将 SKU 级 `food_attrs` 转成规格组及每个 SKU 的详情。
+- SKU 规格 DTO 保持现有价格、原价、库存、图片和 `details`；镜像解析器将未出现商品级形态的 `food_attrs` 转成规格组及每个 SKU 的详情。
 - 选项组 DTO 增加最小/最大选择数语义和选项默认值；保留 `required`、`multiple`、`value_price`、`selected`、`sale_status`。
-- `sku_id=''` 的属性不生成 SKU，不参与规格笛卡尔积；只生成商品选项组。
+- `sku_id=''` 的属性不生成 SKU，不参与规格笛卡尔积；同一 `attr_id` 的用户可选属性即使带 `sku_id`，同样只生成商品选项组。
 
 ## 外部系统
 

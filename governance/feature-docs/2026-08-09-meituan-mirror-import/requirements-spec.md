@@ -31,8 +31,8 @@
 ## Business Rules
 
 - 商品按当前租户、`poi_id`、`spu_id` 聚合；每个 `foods` 行按 `sku_id` 形成一个 SKU。
-- `food_attrs.sku_id <> ''` 的记录按 `sku_id` 关联到 SKU 规格组合；同一 SKU 的属性值必须可唯一确定规格组合。
-- `food_attrs.sku_id = ''` 的记录形成商品级选项组和选项，不展开为 SKU 笛卡尔积。
+- `food_attrs.sku_id = ''` 的记录形成商品级选项组；同一 `attr_id` 后续即使带 `sku_id` 被复制到其他 SKU，仍按商品选项处理。
+- 未出现过空 `sku_id` 的属性定义，才按 `sku_id` 关联到 SKU 规格组合；同一 SKU 的属性值必须可唯一确定规格组合。
 - SKU 价格、原价、库存、图片和规格文本以 `foods` 为准；选项加价和选择规则以 `food_attrs` 为准。
 - 缺少分类的商品进入预览异常或“未分类”警告，不能静默丢弃。
 - 只读取 `foods`、`food_attrs`、`food_categories`；评论和采集流不参与导入。
@@ -70,5 +70,5 @@
 ## Assumptions
 
 - 镜像库连接地址、账号和密码由部署环境提供，使用只读账号；本地探索账号不进入代码或文档。
-- `food_attrs.selected=1` 表示默认选项，不用于判断 SKU 与属性的关联；SKU 关联以 `poi_id + spu_id + sku_id` 为准。
+- `food_attrs.selected=1` 表示默认选项，不用于判断 SKU 与属性的类型；属性类型依据同一门店快照中该 `attr_id` 是否出现过空 `sku_id` 的记录推断。
 - 商品分类缺失时默认保留为预览警告，并允许管理员在预览阶段补齐；实现可按现有校验策略拒绝确认。
