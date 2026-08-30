@@ -11,7 +11,7 @@
 
 1. 镜像库作为服务端固定配置的外部只读数据源，不把数据库连接信息暴露给管理端，也不让导入模块依赖外部库的业务实现。
 2. 使用独立、懒加载、只读连接池；查询必须使用参数绑定、连接/读取超时和单批次行数上限。
-3. 解析器输出导入模块自有的规范化商品行模型：`foods` 负责商品/SKU；`food_attrs` 以同一门店快照中 `attr_id` 是否出现过空 `sku_id` 推断属性类型，兼容绑定到 SKU 的商品选项。
+3. 解析器输出导入模块自有的规范化商品行模型：`foods` 负责商品/SKU，`foods.forbid_single_buy=1` 映射为单点不送；`food_attrs` 以同一门店快照中 `attr_id` 是否出现过空 `sku_id` 推断属性类型，兼容绑定到 SKU 的商品选项。
 4. 当 `foods.spec_text` 为空时，使用当前 SKU 的规格属性值回填导入行 `sourceSpec`，保证预览列表与最终商品规格展示一致。
 5. `food_attrs.selected` 仅转换为选项默认值；`required`、`min_selected_count`、`max_selected_count`、`sale_status` 和 `value_price` 必须保留到选项写入契约。
 6. 外部查询与本地预览批次写入不做跨数据库事务；外部查询失败时不创建本地批次或店铺。

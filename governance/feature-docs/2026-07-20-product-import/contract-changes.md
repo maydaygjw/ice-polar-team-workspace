@@ -8,6 +8,7 @@
 - `POST /admin-api/product/import/preview`：上传文件并生成预览批次，参数包含模板编码、商圈和新店信息；不接收店铺公告或商品数据选项。
 - `GET /admin-api/product/import/preview?id=`：恢复仍处于草稿状态的批次，返回店铺默认值和已保存的导入明细，管理端可继续编辑售价并调用确认接口导入；已导入状态不可恢复。
 - 预览明细项新增 `monthlySales` 字段，返回源文件“商品月售”的纯数字值，供管理端在预览表展示；该字段只读，不参与草稿或确认请求体。
+- 预览明细项新增 `isSingleNoDelivery` 字段；美团镜像库 `foods.forbid_single_buy=1` 时保存为 `1`，并在确认创建商品时写入商品配置；其他来源缺失时默认为 `0`。
 - `POST /admin-api/product/import/draft`：保存仍处于草稿状态的批次；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price, productName?, firstCategory? }`；草稿保存选择状态、预览阶段调整后的售价、商品名称和一级分类，不改变批次状态。
 - `POST /admin-api/product/import/confirm`：确认预览批次并执行导入；请求体包含 `id`、`selectedItemIds` 和可选的 `items`，其中每项为 `{ id, price, productName?, firstCategory? }`，未选中的有效明细标记为 `SKIPPED` 且不创建商品；同一预览只能成功确认一次。
 - `GET /admin-api/product/import/page`：分页查询导入记录。

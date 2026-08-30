@@ -24,7 +24,7 @@
 
 ## 外部系统
 
-- 外部系统：MySQL `mitmflows` 美团镜像库，当前版本按现有 `foods`、`food_attrs`、`food_categories` 表结构读取。
+- 外部系统：MySQL `mitmflows` 美团镜像库，当前版本按现有 `foods`、`food_attrs`、`food_categories` 表结构读取；`foods.forbid_single_buy=1` 表示单点不送，映射为导入字段 `isSingleNoDelivery=1`。
 - 认证：服务端环境变量中的只读数据库账号；管理端只提交 `poi_id`。
 - 访问：参数化只读 SQL；连接超时、读取超时和批次上限可配置；不访问评论表和采集流表。
 - 幂等：外部查询无写入；本地批次沿用现有草稿/确认幂等规则。
