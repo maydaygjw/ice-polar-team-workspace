@@ -18,7 +18,10 @@
 
 ## 商品导入写入契约
 
-- SKU 规格 DTO 保持现有价格、原价、库存、图片和 `details`；镜像解析器将未出现商品级形态的 `food_attrs` 转成规格组及每个 SKU 的详情。
+- 美团分类按 `food_categories.sequence ASC, category_id ASC` 的稳定顺序导入；导入写入 DTO 携带 `categorySort`，一级和二级分类均将该顺序写入 `yshop_store_product_category.sort`。
+- 确认导入必须按预览行号升序处理，不能依赖数据库未指定顺序的返回结果；没有分类关系的商品统一排在镜像分类之后并归入“未分类”。
+- SPU、SKU 规格、属性组和属性值保持镜像库顺序：优先采用对应表的显式顺序列，其次采用镜像采集写入 ID，业务 ID 仅作为稳定兜底；解析、预览和确认写入过程不得再次按 `spu_id`、`sku_id`、`attr_id` 重排。
+- SKU 规格 DTO 保持现有价格、原价、库存、图片和 `details`；镜像解析器将 SKU 级 `food_attrs` 转成规格组及每个 SKU 的详情。
 - 选项组 DTO 增加最小/最大选择数语义和选项默认值；保留 `required`、`multiple`、`value_price`、`selected`、`sale_status`。
 - `sku_id=''` 的属性不生成 SKU，不参与规格笛卡尔积；同一 `attr_id` 的用户可选属性即使带 `sku_id`，同样只生成商品选项组。
 
