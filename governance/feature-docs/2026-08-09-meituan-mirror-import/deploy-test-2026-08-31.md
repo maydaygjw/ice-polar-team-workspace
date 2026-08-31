@@ -28,6 +28,15 @@
 - 远端既有源码目录 HEAD 与本地基准不同且存在既有工作区文件，本次未覆盖远端源码目录；使用本地 Git bundle 和工作区 patch 在远端隔离目录构建，仅替换运行 JAR。
 - 本次未执行数据库迁移。
 
+## 商品关联顺序修复补充部署
+
+- 部署时间：2026-08-31 22:36-22:42（Asia/Shanghai）。
+- 修复：镜像库 `food_category_products` 使用 `captured_at` 保留美团分类内商品顺序；SPU、SKU、属性查询同样优先使用采集时间字段。
+- 定向测试：`MeituanMirrorProductImportParserTest` 4 个用例通过。
+- backend JAR commit：`96154d055d4bae58761b25a2b3f3170911953865`；JAR SHA-256：`541f2c93f2ae371bc9ee762039874b7bf7115e22ae5c79ecf077fed3e23f7b9c`。
+- 运行态：PID `2127990`，Java 21，`dev` profile，8888 监听，根接口健康检查通过，最近日志无 ERROR。
+- 回滚备份：`yshop-server.jar.bak.20260831223645`；未执行数据库迁移。
+
 ## 管理后台筛选顺序补充部署
 
 - 部署时间：2026-08-31 22:08（Asia/Shanghai）
@@ -36,3 +45,11 @@
 - 产物 tar SHA-256：`9c48c39c3eecb0add06f3f1a0d38d478c4b6ca81163f50db47416513985e8244`。
 - 部署目录：`/opt/holun/yshop-drink-vue/dist`；旧目录备份：`/opt/holun/yshop-drink-vue/dist.bak.20260831220818`。
 - 远端校验：归档 SHA-256 一致，`nginx -t` 通过并已 reload；使用 admin 域名 Host 访问本机 Nginx 返回 HTML，Nginx active。
+
+## admin/backend 重新部署补充
+
+- 部署时间：2026-08-31 22:26（Asia/Shanghai）。
+- admin：`pnpm build:dev` 成功；产物 tar SHA-256 `563c43f41156682bb8cdf9de2dc088d7aee03beedb4e9f45659bac08aafb331f`；备份目录 `/opt/holun/yshop-drink-vue/dist.bak.20260831222548`；`nginx -t`、reload 和 admin Host 页面访问均通过。
+- backend：固定 Git bundle commit `96154d055d4bae58761b25a2b3f3170911953865`，Java 21 构建成功；JAR SHA-256 `d1929c05be36ca954315c911a98d42fafb93eaa36c4d8653c79908e987b715a2`；备份 JAR `yshop-server.jar.bak.20260831222621`。
+- backend 运行态：PID `2125070`，`--spring.profiles.active=dev`，8888 正常监听；根接口健康检查通过，启动日志包含 `Started YshopServerApplication`，最近日志无 ERROR。
+- 本次未执行数据库迁移。
