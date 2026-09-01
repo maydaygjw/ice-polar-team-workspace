@@ -1,5 +1,33 @@
 # 契约变更
 
+## App API — 兑换码领取响应
+
+调整现有 `GET /app-api/product/coupon/relation/receive/cdkey/{code}`：兑换成功时，`data` 不再返回布尔值，改为返回刚领取的 `UserCouponVO`，用于前端立即展示优惠券基本信息。
+
+成功响应示例：
+
+```json
+{
+  "code": 0,
+  "data": {
+    "detailId": 4001,
+    "id": 3001,
+    "couponName": "满 10 减 2",
+    "couponValue": 2.00,
+    "couponType": 1,
+    "threshold": 10.00,
+    "discount": 0,
+    "couponScope": 2,
+    "takingEffectTime": "2026-09-01T00:00:00",
+    "expirationTime": "2026-09-30T23:59:59",
+    "receiveTime": "2026-09-01T12:00:00"
+  },
+  "msg": "success"
+}
+```
+
+失败响应的错误码和文案保持不变。
+
 ## Admin API
 
 新增 `GET /admin-api/product/coupon/qrcode/{id}`，权限 `product:coupon:qrcode`。
