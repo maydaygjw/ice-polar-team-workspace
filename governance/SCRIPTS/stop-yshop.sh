@@ -26,7 +26,7 @@ set -euo pipefail
 jar_name="$1"
 find_pid() {
   ps -eo pid=,args= | awk -v target="target/$jar_name" \
-    '$2 == "-jar" && $3 == target { print $1; exit }'
+    '$3 == "-jar" && $4 == target { print $1; exit }'
 }
 
 if systemctl list-units --type=service | grep -q yshop.service; then
