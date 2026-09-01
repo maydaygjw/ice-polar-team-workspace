@@ -1,0 +1,22 @@
+# 技术设计
+
+## Module impact
+
+- `backend/yshop-module-marketing/.../ProductCouponController` 增加生成二维码接口。
+- 优惠券服务校验当前租户优惠券存在；MP 账号服务提供当前租户主小程序服务；桌台模块已有二维码服务负责调用微信和保存文件，可通过现有模块 API/依赖复用。
+- `admin/src/api/market/discountCoupon` 增加请求方法；优惠券列表增加弹窗组件或内联弹窗。
+
+## Decision
+
+后端生成二维码并返回文件 URL。这样微信 AppSecret 不离开服务端，且二维码内容由主小程序 AppID 决定；前端只负责展示、复制和下载。
+
+二维码场景使用 `couponId=...`，页面使用固定 `/home/index/index`，与现有小程序页面约定一致。复用现有 `QrcodeService.createMiniQrcode`，避免重复实现微信调用、文件落盘和租户主小程序选择。
+
+## Failure and rollback
+
+- 未找到优惠券、主小程序或微信调用失败时抛出业务异常，前端保留列表页并提示。
+- 无数据库迁移；回滚只需移除新增接口、前端入口和文档。
+
+## Risk
+
+微信小程序码生成需要有效的主小程序配置和线上合法页面；测试环境若未配置微信凭据，只能完成编译与单元级验证。
