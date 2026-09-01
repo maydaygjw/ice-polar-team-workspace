@@ -102,6 +102,16 @@ ssh "$DEPLOY_USER@$SERVER_HOST" "
 
 ## 管理后台
 
+测试环境使用固定脚本完成打包、上传、SHA-256 校验、目录备份、解压和 Nginx 校验，避免在本地 zsh 中拼接含 `$1` 或远端变量的多层双引号命令：
+
+```bash
+source governance/SCRIPTS/deploy-helper.sh && load_env test
+cd "$ADMIN_LOCAL_PATH" && $ADMIN_BUILD_CMD
+bash governance/SCRIPTS/deploy-admin-test.sh
+```
+
+脚本使用带参数的 quoted heredoc 执行远端逻辑；远端失败时保留旧目录备份，不得手工改写为嵌套双引号命令。
+
 ```bash
 source governance/SCRIPTS/deploy-helper.sh && load_env prod
 cd "$ADMIN_LOCAL_PATH" && $ADMIN_BUILD_CMD

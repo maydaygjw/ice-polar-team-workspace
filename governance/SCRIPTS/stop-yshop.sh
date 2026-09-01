@@ -20,24 +20,33 @@ for var_name in "${required_vars[@]}"; do
   fi
 done
 
-ssh "${DEPLOY_USER}@${SERVER_HOST}" "
-  if systemctl list-units --type=service | grep -q yshop.service; then
-    systemctl stop yshop.service || true
-    for i in \$(seq 1 30); do
-      if ! pgrep -f '[j]ava -jar target/${YSHOP_JAR}' > /dev/null 2>&1; then
-        break
-      fi
-      sleep 1
-    done
-  else
-    # 无 systemd：先 SIGTERM 优雅停机，轮询等待进程退出，超时再 SIGKILL 兜底。
-    pkill -TERM -f '[j]ava -jar target/${YSHOP_JAR}' || true
-    for i in \$(seq 1 30); do
-      if ! pgrep -f '[j]ava -jar target/${YSHOP_JAR}' > /dev/null 2>&1; then
-        break
-      fi
-      sleep 1
-    done
-    pkill -9 -f '[j]ava -jar target/${YSHOP_JAR}' || true
+ssh "${DEPLOY_USER}@${SERVER_HOST}" bash -s -- "${YSHOP_JAR}" <<'REMOTE_SCRIPT'
+set -euo pipefail
+
+jar_name="$1"
+find_pid() {
+  ps -eo pid=,args= | awk -v target="target/$jar_name" \
+    '$2 == "-jar" && $3 == target { print $1; exit }'
+}
+
+if systemctl list-units --type=service | grep -q yshop.service; then
+  systemctl stop yshop.service || true
+fi
+
+# 裸进程模式：只匹配 Java 的实际 argv，避免 pgrep/pkill -f 把 SSH 命令自身匹配进去。
+pid="$(find_pid || true)"
+if [[ -n "$pid" ]]; then
+  kill -TERM "$pid"
+fi
+for i in $(seq 1 30); do
+  if [[ -z "$(find_pid || true)" ]]; then
+    exit 0
   fi
-"
+  sleep 1
+done
+
+pid="$(find_pid || true)"
+if [[ -n "$pid" ]]; then
+  kill -KILL "$pid"
+fi
+REMOTE_SCRIPT
