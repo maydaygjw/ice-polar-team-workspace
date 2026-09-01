@@ -12,7 +12,7 @@
 {
   "code": 0,
   "data": {
-    "url": "/home/index/index?couponId=123",
+    "url": "{coupon_mini_app_page}?couponId=123",
     "qrcodeUrl": "https://host/admin-api/..."
   },
   "msg": "success"
@@ -26,6 +26,7 @@
 - 需要 `product:coupon:qrcode` 权限。
 - 查询优惠券使用现有 MyBatis Plus 租户过滤；不得通过请求参数切换租户。
 - 主小程序使用当前租户的 `isMiniApp=1` 且 `isMain=1` 账号。
+- 页面路径使用当前租户参数 `coupon_mini_app_page`；参数为空时返回“请先配置优惠券小程序页面路径”。
 
 ## Database / events / dependencies
 

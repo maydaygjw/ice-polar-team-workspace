@@ -10,7 +10,7 @@
 
 后端生成二维码并返回文件 URL。这样微信 AppSecret 不离开服务端，且二维码内容由主小程序 AppID 决定；前端只负责展示、复制和下载。
 
-二维码场景使用 `couponId=...`，页面使用固定 `/home/index/index`，与现有小程序页面约定一致。复用现有 `QrcodeService.createMiniQrcode`，避免重复实现微信调用、文件落盘和租户主小程序选择。
+二维码场景使用 `couponId=...`，页面从当前租户参数 `coupon_mini_app_page` 读取。复用现有小程序 SDK、租户参数 API 和文件 API，避免重复实现微信调用、文件落盘和租户主小程序选择。
 
 ## Failure and rollback
 

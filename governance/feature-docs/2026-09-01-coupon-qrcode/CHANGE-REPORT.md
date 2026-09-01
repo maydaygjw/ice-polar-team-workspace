@@ -3,7 +3,7 @@
 ## Business result
 
 - 优惠券列表新增“生成二维码”操作。
-- 后端按当前租户的主小程序生成 `/home/index/index?couponId={id}` 对应的小程序码。
+- 后端按当前租户的主小程序和 `coupon_mini_app_page` 配置生成 `{coupon_mini_app_page}?couponId={id}` 对应的小程序码。
 - 管理员可在弹窗复制链接并下载二维码。
 
 ## Repositories
