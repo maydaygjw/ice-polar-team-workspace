@@ -228,6 +228,8 @@ Authorization: Bearer <token>
 | mobile | string | 否 | 联系手机号 |
 | couponId | string | 否 | 优惠券 ID |
 | payType | string | 否 | 下单时选择的支付方式 |
+| channelCode | string | 否 | 订单来源渠道标识，最长 64 个字符；用于记录订单所属推广渠道 |
+| referrerUserId | long | 否 | 推荐人用户 ID；不能为当前下单用户，且推荐人须属于当前租户；不校验商圈归属 |
 | groupEnabled | boolean | 否 | 是否选择拼单；为 `true` 时必须同时传 `groupTotalCount`，且门店和租户均已启用 |
 | groupTotalCount | int | 否 | 拼单总份数，包含发起人，范围为 2～10；订单创建后不可修改 |
 | remark | string | 否 | 订单备注，最多 200 个字符 |
@@ -247,6 +249,8 @@ Authorization: Bearer <token>
   "spec": ["默认"],
   "number": ["1"],
   "payType": "weixin",
+  "channelCode": "partner_qr",
+  "referrerUserId": 400,
   "remark": "少冰",
   "couponId": "",
   "optionSelections": [[]],

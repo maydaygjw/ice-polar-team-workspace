@@ -9,6 +9,7 @@
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/app-api/member/user/get` | 获得用户基本信息（精简） |
+| GET | `/app-api/member/user/get-nickname?userId=400` | 获取指定用户昵称 |
 | GET | `/app-api/member/user/get-info` | 获得用户完整信息（余额/积分/订单统计等） |
 | POST | `/app-api/member/user/update-nickname` | 修改昵称/生日/性别/头像/手机 |
 | POST | `/app-api/member/user/update-avatar` | 修改头像（文件上传） |
@@ -45,7 +46,38 @@
 
 ---
 
-## 2. 获得完整信息 `GET /app-api/member/user/get-info`
+## 2. 获取指定用户昵称 `GET /app-api/member/user/get-nickname`
+
+根据用户 ID 查询用户昵称，需要登录态。接口只返回昵称，不返回用户其他信息。
+
+### Query 参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| userId | long | **是** | 要查询的用户 ID |
+
+**请求示例**
+
+```http
+GET /app-api/member/user/get-nickname?userId=400
+Authorization: Bearer <token>
+```
+
+**响应示例**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": "张三"
+}
+```
+
+用户不存在时返回用户不存在错误。
+
+---
+
+## 3. 获得完整信息 `GET /app-api/member/user/get-info`
 
 个人中心首页用，含资产、签到、订单统计等。
 
@@ -128,7 +160,7 @@
 
 ---
 
-## 3. 修改昵称/生日/性别/头像/手机 `POST /app-api/member/user/update-nickname`
+## 4. 修改昵称/生日/性别/头像/手机 `POST /app-api/member/user/update-nickname`
 
 JSON body：
 
@@ -158,7 +190,7 @@ JSON body：
 
 ---
 
-## 4. 修改头像 `POST /app-api/member/user/update-avatar`
+## 5. 修改头像 `POST /app-api/member/user/update-avatar`
 
 multipart 表单上传，字段名 `avatarFile`。`data` 为头像路径。
 
@@ -176,7 +208,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 5. 修改手机号 `POST /app-api/member/user/update-mobile`
+## 6. 修改手机号 `POST /app-api/member/user/update-mobile`
 
 换绑手机号，新旧手机号都需通过短信验证码（场景：`MEMBER_UPDATE_MOBILE`，先调短信发送接口）。
 
@@ -202,7 +234,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 6. 用户账单 `GET /app-api/member/user/getBill`
+## 7. 用户账单 `GET /app-api/member/user/getBill`
 
 **Query 参数**
 
@@ -244,7 +276,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 7. 余额充值 `POST /app-api/member/user/recharge`
+## 8. 余额充值 `POST /app-api/member/user/recharge`
 
 创建充值订单，`data` 返回订单 ID，前端拿到后走支付流程。
 
@@ -260,7 +292,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 8. 购买会员卡 `POST /app-api/member/user/buyCard`
+## 9. 购买会员卡 `POST /app-api/member/user/buyCard`
 
 创建会员卡订单，`data` 返回订单 ID，前端走支付流程。
 
@@ -276,7 +308,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 9. 生成二维码 `POST /app-api/member/user/generate`
+## 10. 生成二维码 `POST /app-api/member/user/generate`
 
 **无需登录**。任意内容生成二维码，返回 base64（JPEG）。
 
@@ -288,7 +320,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 10. 生成小程序码 `POST /app-api/member/user/generate-mini`
+## 11. 生成小程序码 `POST /app-api/member/user/generate-mini`
 
 **无需登录**。生成微信小程序码（`createWxaCodeUnlimit`），返回 base64。
 
