@@ -24,6 +24,9 @@
   "wecomApis": {
     "uploadImage": "/cgi-bin/media/uploadimg",
     "uploadMiniProgramCover": "/cgi-bin/media/upload?type=image",
-    "sendWelcomeMessage": "/cgi-bin/externalcontact/send_welcome_msg"
+    "sendWelcomeMessage": "/cgi-bin/externalcontact/send_welcome_msg",
+    "markCustomerTags": "/cgi-bin/externalcontact/mark_tag",
+    "autoCustomerTags": ["businessRegion.code", "tenant.name"],
+    "autoCustomerTagGroup": "自动标签"
   }
 }
