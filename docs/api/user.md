@@ -18,6 +18,7 @@
 | POST | `/app-api/member/user/recharge` | 余额充值（下单） |
 | POST | `/app-api/member/user/buyCard` | 购买会员卡（下单） |
 | POST | `/app-api/member/user/generate` | 生成二维码（无需登录） |
+| POST | `/app-api/mp/miniapp/qrcode` | 生成临时小程序码（需登录） |
 | POST | `/app-api/member/user/generate-mini` | 生成小程序码（无需登录） |
 
 ---
@@ -320,7 +321,55 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 11. 生成小程序码 `POST /app-api/member/user/generate-mini`
+## 11. 生成临时小程序码 `POST /app-api/mp/miniapp/qrcode`
+
+**需登录**。根据小程序页面路径和场景参数生成小程序码，并上传为临时图片，返回图片 URL 和预期过期时间。
+
+### JSON Body
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| path | string | **是** | 小程序页面路径，不含前导 `/`、查询参数，例如 `pages/index/index` |
+| scene | string | **是** | 场景参数，最多 32 个字符；用于在小程序页面中解析业务参数 |
+
+**请求示例**
+
+```http
+POST /app-api/mp/miniapp/qrcode
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "path": "pages/index/index",
+  "scene": "shopId=123"
+}
+```
+
+**响应示例**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "url": "https://oss.example.com/temporary/miniapp-qrcode/xxx.png",
+    "expiresAt": "2026-09-09T00:00:00Z"
+  }
+}
+```
+
+| 响应字段 | 类型 | 说明 |
+|------|------|------|
+| data.url | string | 临时小程序码图片 URL |
+| data.expiresAt | string | 业务预期过期时间；实际清理由存储生命周期负责 |
+
+> 图片临时有效期为 48 小时。`path` 不要拼接查询参数，业务参数放入 `scene`。
+
+---
+
+## 12. 生成小程序码 `POST /app-api/member/user/generate-mini`
 
 **无需登录**。生成微信小程序码（`createWxaCodeUnlimit`），返回 base64。
 
