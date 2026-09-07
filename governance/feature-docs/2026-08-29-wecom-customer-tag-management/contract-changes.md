@@ -11,6 +11,14 @@
 | PUT | `/admin-api/mp/wecom-customer-tag/update` | `mp:wecom-customer-tag:update` | 修改一个标签组或标签的名称/排序 |
 | DELETE | `/admin-api/mp/wecom-customer-tag/delete?accountId={accountId}&id={id}&type={GROUP\|TAG}` | `mp:wecom-customer-tag:delete` | 删除一个标签组或标签 |
 
+### 客户联系人标签增量
+
+客户联系人原有分页和详情接口保持路径、权限和既有字段兼容，新增以下响应字段：
+
+- 分页响应新增 `tags`：联系人标签去重列表，每项包含 `id`、`name`、`groupName`。
+- 详情响应新增 `tags`：联系人标签去重列表；`followUsers[].tags` 返回该跟进成员下的标签，每项包含 `id`、`name`、`groupName`。
+- 标签只读展示，不新增管理端绑定/解绑接口；标签绑定仍以企业微信为准，通过“同步客户联系人”刷新。
+
 ### DTO
 
 - `list` 请求：`accountId: Long`。
@@ -28,7 +36,7 @@
 
 ## DB
 
-不新增业务表、字段或索引；企业微信是本期标签数据的唯一来源。新增一份幂等的菜单/权限迁移脚本，用于注册管理页面和租户管理员权限。
+标签库不新增业务表，企业微信是标签库的唯一来源；客户联系人标签关系作为联系人同步快照新增业务表。菜单/权限迁移脚本保持幂等。
 
 ## 权限与数据范围
 
@@ -40,10 +48,16 @@
 
 - API 版本：企业微信服务端客户联系 API，文档最后更新 2023-12-01。
 - `POST /cgi-bin/externalcontact/get_corp_tag_list`：`group_id/tag_id` 为空时获取当前有效标签库。
+- `GET /cgi-bin/externalcontact/get?external_userid={external_userid}`：每个 `follow_user` 可返回 `tags`，读取 `tag_id`、`tag_name`、`group_name` 并按跟进成员保存。
 - `POST /cgi-bin/externalcontact/add_corp_tag`：新组通过 `group_name` 创建，已有组通过 `group_id` 添加标签；不支持空标签组。
 - `POST /cgi-bin/externalcontact/edit_corp_tag`：通过对象 ID 修改名称或排序。
 - `POST /cgi-bin/externalcontact/del_corp_tag`：通过 `tag_id` 或 `group_id` 删除对象，二者不能同时为空。
 - 认证使用现有企业微信配置的 CorpID + 客户联系 Secret 获取 access token；token 只在服务端请求内存中使用。
+
+## Migration
+
+- 在 `backend/sql/upgrade-2026-09-07-wecom-customer-tag-management.sql` 中创建 `mp_wecom_customer_contact_tag`，脚本可重复执行。
+- 联系人同步对单个联系人按当前企业微信返回结果替换标签快照；未返回的标签不继续展示。
 
 ## Machine Snapshot
 

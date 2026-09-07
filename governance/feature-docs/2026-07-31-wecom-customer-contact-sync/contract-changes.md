@@ -15,9 +15,9 @@
 
 分页请求字段：`pageNo`、`pageSize`、`accountId`、`name`、`externalUserId`、`unionId`、`matchStatus`。
 
-分页响应字段：`id`、`accountId`、`externalUserId`、`name`、`avatar`、`type`、`gender`、`unionIdMasked`、`matchStatus`、`memberId`、`memberNickname`、`memberMobileMasked`、`followUserCount`、`lastSyncTime`。
+分页响应字段：`id`、`accountId`、`externalUserId`、`name`、`avatar`、`type`、`gender`、`unionIdMasked`、`matchStatus`、`memberId`、`memberNickname`、`memberMobileMasked`、`followUserCount`、`tags`、`lastSyncTime`。`tags` 每项包含 `id`、`name`、`groupName`，按标签 ID 去重。
 
-详情响应在分页字段基础上增加 `followUsers`，每项包括 `userId`、`remark`、`description`、`addWay`、`createTime`；不返回 Secret、access token 或完整手机号。
+详情响应在分页字段基础上增加 `followUsers`，每项包括 `userId`、`remark`、`description`、`addWay`、`createTime`、`tags`；`tags` 每项包含 `id`、`name`、`groupName`。不返回 Secret、access token 或完整手机号。
 
 同步响应字段：`accountId`、`total`、`created`、`updated`、`matched`、`unmatched`、`failed`、`failedMessages`。
 
@@ -50,11 +50,17 @@
 - 标准 `creator/create_time/updater/update_time/deleted` 字段。
 - 唯一索引 `(tenant_id, contact_id, follow_userid, deleted)`，避免重复同步产生重复关系。
 
+### `mp_wecom_customer_contact_tag`
+
+- `id` bigint 主键；`tenant_id`、`contact_id`、`follow_userid`、`tag_id` 必填。
+- 保存企业微信返回的 `tag_name`、`group_name` 快照；标签 ID 使用字符串，不能转换为本地 Long。
+- 唯一索引 `(tenant_id, contact_id, follow_userid, tag_id, deleted)`，同步联系人时替换该联系人的当前标签快照。
+
 ### Migration / Rollback
 
-- 新增脚本：`backend/sql/upgrade-2026-07-31-wecom-customer-contact-sync.sql`。
-- 脚本创建两张新表和客户联系人查询权限；不得修改 `sql/yixiang-drink.sql`。
-- 回滚删除本功能菜单、权限和两张新表；执行回滚前必须确认没有依赖联系人匹配结果的后续业务。
+- 新增脚本：`backend/sql/upgrade-2026-07-31-wecom-customer-contact-sync.sql`；标签关系表由 `backend/sql/upgrade-2026-09-07-wecom-customer-tag-management.sql` 幂等创建。
+- 脚本创建联系人快照、跟进关系和客户联系人标签关系表及客户联系人查询权限；不得修改 `sql/yixiang-drink.sql`。
+- 回滚删除本功能菜单、权限和新建数据表；执行回滚前必须确认没有依赖联系人匹配结果的后续业务。
 - 不修改 `yshop_user` 结构，不回写会员 UnionID，不删除既有客户群数据。
 
 ## 权限与数据范围
@@ -68,7 +74,7 @@
 - 认证继续使用现有企业微信配置的 CorpID 和客户联系 Secret 获取 access token；凭证只在服务端使用。
 - 获取配置了客户联系功能的员工列表：`GET /cgi-bin/externalcontact/get_follow_user_list`。
 - 获取员工客户列表：`GET /cgi-bin/externalcontact/list?userid={userid}`，读取 `external_userid`，按接口分页/上限处理。
-- 获取联系人详情：`GET /cgi-bin/externalcontact/get?external_userid={external_userid}`，读取联系人基本资料、`unionid` 和可见的 `follow_user` 关系。
+- 获取联系人详情：`GET /cgi-bin/externalcontact/get?external_userid={external_userid}`，读取联系人基本资料、`unionid`、可见的 `follow_user` 关系和每个跟进成员的 `tags`。
 - 创建客户群发文本任务：`POST /cgi-bin/externalcontact/add_msg_template`，使用联系人 `external_userid` 和已同步的跟进成员 `userid`，不使用 `unionid` 作为发送目标。
 - 获取 UnionID 需要企业微信侧绑定与小程序同主体的微信开发者账号，并具备客户基础信息权限；UnionID 缺失时仍保存联系人。
 - 同步过程使用单次请求超时、分页读取和同配置 Redisson 锁；access token 不写入业务表，不进入管理端响应。
