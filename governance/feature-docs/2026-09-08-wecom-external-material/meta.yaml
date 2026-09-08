@@ -1,5 +1,5 @@
 feature: wecom-external-material
-status: requirements
+status: implementation
 risk: high
 targets: [backend, admin]
 contract: true
