@@ -45,3 +45,11 @@
 - 数据库：已备份 `/opt/holun/backups/wecom_external_material_before_tenant_20260908152759.sql`，迁移后 Provider 有 11 条有效租户配置，`tenant_id IS NULL` 为 0。
 - 当前 test 运行 JAR SHA-256：`32b89be6d29f03a22e0f599325280375c9ba7c0ecb89304cb93c26bde7a1190f`，内嵌基线提交仍为 `211e8790fa36b9656167e0da8001a23bbcbe2d07`，`git.dirty=true` 表示本次租户修正尚未提交。
 - 修正后后端健康接口返回 `{"status":"UP"}`；生产发布前必须提交并合并该修正，禁止直接复用当前 dirty 制品。
+
+## 2026-09-08 17:00 群标签筛选修复部署
+
+- Backend 提交：`cd15ace1614fad84fb09d573b03a8520f09ece08`。
+- Backend JAR SHA-256：`b7f0e6c0b487b1239670eb411d97f9d779ab2056b6c904e8363fa20720e11155`。
+- 部署前已备份旧 JAR；新进程 PID `2736285`，Java 21，`dev` profile，监听 `8888`。
+- 健康接口：`https://yshop-api-test.holuntech.cn/actuator/health/` 返回 `{"status":"UP"}`。
+- 本次部署包含按群标签精确筛选客户群的修复；未重复执行已完成的外部素材数据库迁移。
