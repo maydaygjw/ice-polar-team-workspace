@@ -172,7 +172,7 @@ backend/sql/upgrade-2026-08-18-wecom-material-management.sql
 ```json
 {
   "chat_type": "group",
-  "external_userid": ["wrxxxx"],
+  "chat_id_list": ["wrxxxx"],
   "sender": "zhangsan",
   "text": {"content": "文字内容"},
   "attachments": [
