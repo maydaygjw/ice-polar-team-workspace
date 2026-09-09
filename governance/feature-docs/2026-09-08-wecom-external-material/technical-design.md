@@ -11,8 +11,8 @@
 
 1. **Provider 配置集中管理**：租户级系统配置表维护每个租户可用 Provider 的 `externalType`、`externalMaxCount`、参数定义和启用状态；管理员不能覆盖这些协议属性。
 2. **外部引用与展开结果分离**：素材组只保存 Provider 标识和按参数定义校验后的业务参数；动态结果在预览或发送时解析，不落库为普通素材。
-3. **统一返回有序列表**：提供方返回 `ExternalMaterialResult[]`，列表长度为 1 到 Provider 配置的 `externalMaxCount`，所有元素类型必须一致，系统按原顺序展开，不重排、不静默截断。
-4. **保存时预留数量预算**：非文字素材组的预算按 `普通非文字素材数量 + Σ(外部引用 externalMaxCount) ≤ 9` 校验。运行时再校验 `0 < actualCount ≤ externalMaxCount`，实际少返回的数量不释放已配置预算。
+3. **统一返回有序列表**：提供方返回 `ExternalMaterialResult[]`，非空列表长度不超过 Provider 配置的 `externalMaxCount`，所有元素类型必须一致。饭火轮新店 Provider 在超过 3 个有效门店时先随机抽取 3 个。
+4. **保存时预留数量预算**：非文字素材组的预算按 `普通非文字素材数量 + Σ(外部引用 externalMaxCount) ≤ 9` 校验。运行时校验 `0 ≤ actualCount ≤ externalMaxCount`；空结果跳过，但实际少返回的数量不释放已配置预算。
 4. **发送前原子解析**：先完整解析并校验整个素材组，再转换为企业微信消息；任一外部引用失败时不发送部分内容、不生成不完整任务。
 5. **提供方服务端注册**：管理端只能选择后端注册的提供方并填写白名单参数，不能提交任意 URL、脚本或凭据。
 
@@ -43,7 +43,7 @@
 
 ## 风险与回滚
 
-- 外部提供方超时、返回混合类型、空列表、超出 `externalMaxCount` 或字段无效时，整个预览/发送失败。
+- 外部提供方超时、返回混合类型、非空数量超出 `externalMaxCount` 或字段无效时，整个预览/发送失败；Provider 返回空列表时跳过该素材项。
 - 动态结果数量可能使企业微信最终附件达到上限，因此保存时按 `externalMaxCount` 预留预算，不能只按最近一次实际结果判断。
 - 数据库迁移失败时回滚新增列和索引；不删除已有普通素材、文件服务图片或企业微信外部素材。
 - 没有 `EXTERNAL` 类型的旧组继续沿用原解析路径。
@@ -53,4 +53,5 @@
 - `WecomExternalMaterialResolver` 只定义统一的 `resolve(material)` 接口，返回保持提供方顺序的 `WecomExternalMaterialResult` 列表。
 - 已知内置 Provider 标识统一维护在 `WecomExternalMaterialProviderEnum`；数据库中的 `provider` 值必须与枚举 code 一致。
 - `FHLFixedPriceProductMaterialResolver` 是当前一口价商品 Provider 实现，负责该 Provider 的参数读取、商品查询、结果组装和通用校验。
+- `FHLNewStoreMiniProgramMaterialResolver` 调用饭火轮 `GetNewStoreList` 接口，按 `logo/name/id` 组装小程序素材；非空结果超过 3 个时随机取 3 个，空结果返回空列表。
 - 后续 Provider 适配应通过新的实现类接入，不让素材组编排服务依赖具体外部数据源；解析器返回的结果必须继续满足 Provider 的类型和数量配置。

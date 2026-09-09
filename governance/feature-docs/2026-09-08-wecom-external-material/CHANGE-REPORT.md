@@ -6,6 +6,7 @@
 - 系统新增 Provider 配置表，集中维护 `externalType`、`externalMaxCount` 和参数定义；管理员不输入这些协议属性。
 - 外部素材引用使用 Provider 配置的 `externalMaxCount` 作为预留预算参与素材组数量校验。
 - 明确素材组非文字数量预算：普通非文字素材数量 + 各 Provider `externalMaxCount` 之和不得超过 9。
+- 新增饭火轮新店小程序 Provider：调用 `GetNewStoreList`，`logo/name/id` 分别映射为封面、标题和页面 `storeId` 参数；最多随机取 3 个，空结果跳过。
 
 ## Repositories
 
@@ -16,7 +17,7 @@
 ## Contracts
 
 - 复用素材创建/更新接口，增加 `EXTERNAL` 类型及 `externalProvider`、`externalParams`；`externalType` 和 `externalMaxCount` 从 Provider 配置表解析。
-- 提供方返回同类型有序列表；实际数量满足 `0 < actualCount ≤ Provider.externalMaxCount`。
+- 提供方返回同类型列表；非空数量不超过 `Provider.externalMaxCount`，允许空结果跳过。
 - 已新增数据库升级脚本；OpenAPI 机器快照需在应用启动环境中生成，当前未伪造快照。
 
 ## Verification

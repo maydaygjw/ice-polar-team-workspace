@@ -19,10 +19,24 @@
 }
 ```
 
+饭火轮新店素材请求示例：
+
+```json
+{
+  "groupId": 10,
+  "type": "EXTERNAL",
+  "externalProvider": "FHL_NEW_STORE_MINI_PROGRAM",
+  "externalParams": "{\"businessRegionCode\":\"SHLJZ001\"}"
+}
+```
+
+小程序页面固定为 `hlmall/pages/takeout/takeoutindex?storeId={门店ID}`，Provider 自动把接口返回的门店 `id` 拼接到 `storeId`。租户配置 `fhl_new_store_request_url` 使用业务方提供的完整 `GetNewStoreList` 请求地址（包含其签名参数），不要把签名写入代码或提交到仓库。
+
 - `externalProvider`、`externalParams` 在 `EXTERNAL` 类型下必填；`externalType` 和 `externalMaxCount` 不接受客户端输入，由 Provider 配置表决定。
 - Provider 配置表维护 `provider`、`externalType`、`externalMaxCount`、`paramsDefinition`、`enabled`；只有启用 Provider 才能被选择。
-- 提供方只能返回配置的 `externalType`；实际数量必须满足 `0 < actualCount ≤ externalMaxCount`，并保持原顺序。
+- 提供方只能返回配置的 `externalType`；非空实际数量必须满足 `actualCount ≤ externalMaxCount`。允许返回空列表，表示跳过该素材项。
 - `externalParams` 只能包含该 Provider 参数定义中的业务参数；首期一口价 Provider 只允许一个商圈编码。
+- 饭火轮新店 Provider 标识为 `FHL_NEW_STORE_MINI_PROGRAM`，类型为 `MINI_PROGRAM`，最大数量为 3，参数仅为 `businessRegionCode`。小程序页面固定为 `hlmall/pages/takeout/takeoutindex?storeId={门店ID}`；请求地址由租户配置 `fhl_new_store_request_url` 提供，避免在代码中固化签名。
 - 响应展示外部引用配置及展开后的预览结果，但不得返回 Secret、access token 或提供方内部凭据。
 
 新增接口：
@@ -45,7 +59,7 @@ ExternalMaterialResult[]
   item.payload: type-specific fields
 ```
 
-- 列表必须非空、有序且元素类型一致。
+- 列表可为空；非空时必须有序且元素类型一致。
 - `TEXT` 每项必须有非空 `content`；`MINI_PROGRAM` 每项必须有 `imageUrl`、`title` 和 `page`。
 - 后端逐项转换为既有 `text`/`attachments` 标准消息；提供方对象不得直接透传到企业微信。
 
@@ -71,5 +85,5 @@ ExternalMaterialResult[]
 
 - 提供方不存在/禁用、参数不完整、数量配置非法：配置错误。
 - 素材组预算超限：素材数量超限。
-- 提供方超时、空列表、混合类型、数量超过 `externalMaxCount` 或结果字段无效：外部素材解析失败。
+- 提供方超时、混合类型、非空数量超过 `externalMaxCount` 或结果字段无效：外部素材解析失败；空列表跳过该素材项。
 - 任一外部素材解析失败：本次预览或发送整体失败，不发送部分内容。

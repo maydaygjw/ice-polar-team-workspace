@@ -18,6 +18,7 @@
 - `mp_wecom_external_material_provider` 已创建并写入 `FIXED_PRICE_PRODUCT / TEXT / externalMaxCount=1`。
 - `mp_wecom_material.external_provider`、`mp_wecom_material.external_params` 已存在。
 - 受影响表备份：`/opt/holun/backups/mp_wecom_material.20260908150545.sql`。
+- 饭火轮新店 Provider 还需在目标租户配置 `fhl_new_store_request_url` 为业务方提供的完整 `GetNewStoreList` 请求地址（签名仅放配置，不提交到仓库），素材参数填写 `businessRegionCode=SHLJZ001` 即可；页面固定为 `hlmall/pages/takeout/takeoutindex?storeId={门店ID}`。
 
 ## 部署结果
 
@@ -53,3 +54,16 @@
 - 部署前已备份旧 JAR；新进程 PID `2736285`，Java 21，`dev` profile，监听 `8888`。
 - 健康接口：`https://yshop-api-test.holuntech.cn/actuator/health/` 返回 `{"status":"UP"}`。
 - 本次部署包含按群标签精确筛选客户群的修复；未重复执行已完成的外部素材数据库迁移。
+
+## 2026-09-08 22:29 饭火轮新店 Provider 部署
+
+- 目标租户：`155`（莘动力）。
+- 已执行 `backend/sql/upgrade-2026-09-08-wecom-external-material.sql`；Provider 配置为 `FHL_NEW_STORE_MINI_PROGRAM / MINI_PROGRAM / externalMaxCount=3`。
+- 已写入租户参数 `fhl_new_store_request_url`，值为业务方提供的 `GetNewStoreList` 完整请求地址；签名未写入代码或本记录。
+- 素材参数使用 `businessRegionCode=SHLJZ001`；小程序页面固定为 `hlmall/pages/takeout/takeoutindex?storeId={门店ID}`。
+- 本地构建 JDK：Java 17；测试机运行 JDK：Java 21。
+- Backend 构建 commit：`b8e271498f0598c2eda093b7be06cfb3b763ed25`，制品标记 `git.dirty=true`。
+- Backend JAR SHA-256：`a82c55b2f152df23c2c05cf820b739c33c7d8cd1381efdf1ce1681c86e264504`。
+- 测试机运行进程：PID `2850788`，`dev` profile，监听 `8888`；健康接口返回 `{"status":"UP"}`。
+- Provider 数据库复核通过；Provider 列表管理 API 使用当前测试 Mock 用户返回 403，未宣称 API 权限验证通过。
+- 本次仅配置租户 Provider 和接口地址，未将素材挂入“欢迎语”或“莘动力每日推送”素材组；待明确发送场景后再添加素材项。
