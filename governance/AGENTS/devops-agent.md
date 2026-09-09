@@ -70,7 +70,8 @@
 ```bash
 # 后端：开发/测试/生产环境统一使用 Java 17；按变更范围执行模块测试，发布前按项目规则执行完整测试
 (cd backend && mvn clean test)
-(cd backend && mvn -pl yshop-server -am package -DskipTests)
+# 测试发布候选包：clean + javac + 嵌套 JAR 编译错误扫描 + commit/dirty 校验
+bash governance/SCRIPTS/build-backend-test.sh
 
 # 管理后台：锁文件安装、类型检查、目标生产构建
 (cd admin && pnpm install --frozen-lockfile)

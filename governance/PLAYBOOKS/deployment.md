@@ -16,6 +16,15 @@ source governance/SCRIPTS/deploy-helper.sh && load_env test   # 或 prod
 
 ## yshop 后端
 
+测试环境统一使用以下脚本构建和发布 backend；脚本会强制 clean + javac、扫描嵌套模块 JAR 中的编译错误类，并在健康检查失败时自动恢复备份：
+
+```bash
+source governance/SCRIPTS/deploy-helper.sh && load_env test
+bash governance/SCRIPTS/deploy-backend-test.sh
+```
+
+如只需要复用已经完成验证的本地制品，可显式设置 `SKIP_BUILD=1`；不得用它绕过制品校验。构建脚本默认拒绝脏工作区，临时诊断才允许设置 `ALLOW_DIRTY_BUILD=1`，该模式禁止用于部署。
+
 ### 发布规则
 
 - 生产只使用测试环境当前运行且验证通过的 JAR。
