@@ -21,7 +21,7 @@
 
 | 项目 | 测试环境 | 生产环境 | 风险/要求 |
 |---|---|---|---|
-| yshop 运行方式 | `dev` profile，裸 `java -jar`，监听 `8888` | `prod` profile，`yshop.service` 已启用，监听 `8080` | 测试和生产的进程管理方式不一致；生产服务显式使用 Java 21，但生产 shell 默认 Java 是 17，不能只检查 `java -version` |
+| yshop 运行方式 | `dev` profile，JDK 17，裸 `java -jar`，监听 `8888` | `prod` profile，JDK 17，`yshop.service` 已启用，监听 `8080` | 测试和生产的进程管理方式不一致；仍需核对生产 systemd 实际使用的 Java 17，不能只检查 shell 默认的 `java -version` |
 | yshop 制品 | 运行 JAR commit 为 `15eb8de...` | 运行 JAR commit 为 `7e6866b...` | 两个运行 JAR 相差 193 个文件（`+218/-6584`）；当前不能证明生产就是测试制品，必须阻断直接发布 |
 | yshop 代码目录 | HEAD `0a0ca1e...`，工作区有 8 项变更 | HEAD `1026de8c...`，工作区有 1 项变更 | 代码目录 HEAD 均不等于运行 JAR commit；代码目录不能作为制品身份凭证 |
 | 管理后台 | `pnpm build:dev`，远端 dist 约 1191 个文件 | `pnpm build:prod`，远端 dist 约 911 个文件 | 两套静态 bundle 的 `index.html` hash 不同；生产必须晋级测试验证过的同一个 tar 包，不得在生产目录重新构建 |
@@ -68,7 +68,7 @@
 在测试机或固定构建机使用干净、固定 commit 的工作区构建，不从有未提交修改的目录生成发布制品：
 
 ```bash
-# 后端：Java 21；按变更范围执行模块测试，发布前按项目规则执行完整测试
+# 后端：开发/测试/生产环境统一使用 Java 17；按变更范围执行模块测试，发布前按项目规则执行完整测试
 (cd backend && mvn clean test)
 (cd backend && mvn -pl yshop-server -am package -DskipTests)
 

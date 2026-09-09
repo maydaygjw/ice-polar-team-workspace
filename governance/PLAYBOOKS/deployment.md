@@ -9,7 +9,7 @@ source governance/SCRIPTS/deploy-helper.sh && load_env test   # 或 prod
 ```
 
 - 先测试、后生产；生产操作必须获得明确授权并避开业务高峰。
-- 测试和生产统一使用 JDK 21；首次部署先执行 `environment-provisioning.md`。
+- 测试和生产统一使用 JDK 17；首次部署先执行 `environment-provisioning.md`。
 - 部署前备份当前制品，部署后检查进程、日志、端口、commit 和关键接口。
 - 生产禁止执行 Maven 构建、下载依赖或手工修改 JAR。
 - 数据库迁移必须单独确认；只部署应用时不自动执行 SQL。
@@ -19,7 +19,7 @@ source governance/SCRIPTS/deploy-helper.sh && load_env test   # 或 prod
 ### 发布规则
 
 - 生产只使用测试环境当前运行且验证通过的 JAR。
-- 测试 JAR 必须同时满足：测试服务健康、JDK 21、完整 Git commit 可读、`application-prod.yaml` 已包含正确生产配置。
+- 测试 JAR 必须同时满足：测试服务健康、JDK 17、完整 Git commit 可读、`application-prod.yaml` 已包含正确生产配置。
 - `application-prod.yaml` 不得保留本机数据库、Redis、DMS、MQ 默认地址或可替换环境变量占位配置。
 - 测试 JAR 下载和生产上传必须通过 SHA-256 校验；任何校验失败立即停止。
 - 生产必须以 `SPRING_PROFILES_ACTIVE=prod` 启动。当前生产不使用 RocketMQ、RabbitMQ、Kafka。
@@ -60,11 +60,11 @@ ARTIFACT_FILE="$ARTIFACT_DIR/$TEST_JAR"
 scp "$TEST_USER@$TEST_HOST:$TEST_PATH/target/$TEST_JAR" "$ARTIFACT_FILE"
 ARTIFACT_SHA256="$(shasum -a 256 "$ARTIFACT_FILE" | awk '{print $1}')"
 
-# 4. 加载生产环境，确认生产服务使用 JDK 21
+# 4. 加载生产环境，确认生产服务使用 JDK 17
 source governance/SCRIPTS/deploy-helper.sh && load_env prod
 ssh "$DEPLOY_USER@$SERVER_HOST" "
-  test -x /usr/lib/jvm/java-21-openjdk/bin/java
-  systemctl cat yshop.service | grep -q '/usr/lib/jvm/java-21-openjdk/bin/java'
+  test -x /usr/lib/jvm/java-17-openjdk/bin/java
+  systemctl cat yshop.service | grep -q '/usr/lib/jvm/java-17-openjdk/bin/java'
 "
 
 # 5. 上传临时文件并校验 SHA-256
