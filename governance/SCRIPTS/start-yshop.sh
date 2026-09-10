@@ -46,7 +46,7 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
   if systemctl list-unit-files | grep -q yshop.service; then
     if [ \"${ENV_NAME}\" = \"test\" ]; then
       systemctl import-environment DASHSCOPE_API_KEY
-      systemctl set-environment ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true
+      systemctl set-environment ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true LOGGING_LEVEL_CO_YIXIANG_YSHOP_MODULE_MP_PRIVATEPROMOTE_PRIVATEPROMOTEWEBHOOKCLIENT=DEBUG
     else
       systemctl unset-environment ADAPAY_DEBUG AI_IMAGE_ENABLED DASHSCOPE_API_KEY || true
       systemctl set-environment SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-}"
@@ -55,7 +55,7 @@ ssh "${DEPLOY_USER}@${SERVER_HOST}" "
   else
     cd ${YSHOP_START_PATH}
     if [ \"${ENV_NAME}\" = \"test\" ]; then
-      ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true nohup java -jar target/${YSHOP_JAR} --spring.profiles.active=dev > ${YSHOP_START_PATH}/app.log 2>&1 &
+      ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true nohup java -jar target/${YSHOP_JAR} --spring.profiles.active=dev --logging.level.co.yixiang.yshop.module.mp.privatepromote.PrivatePromoteWebhookClient=DEBUG > ${YSHOP_START_PATH}/app.log 2>&1 &
     else
       nohup java -jar target/${YSHOP_JAR} --spring.profiles.active="${SPRING_PROFILES_ACTIVE:-}" > ${YSHOP_START_PATH}/app.log 2>&1 &
     fi
