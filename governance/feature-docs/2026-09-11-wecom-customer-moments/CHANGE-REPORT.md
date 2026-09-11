@@ -8,7 +8,7 @@
 ## Repositories
 
 - `backend`：朋友圈任务表、管理端接口、企业微信 API 调用和图片媒体上传。
-- `admin`：朋友圈创建页、客户管理员多选和任务列表。
+- `admin`：朋友圈创建页（按素材组选择）、客户管理员多选和任务列表。
 
 ## Contracts and migration
 

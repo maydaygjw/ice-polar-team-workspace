@@ -5,9 +5,9 @@
 - 新增管理端朋友圈任务分页接口：`GET /mp/wecom-moment/page`（管理端统一前缀由网关补充）。
 - 新增管理端创建任务接口：`POST /mp/wecom-moment/create`。
 - 新增管理端查询创建结果接口：`GET /mp/wecom-moment/get?id={id}`，查询时刷新企业微信异步创建结果。
-- 创建请求包含 `accountId`、`content`、`imageMaterialIds`、`senderUserids`；不包含可见范围和定时字段。
+- 创建请求包含 `accountId`、`materialGroupId`、`senderUserids`；后端按素材组快照文字和图片，不包含可见范围和定时字段。
 - 创建响应返回本地任务编号；`jobid` 和初始状态在任务详情/列表中查询。
-- 创建前后端均校验发表人、图片数量、素材归属和文字/图片至少一项。
+- 创建前后端均校验发表人和素材组归属；素材组只能包含 `TEXT`、`IMAGE`，图片最多 9 张，且文字和图片不能同时为空。
 
 ## DB
 
