@@ -6,12 +6,15 @@
 - 新增管理端创建任务接口：`POST /mp/wecom-moment/create`。
 - 新增管理端查询创建结果接口：`GET /mp/wecom-moment/get?id={id}`，查询时刷新企业微信异步创建结果。
 - 创建请求包含 `accountId`、`materialGroupId`、`senderUserids`；后端按素材组快照文字、图片和链接，不包含可见范围和定时字段。
+- 新增周期发送接口：`POST /mp/wecom-moment/schedule/create`、`GET /mp/wecom-moment/schedule/page`、`POST /mp/wecom-moment/schedule/cancel`。周期计划包含 `dailyTimes` 时间数组，因此同一计划每天可多次执行，并可选开始/结束日期。
 - 创建响应返回本地任务编号；`jobid` 和初始状态在任务详情/列表中查询。
-- 创建前后端均校验发表人和素材组归属；素材组只能包含 `TEXT`、`IMAGE`、`LINK`，图片最多 9 张，链接最多 1 个；链接不能与图片同时发送，且文字、图片和链接不能同时为空。
+- 创建前后端均校验发表人和素材组归属；素材组只能包含 `TEXT`、`IMAGE`、`LINK`，图片最多 9 张，链接最多 1 个；链接不能与图片同时发送，且文字、图片和链接不能同时为空。周期计划在每个执行槽重新校验素材和发表人。
 
 ## DB
 
 - 新增 `mp_wecom_moment_task`，按租户和企业微信配置保存任务、内容快照、图片/链接媒体快照、发表人快照、`jobid`、`moment_id`、状态、错误信息及时间字段。
+- `mp_wecom_moment_task` 增加可选 `schedule_id`、`scheduled_time`，每个周期执行槽对应一条独立朋友圈任务。
+- 新增 `mp_wecom_moment_schedule` 保存周期计划和多个每日时间；使用 `backend/sql/upgrade-2026-09-12-wecom-moment-scheduled-push.sql`。
 - 使用 `backend/sql/upgrade-2026-09-11-wecom-customer-moments.sql` 初始化新表；已有环境追加执行 `backend/sql/upgrade-2026-09-12-wecom-customer-moment-link.sql`，不修改基线 SQL。
 - 回滚前确认没有使用该模块，再删除新增菜单权限和任务表；不删除素材文件或企业微信媒体。
 
@@ -28,4 +31,4 @@
 - 图片通过企业微信朋友圈附件上传接口 `POST /cgi-bin/media/upload_attachment` 获得朋友圈所需 `media_id`；当前保存的 `pic_url` 不直接作为朋友圈图片字段。该接口与欢迎语/群发使用的普通临时素材上传接口隔离。
 - 链接通过 `msgtype=link` 发送，使用链接标题、URL 和封面图片上传后得到的 `media_id`；企业微信要求图片、链接、视频附件类型三选一，链接最多 1 个。
 - 请求和响应仅 DEBUG 脱敏记录；明确失败返回业务错误，网络超时进入待核查状态，不自动重试。
-- 企业微信任务创建频率按接口限制控制；第一版不做定时队列。
+- `wecomMomentScheduledPushJob` 每 10 分钟扫描周期计划，并以数据库条件更新抢占执行槽，避免多实例重复创建外部任务。
