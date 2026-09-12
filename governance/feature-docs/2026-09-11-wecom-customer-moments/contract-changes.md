@@ -25,7 +25,7 @@
 
 - 创建：`POST /cgi-bin/externalcontact/add_moment_task`。
 - 查询异步创建结果：`GET /cgi-bin/externalcontact/get_moment_task_result`。
-- 图片通过企业微信临时素材上传接口获得朋友圈所需 `media_id`；当前保存的 `pic_url` 不直接作为朋友圈图片字段。
+- 图片通过企业微信朋友圈附件上传接口 `POST /cgi-bin/media/upload_attachment` 获得朋友圈所需 `media_id`；当前保存的 `pic_url` 不直接作为朋友圈图片字段。该接口与欢迎语/群发使用的普通临时素材上传接口隔离。
 - 链接通过 `msgtype=link` 发送，使用链接标题、URL 和封面图片上传后得到的 `media_id`；企业微信要求图片、链接、视频附件类型三选一，链接最多 1 个。
 - 请求和响应仅 DEBUG 脱敏记录；明确失败返回业务错误，网络超时进入待核查状态，不自动重试。
 - 企业微信任务创建频率按接口限制控制；第一版不做定时队列。
