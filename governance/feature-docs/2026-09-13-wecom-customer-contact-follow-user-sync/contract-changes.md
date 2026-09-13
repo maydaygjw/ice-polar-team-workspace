@@ -5,6 +5,7 @@
 - `POST /admin-api/mp/wecom-customer-contact/sync` 新增可选查询参数 `followUserId`。
 - `accountId` 保持必填；未传 `followUserId` 时同步当前企业微信配置权限范围内的全部客户员联系人。
 - 传入 `followUserId` 时，仅同步该客户员负责的联系人；后端校验该 UserID 属于当前配置且处于当前权限范围。
+- `GET /admin-api/mp/wecom-customer-contact/page` 新增可选查询参数 `followUserId`，按跟进成员关系过滤联系人列表。
 - 管理端客户联系人页面提供客户员选择器，默认“全部客户员”。
 
 ## 兼容性
