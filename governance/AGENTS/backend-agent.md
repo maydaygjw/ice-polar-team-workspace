@@ -21,36 +21,7 @@
 - 拒绝过度抽象与"预留"设计，可读性优先；不为将来可能用到而提前抽象，拍平过深包层级
 - 所有发送给外部系统的请求报文和响应报文必须以 `DEBUG` 级别记录；必须脱敏 access token、Secret、密码等凭据，禁止在 `INFO`/`WARN`/`ERROR` 级别打印完整外部报文。
 
-## MP 模块代码格式与 Checkstyle
+## Checkstyle
 
-当前仅 `backend/yshop-module-mp` 使用 Checkstyle 做 Java 代码格式和静态规范校验，其他后端模块暂不启用。Checkstyle 是校验器，不负责自动重排代码；开发者应先使用 IDE 的项目格式化功能，再运行 Checkstyle 确认结果。
-
-### 统一约定
-
-- 配置文件统一放在 `backend/config/checkstyle/checkstyle.xml`，由 `yshop-module-mp/pom.xml` 的 `maven-checkstyle-plugin` 统一加载；MP 子模块不得各自复制或覆盖规则。
-- 规则基线为 Java 17、UTF-8、4 个空格缩进、行宽 120；大括号、空格、换行、import 顺序、命名和基础 Javadoc 按现有后端代码风格约束。
-- 检查范围覆盖所有生产 Java 源码和测试 Java 源码；排除 `target/`、生成源码和第三方/vendor 目录。
-- Checkstyle 只约束代码排版与通用可读性，不在其中重复实现架构、租户隔离、权限、SQL 或业务规则检查。
-- 不以“当前历史代码存在问题”为理由新增永久豁免。确需例外时，必须在 `config/checkstyle/suppressions.xml` 中针对明确文件和规则记录原因，并关联 issue/任务；禁止关闭整个检查树。
-
-### 执行方式
-
-后端根 `pom.xml` 应提供统一的 Maven profile（建议命名为 `checkstyle`），至少支持以下命令：
-
-```bash
-# 只检查并输出问题，不运行测试
-(cd backend && mvn -Pcheckstyle -pl yshop-module-mp/yshop-module-mp-api,yshop-module-mp/yshop-module-mp-biz checkstyle:check -DskipTests)
-
-# MP 模块清理完成后，执行严格规范门禁
-(cd backend && mvn -Pcheckstyle -pl yshop-module-mp/yshop-module-mp-api,yshop-module-mp/yshop-module-mp-biz verify -DskipTests -Dcheckstyle.failOnViolation=true)
-```
-
-MP 模块当前只在 `yshop-module-mp/pom.xml` 中启用，其他 backend 模块不会因该 profile 自动执行。插件版本必须在 MP POM 集中声明并锁定，不能由 MP 子模块自行指定。CI 应先执行 MP 的报告命令；存量问题清理完成后切换到严格门禁。本地 IDE 格式化只能提高效率，不能替代 CI 校验。临时跳过检查只允许用于定位其他构建问题，不得作为提交或合并的常规手段。
-
-### 推进顺序
-
-1. 第一阶段：提交统一 `checkstyle.xml` 和 Maven profile，以报告模式清理现有存量问题；新增代码不得引入新的违规。
-2. 第二阶段：存量问题收敛后，将 `verify` 配置为违规即失败，并纳入 CI 必检项。
-3. 第三阶段：规则调整必须先说明影响范围并更新配置/文档；禁止在业务 PR 中为了通过检查而临时放宽全局规则。
-
-涉及 Checkstyle 配置、POM 或规则例外的变更，应在 PR 中说明受影响模块、执行的 Maven 命令及检查结果。
+仅 `backend/yshop-module-mp` 启用 Checkstyle，配置位于 `backend/config/checkstyle/`，其他后端模块暂不启用。
+提交前执行 MP 模块的 Checkstyle 检查；CI 使用严格门禁，规则例外须限定范围并在 PR 中说明原因。
