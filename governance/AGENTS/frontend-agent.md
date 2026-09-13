@@ -18,3 +18,10 @@
 - 表单沿用 `Dialog`、`el-form` 和 `formRef.validate()` 模式
 - 复用现有组件和权限模式
 - UI 变化遵循 `ui-ux-design.md`
+
+## Lint 要求
+
+- `admin/` 使用 ESLint、Prettier 和 Stylelint；不使用 Checkstyle。
+- 提交前执行 `pnpm lint:eslint`、`pnpm lint:format`、`pnpm lint:style` 自动修复代码。
+- CI 使用不带 `--fix`/`--write` 的只读检查命令，不修改工作区。
+- 规则以 `eslint*`、`prettier.config.js`、`stylelint.config.js` 为准；例外须限定范围并在 PR 中说明原因。
