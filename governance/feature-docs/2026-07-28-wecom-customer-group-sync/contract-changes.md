@@ -22,9 +22,12 @@
 | Method | Path | Permission | Semantics |
 |---|---|---|---|
 | POST | `/admin-api/mp/wecom-customer-group/sync?accountId={id}` | `mp:wecom-customer-group:sync` | 拉取并 upsert 指定配置的全部客户群，返回 `total/success/failed` |
+| POST | `/admin-api/mp/wecom-customer-group/sync-one?groupId={id}` | `mp:wecom-customer-group:sync` | 按客户群记录刷新单个群的基本信息和成员列表，返回 `total/success/failed` |
 | GET | `/admin-api/mp/wecom-customer-group/page` | `mp:wecom-customer-group:query` | 按 `accountId`、`chatId`、`name` 分页查询本地快照 |
 
 同步响应：`accountId`、`total`、`success`、`failed`、`failedMessages`。失败消息只返回企业微信错误摘要，不返回 Secret 或 access token。
+
+单群同步通过本地群记录取得 `accountId + chatId`，只调用企业微信 `externalcontact/groupchat/get`，更新群基本信息、成员列表、管理员列表和同步时间；不调用 `externalcontact/get` 获取客户完整资料。
 
 错误语义：配置不存在、租户不匹配、并发同步、凭证无效、外部接口无权限、外部接口超时均返回业务错误；局部详情失败不回滚已成功写入的数据，并通过同步汇总返回失败数量。
 
