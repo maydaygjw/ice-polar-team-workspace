@@ -16,3 +16,8 @@
 [submodule "mock-external-server"]
 	path = mock-external-server
 	url = https://gitee.com/icepolar/mock-external-server.git
+
+[submodule "h5"]
+	path = h5
+	url = https://gitee.com/icepolar/yshop-activity-h5.git
+	branch = main
