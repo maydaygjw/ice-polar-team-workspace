@@ -8,6 +8,7 @@
 - [会员外部用户 ID](feature-docs/2026-09-13-member-external-user-id/contract-changes.md)：会员增加可选外部系统用户 ID，供后台维护和查询展示。
 - [企业微信客户朋友圈](feature-docs/2026-09-11-wecom-customer-moments/contract-changes.md)：朋友圈素材组支持文字、图片或单个链接附件，并按企业微信接口规则校验附件类型。
 - [企业微信客户联系人按客户员同步](feature-docs/2026-09-13-wecom-customer-contact-follow-user-sync/contract-changes.md)：客户联系人同步接口支持可选客户员 UserID，未传时保持全部客户员同步。
+- [活动抽奖次数与中奖限制](feature-docs/2026-09-13-activity-management/contract-changes.md)：报名默认 1 次抽奖机会，支持后台和用户端增加次数，并支持按活动限制每人最多中奖一次。
 
 ## 饭火轮新店外部素材
 

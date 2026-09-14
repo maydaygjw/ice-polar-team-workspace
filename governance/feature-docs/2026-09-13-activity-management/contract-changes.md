@@ -20,6 +20,7 @@
 | POST | `/period/draw` | 到开奖时间后手动触发开奖 | `activity:period:draw` |
 | POST | `/period/qrcode` | 为指定期次生成临时小程序码 | `activity:period:qrcode` |
 | GET | `/registration/page?periodId={id}` | 查询报名记录 | `activity:registration:query` |
+| POST | `/registration/increase-chances` | 为指定报名用户增加抽奖次数 | `activity:registration:query` |
 | GET | `/winner/page?periodId={id}` | 查询中奖记录 | `activity:winner:query` |
 | GET | `/registration/export?periodId={id}` | 导出报名记录 | `activity:registration:export` |
 | GET | `/winner/export?periodId={id}` | 导出中奖记录 | `activity:winner:export` |
@@ -40,7 +41,15 @@
 
 服务内部调用既有小程序码能力，页面路径使用预留活动详情页，scene 使用受微信限制的短格式期次参数，例如 `activityPeriodId=123`。客户端不得传入 path、scene、appId 或其他租户信息。
 
-后续小程序 API 预留为 `/app-api/activity/period/detail`、`/app-api/activity/period/register` 和 `/app-api/activity/period/my-result`；本期不实现页面和调用方，但其业务主键统一为 `periodId`。
+用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances` 和 `/app-api/activity/period/my-result`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。
+
+### 抽奖次数与中奖限制
+
+- 活动模板新增 `singleWinner`，生成期次时复制到期次快照；为 `true` 时同一会员在该期最多生成一条中奖记录，为 `false` 时同一报名记录可按其抽奖次数生成多条中奖记录。
+- 报名成功时 `drawChances=1`、`drawChancesUsed=0`。抽奖机会按报名记录保存，不改变报名唯一性。
+- `POST /admin-api/activity/registration/increase-chances` 请求体为 `{"registrationId":10001,"chances":2}`，仅允许在开奖前为有效报名增加次数，返回增加后的抽奖总次数。
+- `POST /app-api/activity/period/increase-chances?periodId={id}&chances={n}` 使用当前登录用户的报名记录，仅允许在开奖前增加 `1-10` 次，返回增加后的抽奖总次数。
+- 开奖时每个抽奖次数作为一个抽签位；开奖完成后该期所有有效报名的 `drawChancesUsed` 更新为 `drawChances`。用户端结果同时返回总次数、已使用次数、剩余次数及全部中奖记录。
 
 ## 状态与错误语义
 
@@ -82,6 +91,7 @@
 | `draw_time` | `TIME NOT NULL` | 期次开奖时间 |
 | `check_wecom_admin` | `BIT NOT NULL DEFAULT 0` | 是否校验已添加活动客户管理员 |
 | `check_group_member` | `BIT NOT NULL DEFAULT 0` | 是否校验活动社群成员 |
+| `single_winner` | `BIT NOT NULL DEFAULT 0` | 是否限制每人最多中奖一次 |
 | `enabled` | `BIT NOT NULL DEFAULT 0` | 是否启用生成新期次 |
 | `next_period_date` | `DATE NULL` | 可选缓存字段，仅用于列表展示，不作为事实来源 |
 
@@ -156,6 +166,7 @@
 | `promote_images` | `JSON NULL` | 宣传素材快照 |
 | `check_wecom_admin` | `BIT NOT NULL DEFAULT 0` | 管理员校验开关快照 |
 | `check_group_member` | `BIT NOT NULL DEFAULT 0` | 社群校验开关快照 |
+| `single_winner` | `BIT NOT NULL DEFAULT 0` | 是否限制每人最多中奖一次 |
 | `admin_snapshot` | `JSON NULL` | 管理员 UserID/名称数组 |
 | `group_snapshot` | `JSON NULL` | 标签/群 ID/名称数组 |
 
@@ -187,6 +198,8 @@
 | `user_id` | `BIGINT NOT NULL` | `yshop_user.id`，企微校验时取其 `external_user_id` |
 | `register_time` | `DATETIME NOT NULL` | 报名时间 |
 | `status` | `TINYINT NOT NULL DEFAULT 1` | `1` 有效、`2` 取消/无效 |
+| `draw_chances` | `INT NOT NULL DEFAULT 1` | 累计获得的抽奖次数 |
+| `draw_chances_used` | `INT NOT NULL DEFAULT 0` | 开奖时已使用的抽奖次数 |
 | `admin_check_passed` | `BIT NOT NULL DEFAULT 0` | 管理员校验结果 |
 | `group_check_passed` | `BIT NOT NULL DEFAULT 0` | 社群校验结果 |
 | `check_snapshot` | `JSON NULL` | 命中的管理员、标签和群快照 |
@@ -211,9 +224,9 @@
 | `winner_time` | `DATETIME NOT NULL` | 中奖生成时间 |
 | `status` | `TINYINT NOT NULL DEFAULT 1` | `1` 待领取、`2` 已领取；本期不实现核销，可保持待领取 |
 
-唯一约束：`uk_period_registration (tenant_id, period_id, registration_id, deleted)`；索引：`idx_period_prize (tenant_id, period_id, prize_id, deleted)`、`idx_user (tenant_id, user_id, winner_time)`。
+索引：`idx_period_registration (tenant_id, period_id, registration_id, deleted)`、`idx_period_prize (tenant_id, period_id, prize_id, deleted)`、`idx_user (tenant_id, user_id, winner_time)`。同一报名记录是否可产生多条中奖记录由期次快照的 `singleWinner` 控制。
 
-活动模板保存默认配置；生成期次时写入期次、快照、奖品记录和关联配置。二维码不新增永久存储表，临时文件目录沿用 `temporary/miniapp-qrcode/{tenantId}`。迁移脚本为 `backend/sql/upgrade-2026-09-13-activity-management.sql`，必须包含上述表、索引、菜单权限数据及限定范围的 DDL/数据回滚语句。
+活动模板保存默认配置；生成期次时写入期次、快照、奖品记录和关联配置。二维码不新增永久存储表，临时文件目录沿用 `temporary/miniapp-qrcode/{tenantId}`。基础迁移脚本为 `backend/sql/upgrade-2026-09-13-activity-management.sql`，本次增量迁移为 `backend/sql/upgrade-2026-09-14-activity-draw-chances.sql`，均必须包含限定范围的 DDL/数据回滚语句。
 
 ## MQ / 定时任务
 

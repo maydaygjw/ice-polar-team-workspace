@@ -28,6 +28,7 @@
 | POST | `/admin-api/activity/period/draw` | `activity:period:draw` | 手动开奖 |
 | POST | `/admin-api/activity/period/qrcode` | `activity:period:qrcode` | 生成期次小程序码 |
 | GET | `/admin-api/activity/registration/page` | `activity:registration:query` | 分页查询报名记录 |
+| POST | `/admin-api/activity/registration/increase-chances` | `activity:registration:query` | 增加报名用户抽奖次数 |
 | GET | `/admin-api/activity/registration/export` | `activity:registration:export` | 导出报名记录 |
 | GET | `/admin-api/activity/winner/page` | `activity:winner:query` | 分页查询中奖记录 |
 | GET | `/admin-api/activity/winner/export` | `activity:winner:export` | 导出中奖记录 |
@@ -40,6 +41,7 @@
 | GET | `/app-api/activity/period/latest` | 否 | 查询最近活动期次详情 |
 | POST | `/app-api/activity/period/register?periodId={id}` | 是 | 当前登录用户报名活动 |
 | GET | `/app-api/activity/period/my-result?periodId={id}` | 是 | 查询当前用户报名和中奖结果 |
+| POST | `/app-api/activity/period/increase-chances?periodId={id}&chances={n}` | 是 | 增加当前用户抽奖次数 |
 | POST | `/app-api/activity/registration/create?periodId={id}&userId={externalUserId}` | 兼容接口 | 按外部用户标识报名，旧调用方使用 |
 
 ## 1. 活动模板
@@ -63,6 +65,7 @@
 | drawTime | time | 是 | 每日开奖时间，如 `22:00:00` |
 | checkWecomAdmin | boolean | 否 | 是否校验已添加活动客户管理员 |
 | checkGroupMember | boolean | 否 | 是否校验活动社群成员 |
+| singleWinner | boolean | 否 | 是否限制每个人最多中奖一次，默认 `false` |
 | enabled | boolean | 否 | 是否启用模板 |
 | prizes | object[] | 是 | 奖品列表，至少一项 |
 | admins | object[] | 否 | 企业微信客户管理员配置列表 |
@@ -97,6 +100,7 @@
   "drawTime": "22:00:00",
   "checkWecomAdmin": true,
   "checkGroupMember": true,
+  "singleWinner": false,
   "enabled": true,
   "prizes": [
     {
@@ -178,7 +182,7 @@ Query 参数：
 
 ### 查询详情 `GET /admin-api/activity/period/get?id={id}`
 
-返回期次时间、报名人数、中奖人数、内容快照、企微/社群配置快照和奖品列表。
+返回期次时间、报名人数、中奖人数、内容快照、企微/社群配置快照、`singleWinner` 规则和奖品列表。
 
 ### 生成期次 `POST /admin-api/activity/period/generate`
 
@@ -240,6 +244,18 @@ Query 参数：
 
 Query 参数同报名记录分页查询。接口返回 Excel 文件；服务端会导出符合条件的全部记录，不受分页大小限制。
 
+### 增加抽奖次数 `POST /admin-api/activity/registration/increase-chances`
+
+需要权限 `activity:registration:query`，仅允许在开奖前为有效报名增加次数。
+
+请求体：
+
+```json
+{"registrationId": 10001, "chances": 2}
+```
+
+`chances` 范围为 `1-1000`。成功时 `data` 为增加后的抽奖总次数。
+
 ## 4. 活动中奖记录
 
 ### 分页查询 `GET /admin-api/activity/winner/page`
@@ -285,6 +301,7 @@ Query 参数同中奖记录分页查询。接口返回 Excel 文件；服务端�
     "registrationCount": 100,
     "plannedWinnerCount": 10,
     "actualWinnerCount": 0,
+    "singleWinner": false,
     "content": "本周五到店参与霸王餐活动",
     "coverImage": "https://cdn.example.com/activity-cover.png",
     "backgroundImage": "https://cdn.example.com/activity-background.png",
@@ -305,6 +322,8 @@ Query 参数同中奖记录分页查询。接口返回 Excel 文件；服务端�
 ```
 
 `status`：`1` 未开始，`2` 进行中，`3` 已结束。
+
+`singleWinner` 为 `true` 时同一用户在本期最多中奖一次；为 `false` 时，用户可按抽奖次数获得多条中奖记录。
 
 ### 查询最近活动期次 `GET /app-api/activity/period/latest`
 
@@ -354,6 +373,17 @@ Authorization: Bearer <member-token>
 ```
 
 已报名但尚未中奖或尚未开奖时，`registered` 为 `true`、`winner` 为 `false`。中奖后会返回 `winnerId`、`prizeId`、`prizeName`、`prizeImage`、`claimInstruction`、`winnerTime` 和 `winnerStatus`。
+
+### 增加我的抽奖次数 `POST /app-api/activity/period/increase-chances`
+
+需要登录，使用当前登录用户在指定期次的报名记录，仅允许开奖前调用。
+
+```http
+POST /app-api/activity/period/increase-chances?periodId=123&chances=2
+Authorization: Bearer <member-token>
+```
+
+`chances` 范围为 `1-10`。成功时 `data` 为增加后的抽奖总次数。用户端结果中的 `drawChances`、`drawChancesUsed` 和 `remainingDrawChances` 分别表示总次数、已使用次数和剩余次数；`winners` 返回全部中奖记录。
 
 ### 旧版报名接口 `POST /app-api/activity/registration/create`
 
