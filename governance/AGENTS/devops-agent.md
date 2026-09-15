@@ -13,6 +13,7 @@
   ```
 
 - 可修改部署、CI/CD、容器、Nginx、环境模板和运维脚本；不修改业务代码、API 契约或数据库迁移定义。需要业务修复时，提交诊断证据给对应开发 Agent。
+- 负责 `h5/` 测试环境静态部署：在本地构建固定产物，发布到 `rprod18`，通过 `yshop-h5-test.holuntech.cn` 验证页面、资源和 API 连通性，并保留备份与回滚路径。
 - 不自动提交 Git。生产操作、数据库迁移、数据修复和凭据轮换必须获得用户明确授权，并具备回滚方案。
 
 ## 当前环境差异基线
@@ -105,7 +106,14 @@ bash governance/SCRIPTS/build-backend-test.sh
 3. 将测试验证过的同一个 tar 包上传生产并校验 hash；生产只做备份、解包和 `nginx -t && systemctl reload nginx`，不在服务器重新执行 pnpm 构建。
 4. 检查生产域名、静态资源、Nginx 状态和关键页面；失败时恢复上一版 dist 备份并 reload Nginx。
 
-### 5. DMS 制品晋级
+### 5. H5 活动前端制品晋级
+
+1. 在本地使用测试 API 地址和租户 ID 构建 H5，不在 `rprod18` 重新安装依赖或构建。
+2. 记录源码 commit、构建参数和产物 SHA-256；使用 `yshop-h5-test.holuntech.cn` 验证静态资源、ticket 换 Token 和关键 API 请求。
+3. 将同一份 tar 包上传到 `rprod18`，备份 `${H5_REMOTE_PATH}`，解压后执行 `nginx -t && systemctl reload nginx`。
+4. 页面或 API 验证失败时，恢复带时间戳的备份目录并 reload Nginx。
+
+### 6. DMS 制品晋级
 
 1. 测试和生产均使用固定 Git commit、干净工作区和记录过的 Python/依赖版本；生产禁止直接 `git pull` 当前分支后即启动。
 2. 依赖安装必须来自锁定/审核过的依赖清单；凭据通过受控 `.env` 或密钥管理服务提供，不能写入仓库或命令行日志。

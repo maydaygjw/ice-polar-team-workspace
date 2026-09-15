@@ -137,6 +137,37 @@ ssh "$DEPLOY_USER@$SERVER_HOST" "
 
 部署后检查 `${ADMIN_REMOTE_PATH}` 文件和 Nginx 状态；失败时恢复 `.bak` 目录。
 
+## H5 活动前端
+
+H5 部署到测试服务器 `rprod18`，域名为 `${DOMAIN_H5}`。先使用测试 API 地址构建，再发布同一份静态制品：
+
+```bash
+source governance/SCRIPTS/deploy-helper.sh && load_env test
+cd "$H5_LOCAL_PATH"
+VITE_API_BASE_URL="$H5_API_BASE_URL" VITE_TENANT_ID="$H5_TENANT_ID" pnpm build
+bash governance/SCRIPTS/deploy-h5-test.sh
+```
+
+`deploy-h5-test.sh` 会校验 `dist/index.html`、源码 commit 和 tar 包 SHA-256，上传并校验远端文件，备份 `${H5_REMOTE_PATH}`，解压新产物后执行 `nginx -t && systemctl reload nginx`。
+
+首次部署前配置 Nginx，将 `${DOMAIN_H5}` 指向 `${H5_REMOTE_PATH}`，并为 Vue Router 保留 history fallback：
+
+```nginx
+server {
+    listen 80;
+    server_name yshop-h5-test.holuntech.cn;
+
+    root /opt/holun/yshop-h5/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+部署后验证首页、静态资源、`/auth/callback?ticket=...` 路由和 ticket 换 Token 请求。失败时恢复 `${H5_REMOTE_PATH}.bak.<timestamp>`，再执行 `nginx -t && systemctl reload nginx`。
+
 ## icepolar-dms
 
 ```bash

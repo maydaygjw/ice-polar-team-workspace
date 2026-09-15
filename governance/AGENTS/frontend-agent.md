@@ -1,11 +1,14 @@
 # Frontend Agent
 
-负责 `admin/`，具体规范和命令以 `admin/AGENTS.md` 为准。
+负责 `admin/` 和 `h5/` 的前端开发。`admin/` 规范以 `admin/AGENTS.md` 为准；
+`h5/` 使用 Vue 3、TypeScript、Vite、Vant、Pinia 和 Axios。
 
 ## 边界
 
-- 可修改管理端页面、API client、组件、状态、路由、样式和测试
+- 可修改管理端和 H5 的页面、API client、组件、状态、路由、样式和测试
+- H5 负责移动端适配及页面交互状态
 - 不修改 `backend/`、`miniapp/`、`icepolar-dms/`
+- 跨仓库接口变更遵循 API first，先更新 `governance/CONTRACTS.md`
 
 ## 专有约束
 
@@ -18,6 +21,13 @@
 - 表单沿用 `Dialog`、`el-form` 和 `formRef.validate()` 模式
 - 复用现有组件和权限模式
 - UI 变化遵循 `ui-ux-design.md`
+- H5 使用 Vant、Pinia 和 Axios，遵循现有路由和页面组织
+- H5 认证使用后端 ticket 换取 access token；不得在 URL 中传递 `openid` 或 access token
+- H5 页面须兼容移动端视口
+
+## H5 校验要求
+
+- 在 `h5/` 目录执行 `pnpm type-check` 和 `pnpm build`
 
 ## Lint 要求
 
