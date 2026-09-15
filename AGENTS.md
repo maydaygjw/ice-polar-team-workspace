@@ -10,6 +10,7 @@ ice-polar-team-workspace/
 ├── backend/            # submodule — yshop-drink (Java/Spring Boot)
 ├── admin/              # submodule — yshop-drink-vue (Vue3/Vite)
 ├── miniapp/            # submodule — icepolarminiapp (Native WeChat Mini Program)
+├── h5/                 # submodule — yshop-activity-h5 (Vue3 活动 H5)
 ├── icepolar-dms/       # submodule — icepolar-dms (Python/FastAPI)
 ├── mock-external-server/ # submodule — mock-external-server (FastAPI 外部依赖模拟服务)
 └── .gitmodules
@@ -20,6 +21,7 @@ ice-polar-team-workspace/
 | `backend/` | `https://gitee.com/icepolar/yshop-drink.git` | Java 17, Spring Boot 3.2, MyBatis Plus, Maven | `master` |
 | `admin/` | `https://gitee.com/icepolar/yshop-drink-vue.git` | Vue3, Vite4, Element Plus, TypeScript, pnpm | `master` |
 | `miniapp/` | `https://gitee.com/icepolar/icepolarminiapp.git` | Native WeChat Mini Program (WXML/WXSS/JS) | `main` |
+| `h5/` | `https://gitee.com/icepolar/yshop-activity-h5.git` | Vue3, Vite, TypeScript, Vant, Pinia, Axios, pnpm | `main` |
 | `icepolar-dms/` | `git@github.com:holun-yshop/icepolar-dms.git` | Python 3.12+, FastAPI, SQLAlchemy 2.x, pytest | `main` |
 | `mock-external-server/` | `https://gitee.com/icepolar/mock-external-server.git` | Python 3.12+, FastAPI, pytest | `master` |
 
@@ -36,7 +38,7 @@ git pull --recurse-submodules
 git submodule update --remote
 
 # Check status across all repos
-for d in backend admin miniapp icepolar-dms mock-external-server; do
+for d in backend admin miniapp h5 icepolar-dms mock-external-server; do
   echo "[$d] $(cd $d && git status --short | wc -l | xargs) changes"
 done
 ```
@@ -77,6 +79,8 @@ Run commands from the target submodule root. Each submodule owns its own build, 
 # Example: run a command inside a submodule without changing the shell cwd
 (cd backend && mvn clean test)
 (cd admin && pnpm dev)
+(cd h5 && pnpm dev)
+(cd h5 && pnpm build)
 (cd icepolar-dms && pytest -v)
 (cd mock-external-server && pytest -v)
 ```
@@ -89,6 +93,7 @@ Follow the conventions of the subproject you change. See each submodule's `AGENT
 - **Admin Vue/TypeScript**: PascalCase components, camelCase utilities, `@/` imports; validate via `pnpm ts:check`, lint, and build.
 - **DMS Python**: PEP 8, snake_case modules, Pydantic schemas, SQLAlchemy models, Ruff checks, `pytest` under `tests/`.
 - **Miniapp**: Native WeChat Mini Program; develop with WeChat DevTools.
+- **Activity H5**: Vue3 + TypeScript; use Vant for mobile UI, Axios for backend calls, and Pinia for shared state. Authentication uses a one-time backend ticket exchanged for an access token; do not put `openid` or access tokens in URLs.
 
 ## Git Conventions
 
