@@ -2,9 +2,9 @@
 
 > 前端对接文档。所有接口统一返回 `CommonResult`：`{ code, msg, data }`，`code = 0` 表示成功，非 0 时 `msg` 为错误文案，直接 toast 即可。
 >
-> 除注明外均需登录，请求头：`Authorization: Bearer <token>`。
+> 除注明外均需登录，请求头：`Authorization: Bearer <token>`。H5 WebView Ticket 兑换接口不需要登录，详见第 1 节。
 >
-> 源码：`backend/yshop-module-member/.../controller/app/user/AppUserController.java`
+> 源码：`backend/yshop-module-member/.../controller/app/user/AppUserController.java`、`backend/yshop-module-member/.../controller/app/auth/AppAuthController.java`
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -20,10 +20,76 @@
 | POST | `/app-api/member/user/generate` | 生成二维码（无需登录） |
 | POST | `/app-api/mp/miniapp/qrcode` | 生成临时小程序码（需登录） |
 | POST | `/app-api/member/user/generate-mini` | 生成小程序码（无需登录） |
+| POST | `/app-api/member/auth/webview-ticket` | 创建 H5 一次性 Ticket（需登录） |
+| POST | `/app-api/member/auth/webview-exchange` | 兑换 H5 Ticket 为 backend Token（无需登录） |
 
 ---
 
-## 1. 获得基本信息 `GET /app-api/member/user/get`
+## 1. H5 WebView 认证
+
+用于小程序或其他已登录客户端打开内部 H5。客户端先用已有 Token 创建一次性 Ticket，H5 打开后立即兑换为 backend Token。
+
+### 1.1 创建 Ticket `POST /app-api/member/auth/webview-ticket`
+
+需要当前会员登录态，请求体为空。
+
+```http
+POST /app-api/member/auth/webview-ticket
+Authorization: Bearer <miniapp-token>
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "ticket": "c5f2...",
+    "expiresIn": 60
+  }
+}
+```
+
+Ticket 只能使用一次，60 秒后过期。不要把 openid、微信 access_token 或 backend Token 放入 H5 URL。
+
+### 1.2 兑换 Token `POST /app-api/member/auth/webview-exchange`
+
+该接口无需登录，身份完全来自一次性 Ticket。H5 页面加载后调用：
+
+```http
+POST /app-api/member/auth/webview-exchange
+Content-Type: application/json
+
+{"ticket":"c5f2..."}
+```
+
+成功响应：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "userId": 1001,
+    "accessToken": "<access-token>",
+    "refreshToken": "<refresh-token>",
+    "expiresTime": "2026-09-15T12:00:00"
+  }
+}
+```
+
+兑换成功后，H5 后续请求统一携带：
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+Ticket 过期、伪造或重复兑换时返回错误码 `1004003007`。兑换接口会根据 Ticket 恢复租户上下文，调用方不应自行传入用户 ID 或租户 ID。
+
+---
+
+## 2. 获得基本信息 `GET /app-api/member/user/get`
 
 返回当前登录用户的精简信息。
 
@@ -47,7 +113,7 @@
 
 ---
 
-## 2. 获取指定用户昵称 `GET /app-api/member/user/get-nickname`
+## 3. 获取指定用户昵称 `GET /app-api/member/user/get-nickname`
 
 根据用户 ID 查询用户昵称，需要登录态。接口只返回昵称，不返回用户其他信息。
 
@@ -78,7 +144,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 3. 获得完整信息 `GET /app-api/member/user/get-info`
+## 4. 获得完整信息 `GET /app-api/member/user/get-info`
 
 个人中心首页用，含资产、签到、订单统计等。
 
@@ -161,7 +227,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 4. 修改昵称/生日/性别/头像/手机 `POST /app-api/member/user/update-nickname`
+## 5. 修改昵称/生日/性别/头像/手机 `POST /app-api/member/user/update-nickname`
 
 JSON body：
 
@@ -191,7 +257,7 @@ JSON body：
 
 ---
 
-## 5. 修改头像 `POST /app-api/member/user/update-avatar`
+## 6. 修改头像 `POST /app-api/member/user/update-avatar`
 
 multipart 表单上传，字段名 `avatarFile`。`data` 为头像路径。
 
@@ -209,7 +275,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 6. 修改手机号 `POST /app-api/member/user/update-mobile`
+## 7. 修改手机号 `POST /app-api/member/user/update-mobile`
 
 换绑手机号，新旧手机号都需通过短信验证码（场景：`MEMBER_UPDATE_MOBILE`，先调短信发送接口）。
 
@@ -235,7 +301,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 7. 用户账单 `GET /app-api/member/user/getBill`
+## 8. 用户账单 `GET /app-api/member/user/getBill`
 
 **Query 参数**
 
@@ -277,7 +343,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 8. 余额充值 `POST /app-api/member/user/recharge`
+## 9. 余额充值 `POST /app-api/member/user/recharge`
 
 创建充值订单，`data` 返回订单 ID，前端拿到后走支付流程。
 
@@ -293,7 +359,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 9. 购买会员卡 `POST /app-api/member/user/buyCard`
+## 10. 购买会员卡 `POST /app-api/member/user/buyCard`
 
 创建会员卡订单，`data` 返回订单 ID，前端走支付流程。
 
@@ -309,7 +375,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 10. 生成二维码 `POST /app-api/member/user/generate`
+## 11. 生成二维码 `POST /app-api/member/user/generate`
 
 **无需登录**。任意内容生成二维码，返回 base64（JPEG）。
 
@@ -321,7 +387,7 @@ curl -X POST 'https://<host>/app-api/member/user/update-avatar' \
 
 ---
 
-## 11. 生成临时小程序码 `POST /app-api/mp/miniapp/qrcode`
+## 12. 生成临时小程序码 `POST /app-api/mp/miniapp/qrcode`
 
 **需登录**。根据小程序页面路径和场景参数生成小程序码，并上传为临时图片，返回图片 URL 和预期过期时间。
 
@@ -369,7 +435,7 @@ Content-Type: application/json
 
 ---
 
-## 12. 生成小程序码 `POST /app-api/member/user/generate-mini`
+## 13. 生成小程序码 `POST /app-api/member/user/generate-mini`
 
 **无需登录**。生成微信小程序码（`createWxaCodeUnlimit`），返回 base64。
 
