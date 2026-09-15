@@ -76,8 +76,10 @@
 4. 签发 token（登录日志类型 `LOGIN_SOCIAL`），返回登录态。
 
 ## 前端调用要点
-1. 先调 `POST /app-api/member/auth/auth-session`（`{ code: wx.login().code }`）换取 `openid`。
+1. 如果业务需要手机号，先调 `POST /app-api/member/auth/auth-session`（`{ code: wx.login().code }`）换取 `openid`。
 2. 用户点击 `<button open-type="getPhoneNumber" bindgetphonenumber="...">`，回调取 `e.detail.code` 作为 `phoneCode`。
-3. 调本接口完成登录。
+3. 调本接口完成手机号登录。
+
+> 如果业务不需要手机号，`auth-session` 本身会在首次登录时创建手机号为空的会员并返回 Token，不需要继续调用本接口。
 
 > 注意：`phoneCode` 与 `auth-session` 的 `code` 是**两个不同的 code**（前者来自 getPhoneNumber 回调，后者来自 wx.login）。两者均为一次性。

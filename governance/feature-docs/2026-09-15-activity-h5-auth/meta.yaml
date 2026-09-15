@@ -1,0 +1,8 @@
+feature: activity-h5-auth
+status: implementation
+risk: high
+targets: [backend]
+contract: true
+ui: false
+e2e: false
+blocked: false

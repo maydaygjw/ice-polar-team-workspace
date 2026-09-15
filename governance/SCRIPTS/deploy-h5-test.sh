@@ -5,7 +5,7 @@ set -euo pipefail
 # Usage:
 #   source governance/SCRIPTS/deploy-helper.sh && load_env test
 #   cd "$H5_LOCAL_PATH"
-#   VITE_API_BASE_URL="$H5_API_BASE_URL" VITE_TENANT_ID="$H5_TENANT_ID" pnpm build
+#   VITE_API_BASE_URL="$H5_API_BASE_URL" VITE_TENANT_ID="$H5_TENANT_ID" VITE_TEST_AUTH_ENABLED="$H5_TEST_AUTH_ENABLED" pnpm build
 #   bash governance/SCRIPTS/deploy-h5-test.sh
 
 required_vars=(H5_SERVER_HOST H5_DEPLOY_USER H5_LOCAL_PATH H5_REMOTE_PATH)

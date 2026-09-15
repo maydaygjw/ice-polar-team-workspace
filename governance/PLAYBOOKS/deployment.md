@@ -144,7 +144,7 @@ H5 部署到测试服务器 `rprod18`，域名为 `${DOMAIN_H5}`。先使用测�
 ```bash
 source governance/SCRIPTS/deploy-helper.sh && load_env test
 cd "$H5_LOCAL_PATH"
-VITE_API_BASE_URL="$H5_API_BASE_URL" VITE_TENANT_ID="$H5_TENANT_ID" pnpm build
+VITE_API_BASE_URL="$H5_API_BASE_URL" VITE_TENANT_ID="$H5_TENANT_ID" VITE_TEST_AUTH_ENABLED="$H5_TEST_AUTH_ENABLED" pnpm build
 bash governance/SCRIPTS/deploy-h5-test.sh
 ```
 

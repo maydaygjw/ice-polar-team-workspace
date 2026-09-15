@@ -11,6 +11,14 @@
 - [活动抽奖次数与中奖限制](feature-docs/2026-09-13-activity-management/contract-changes.md)：报名默认 1 次抽奖机会，支持后台和用户端增加次数，并支持按活动限制每人最多中奖一次。
 - [活动 H5 Ticket 认证](feature-docs/2026-09-15-activity-h5-auth/contract-changes.md)：已登录客户端通过一次性 ticket 安全进入 H5，兑换 backend Bearer Token。
 
+## 小程序无手机号登录
+
+- `POST /app-api/member/auth/auth-session` 继续接收 `wx.login()` 返回的一次性 `code`。
+- 后端通过微信 `jscode2session` 获取并校验 `openid`，按当前 `tenant-id` 查询小程序会员；不存在时创建一个手机号为空的会员并绑定 `routine_openid`。
+- 查询或创建成功后统一签发并返回 `accessToken`、`refreshToken`、`expiresTime`、`openId` 和 `userInfo`。
+- 客户端不得直接提交 `openid` 作为身份凭证；重试必须重新调用 `wx.login()` 获取新 `code`。
+- `auth-session` 的登录副作用是明确的：首次调用可能创建会员并写入登录记录。旧客户端只读取 `openId` 的行为保持兼容。
+
 ## 饭火轮新店外部素材
 
 - 新店素材复用当前租户的 `we7_mall_host`（微擎商城域名），不再读取 `fhl_new_store_request_url`。
