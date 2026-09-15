@@ -15,7 +15,7 @@
 | POST | `/app-api/member/auth/sms-login` | 手机号 + 短信验证码登录 |
 | POST | `/app-api/member/auth/update-password` | 修改密码 |
 | POST | `/app-api/member/auth/weixin-mini-app-login` | 微信小程序手机号登录 |
-| POST | `/app-api/member/auth/auth-session` | 微信小程序 code 登录 |
+| POST | `/app-api/member/auth/auth-session` | 微信小程序 code 登录（无手机号，自动创建/查询会员并返回 Token） |
 | POST | `/app-api/member/auth/auth-miniapp-login-v2` | 微信小程序手机号 code 登录 |
 | POST | `/app-api/member/auth/auth-miniapp-login` | 微信小程序旧版登录（已废弃） |
 | GET | `/app-api/member/auth/auth-wechat-login` | 微信公众号 code 登录 |
@@ -260,15 +260,16 @@ Authorization: Bearer <access-token>
 }
 ```
 
-#### 登录 code 换取会话 `POST /app-api/member/auth/auth-session`
+#### 微信小程序无手机号登录 `POST /app-api/member/auth/auth-session`
 
 ```json
 { "code": "code-from-wx.login" }
 ```
 
-该接口先通过微信 `code` 换取 `openid`，并缓存小程序会话信息。
+接口服务端通过微信 `code` 换取并校验 `openid`，缓存小程序会话信息；随后按当前租户查询 `routine_openid`。
+如果用户尚未注册，则创建一个手机号为空的会员并绑定该 `routine_openid`。查询或创建完成后统一签发 Token。
 
-**已绑定会员响应示例**
+**响应示例**
 
 ```json
 {
@@ -284,22 +285,13 @@ Authorization: Bearer <access-token>
 }
 ```
 
-**未绑定会员响应示例**
+响应中的 `accessToken` 可直接用于后续业务请求：
 
-```json
-{
-  "code": 0,
-  "msg": "",
-  "data": {
-    "openId": "o_new_user_openid"
-  }
-}
+```http
+Authorization: Bearer <accessToken>
 ```
 
-- 已绑定 `routine_openid` 的会员：返回 `openId`、`accessToken` 和用户信息，可以直接继续调用业务接口。
-- 未绑定手机号或 `routine_openid` 的新用户：当前实现只返回 `openId`，不会创建会员，也不会返回有效 `accessToken`。
-
-因此，当前系统暂不支持“无手机号新用户”的完整小程序登录。新用户需要继续走手机号授权接口；不能直接把 `openId` 当作长期认证 Token。后续业务请求仍使用返回的 `accessToken`。
+小程序端只需要调用一次 `wx.login()` 并调用本接口，不需要再调用其他登录接口。`code` 是一次性的；请求失败后必须重新调用 `wx.login()` 获取新 code，不能重放旧 code。
 
 #### 新版手机号 code 登录 `POST /app-api/member/auth/auth-miniapp-login-v2`
 
