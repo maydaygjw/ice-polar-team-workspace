@@ -11,6 +11,11 @@
 - [活动抽奖次数与中奖限制](feature-docs/2026-09-13-activity-management/contract-changes.md)：报名默认 1 次抽奖机会，支持后台和用户端增加次数，并支持按活动限制每人最多中奖一次。
 - [活动 H5 Ticket 认证](feature-docs/2026-09-15-activity-h5-auth/contract-changes.md)：已登录客户端通过一次性 ticket 安全进入 H5，兑换 backend Bearer Token。
 
+活动 H5 认证在测试环境额外支持 Mock Ticket：当 `yshop.security.mock-enable` 和
+`yshop.security.mock-webview-ticket-enable` 同时开启时，`test` 前缀加数字用户 ID（例如
+`test590471`）可直接兑换该测试用户的 backend Token；测试租户由
+`yshop.security.mock-webview-ticket-tenant-id` 配置。该能力不使用 Redis Ticket，生产环境必须关闭。
+
 ## 小程序无手机号登录
 
 - `POST /app-api/member/auth/auth-session` 继续接收 `wx.login()` 返回的一次性 `code`。

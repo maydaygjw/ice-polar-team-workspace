@@ -113,6 +113,10 @@ Authorization: Bearer <accessToken>
 
 Ticket 过期、伪造或重复兑换时返回错误码 `1004003007`。兑换接口会根据 Ticket 恢复租户上下文，调用方不应自行传入用户 ID 或租户 ID。
 
+### 1.3 测试环境 Mock Ticket
+
+测试环境开启 Mock Ticket 后，可使用 `test` 加数字用户 ID 直接兑换 Token，例如 `test590471`。该方式不经过 60 秒一次性 Ticket 流程，长期测试时可重复使用；仅在 Mock 配置开启的测试环境有效，生产环境必须关闭。
+
 ---
 
 ## 2. 用户认证
