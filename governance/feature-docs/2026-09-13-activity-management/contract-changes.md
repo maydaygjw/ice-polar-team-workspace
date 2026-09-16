@@ -27,6 +27,8 @@
 
 创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动图、背景图、宣传素材引用、活动管理员、社群标签、活动群和奖品列表。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。报名接口的 `user_id` 参数第一版承载调用方传入的 `yshop_user.external_user_id`，服务先查出 `yshop_user.id` 写入报名记录，再通过 `yshop_user.id = mp_wecom_customer_contact.member_id` 获取企微外部联系人 ID 做群成员校验。
 
+模板详情和分页响应中的 `data.prizes` 返回模板保存的奖品配置数组，字段包括 `prizeName`、`image`、`quantity` 和 `claimInstruction`，顺序与模板配置一致；数据库中的 `prize_config` JSON 由后端负责解析，客户端不得根据缺失字段自行重建奖品配置。
+
 小程序码请求：
 
 ```json
