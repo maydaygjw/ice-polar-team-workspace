@@ -38,7 +38,7 @@
 | 方法 | 路径 | 登录 | 说明 |
 |------|------|:---:|------|
 | GET | `/app-api/activity/period/detail?periodId={id}` | 否 | 查询活动期次详情 |
-| GET | `/app-api/activity/period/latest` | 否 | 查询最近活动期次详情 |
+| GET | `/app-api/activity/period/latest?templateId={id}` | 否 | 查询指定活动最近期次详情 |
 | POST | `/app-api/activity/period/register?periodId={id}` | 是 | 当前登录用户报名活动 |
 | GET | `/app-api/activity/period/my-result?periodId={id}` | 是 | 查询当前用户报名和中奖结果 |
 | POST | `/app-api/activity/period/increase-chances?periodId={id}&chances={n}` | 是 | 增加当前用户抽奖次数 |
@@ -325,12 +325,12 @@ Query 参数同中奖记录分页查询。接口返回 Excel 文件；服务端�
 
 `singleWinner` 为 `true` 时同一用户在本期最多中奖一次；为 `false` 时，用户可按抽奖次数获得多条中奖记录。
 
-### 查询最近活动期次 `GET /app-api/activity/period/latest`
+### 查询指定活动最近期次 `GET /app-api/activity/period/latest`
 
-无需登录，无需参数。服务端优先返回当前时间最近的未结束期次（按计划开奖时间升序）；如果没有未结束期次，则返回最近一个已结束期次。不存在任何活动期次时返回“活动期次不存在”。
+无需登录，需要传入活动模板 ID。服务端优先返回该活动模板下当前时间最近的未结束期次（按计划开奖时间升序）；如果没有未结束期次，则返回该活动模板下最近一个已结束期次。不存在该活动模板或其期次时返回对应的资源不存在错误。
 
 ```http
-GET /app-api/activity/period/latest
+GET /app-api/activity/period/latest?templateId=123
 ```
 
 返回结构与 `/app-api/activity/period/detail` 相同。
