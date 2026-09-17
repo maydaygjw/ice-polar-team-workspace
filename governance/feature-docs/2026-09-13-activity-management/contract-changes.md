@@ -18,6 +18,7 @@
 | GET | `/period/page` | 查询活动期次及人数统计 | `activity:period:query` |
 | GET | `/period/get?id={id}` | 查询期次详情和快照 | `activity:period:query` |
 | POST | `/period/draw` | 到开奖时间后手动触发开奖 | `activity:period:draw` |
+| POST | `/period/abandon` | 废弃未开奖期次并清理报名/中奖记录 | `activity:period:abandon` |
 | POST | `/period/qrcode` | 为指定期次生成临时小程序码 | `activity:period:qrcode` |
 | GET | `/registration/page?periodId={id}` | 查询报名记录 | `activity:registration:query` |
 | POST | `/registration/increase-chances` | 为指定报名用户增加抽奖次数 | `activity:registration:query` |
@@ -56,6 +57,8 @@
 ## 状态与错误语义
 
 期次状态：`NOT_STARTED` 未开始、`IN_PROGRESS` 进行中、`ENDED` 已结束；内部可使用短暂的 `DRAWING` 开奖中状态，但不对前端作为业务展示状态开放。
+
+- `POST /admin-api/activity/period/abandon` 请求体为 `{"periodId":123}`。仅允许在开奖前废弃期次；服务在租户和数据权限校验后逻辑删除原期次及其报名、中奖、奖品和快照记录。新期次继续通过原期次生成接口创建。
 
 - 模板或期次不存在、跨租户或无数据权限：按现有资源不存在/无权限语义处理。
 - 时间区间非法、奖品数量非法、必填素材缺失：参数校验失败。
