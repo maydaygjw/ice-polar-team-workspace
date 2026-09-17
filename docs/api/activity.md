@@ -154,7 +154,26 @@ Query 参数：
 
 ### 查询详情 `GET /admin-api/activity/template/get?id={id}`
 
-返回 `ActivityTemplateRespVO`，包含模板配置、启用状态、是否已生成期次和创建时间。
+返回 `ActivityTemplateRespVO`，包含模板配置、启用状态、是否已生成期次和创建时间。编辑回显时，`admins` 和 `groups` 返回模板已保存的配置快照：
+
+```json
+{
+  "admins": [
+    { "wecomUserid": "zhangsan", "adminName": "张三", "sort": 0 }
+  ],
+  "groups": [
+    {
+      "tagId": 1001,
+      "tagName": "霸王餐用户",
+      "groupId": "wr_test_group",
+      "groupName": "杭州霸王餐群",
+      "sort": 0
+    }
+  ]
+}
+```
+
+保存模板时客户端提交完整的 `admins`、`groups` 数组；未配置时传空数组或省略字段均按无配置处理。`groups` 中的 `groupId` 使用本地企业微信群 ID，`tagId` 使用本地社群标签 ID。
 
 ### 分页查询 `GET /admin-api/activity/template/page`
 
@@ -293,16 +312,16 @@ Query 参数同中奖记录分页查询。接口返回 Excel 文件；服务端�
     "id": 123,
     "periodNo": "2026-09-18",
     "title": "周五霸王餐",
-    "periodDate": "2026-09-18",
-    "registrationStartTime": "2026-09-18T00:00:00",
-    "registrationEndTime": "2026-09-18T22:00:00",
-    "drawTime": "2026-09-18T22:00:00",
+    "periodDate": [2026, 9, 18],
+    "registrationStartTime": 1789660800000,
+    "registrationEndTime": 1789740000000,
+    "drawTime": 1789740000000,
     "status": 2,
     "registrationCount": 100,
     "plannedWinnerCount": 10,
     "actualWinnerCount": 0,
     "singleWinner": false,
-    "content": "本周五到店参与霸王餐活动",
+    "content": "<h2>周五霸王餐</h2><p>本周五到店参与霸王餐活动</p>",
     "coverImage": "https://cdn.example.com/activity-cover.png",
     "backgroundImage": "https://cdn.example.com/activity-background.png",
     "promoteImages": [],
@@ -320,6 +339,10 @@ Query 参数同中奖记录分页查询。接口返回 Excel 文件；服务端�
   }
 }
 ```
+
+`periodDate` 使用 `[year, month, day]` 数组；`registrationStartTime`、`registrationEndTime` 和 `drawTime` 使用 Unix 毫秒时间戳。客户端展示时应按业务时区格式化，不要直接展示原始数值。
+
+`content` 为富文本 HTML 字符串，客户端应按富文本容器渲染，并限制图片宽度以适配移动端。
 
 `status`：`1` 未开始，`2` 进行中，`3` 已结束。
 
@@ -346,9 +369,23 @@ GET /app-api/activity/period/latest?templateId=123
 ```http
 POST /app-api/activity/period/register?periodId=123
 Authorization: Bearer <member-token>
+tenant-id: <tenant-id>
+Content-Type: application/json
 ```
 
-成功时 `data` 为报名记录 ID。服务端从登录态获取会员 ID，并按该会员关联的企微外部联系人执行活动管理员和社群成员校验。客户端不传 `userId`、`tenantId` 或管理员身份。
+请求体为空，不要在请求体中传入用户 ID、租户 ID 或管理员身份。
+
+成功响应：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": 10001
+}
+```
+
+其中 `data` 为报名记录 ID。服务端从登录态获取会员 ID，并按该会员关联的企微外部联系人执行活动管理员和社群成员校验。重复点击时客户端应保持按钮 loading，避免重复请求；服务端也会通过期次和用户唯一约束拒绝重复报名。
 
 ### 查询我的结果 `GET /app-api/activity/period/my-result`
 
