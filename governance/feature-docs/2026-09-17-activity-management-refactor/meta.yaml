@@ -1,0 +1,8 @@
+feature: activity-management-refactor
+status: implementation
+risk: high
+targets: [backend, admin, h5]
+contract: true
+ui: true
+e2e: true
+blocked: false
