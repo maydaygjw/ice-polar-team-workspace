@@ -48,6 +48,33 @@
 
 用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances` 和 `/app-api/activity/period/my-result`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期。
 
+`GET /app-api/activity/period/eligibility?periodId={id}` 要求当前用户登录，按期次快照执行所有启用报名条件，返回条件数组：
+
+```json
+[
+  {
+    "type": "HAS_TODAY_CONFIRMED_ORDER",
+    "name": "当天已下过单",
+    "description": "用户当天在外部商城存在已确认订单即可报名",
+    "passed": false,
+    "failureReason": "当天未下过已确认订单"
+  }
+]
+```
+
+用户端应展示所有条件，并突出显示 `passed=false` 的条件及其 `failureReason`；报名提交前和报名失败后均可重新查询该接口。
+
+### 报名条件扩展：当天已下过单
+
+- 条件类型：`HAS_TODAY_CONFIRMED_ORDER`。
+- 展示名称：`当天已下过单`；配置为空对象 `{}`，不接受客户端传入商城域名、租户 ID 或其他外部身份参数。
+- 条件通过口径：调用当前租户 `we7_mall_host` 配置对应的外部商城接口，查询当前会员的 `externalUserId`；外部接口返回 `data.has_confirmed_order=true` 时通过。
+- 外部接口：`GET {we7_mall_host}/app/index.php`，携带 `i=2`、`c=entry`、`a=wxapp`、`m=hlmall`、`businessModule=order`、`do=HasTodayConfirmedOrder` 和 `user_id={externalUserId}`。
+- 外部接口的“当天”由外部商城按其服务器时区和 `order_date` 判断；有效订单状态沿用 `wxapp_order` 文档定义的 `2、3、4、5、8、10`。
+- `we7_mall_host` 从当前租户系统参数读取，拼接路径前去除末尾 `/`；服务端固定 10 秒请求超时。
+- 当前会员不存在、没有 `externalUserId`、未配置 `we7_mall_host`、接口 HTTP 非 2xx、返回 `status != success` 或响应结构无效时，条件按失败关闭处理，不得误放行报名。
+- 该条件与其他启用条件按 AND 关系执行；校验结果写入报名记录的 `condition_result` JSON 快照。
+
 ### 抽奖次数与中奖限制
 
 - 活动模板新增 `singleWinner`，生成期次时复制到期次快照；为 `true` 时同一会员在该期最多生成一条中奖记录，为 `false` 时同一报名记录可按其抽奖次数生成多条中奖记录。
@@ -91,6 +118,7 @@
 | `cover_image` | `VARCHAR(512) NOT NULL` | 活动主图 |
 | `background_image` | `VARCHAR(512) NULL` | 小程序活动页背景图 |
 | `promote_images` | `JSON NULL` | 渠道宣传素材 URL/排序数组 |
+| `condition_config` | `JSON NULL` | 报名条件配置数组，保存条件类型、版本、启用状态和条件配置 |
 | `cycle_type` | `TINYINT NOT NULL DEFAULT 1` | 周期类型，`1` 每周 |
 | `cycle_weekday` | `TINYINT NOT NULL` | 每周星期，`1` 周一至 `7` 周日 |
 | `registration_start_time` | `TIME NOT NULL` | 期次每日报名开始时间 |
@@ -175,6 +203,7 @@
 | `single_winner` | `BIT NOT NULL DEFAULT 0` | 是否限制每人最多中奖一次 |
 | `admin_snapshot` | `JSON NULL` | 管理员 UserID/名称数组 |
 | `group_snapshot` | `JSON NULL` | 标签/群 ID/名称数组 |
+| `condition_snapshot` | `JSON NULL` | 报名条件快照数组，期次生成后不可回溯修改 |
 
 唯一约束：`uk_period (tenant_id, period_id, deleted)`。
 
@@ -211,6 +240,7 @@
 | `admin_check_passed` | `BIT NOT NULL DEFAULT 0` | 管理员校验结果 |
 | `group_check_passed` | `BIT NOT NULL DEFAULT 0` | 社群校验结果 |
 | `check_snapshot` | `JSON NULL` | 命中的管理员、标签和群快照 |
+| `condition_result` | `JSON NULL` | 各报名条件的通过状态、失败原因和摘要快照 |
 | `client_ip` | `VARCHAR(64) NULL` | 风控审计信息 |
 
 唯一约束：`uk_period_user (tenant_id, period_id, user_id, deleted)`；索引：`idx_period_status (tenant_id, period_id, status, register_time)`。

@@ -9,6 +9,9 @@
 - backend 已从最新 `master` 合并 Checkstyle 配置；`mvn -pl yshop-module-activity/yshop-module-activity-biz -am -Pcheckstyle -DskipTests verify`：通过。新模块当前输出规范报告但不阻断构建，与主分支 mp 模块策略一致。
 - 按要求 activity 模块已切换为 `failOnViolation=true`；当前 Checkstyle 会阻断构建，尚有 226 条 activity/既有 mp-api 规范告警待清理。
 - `NODE_OPTIONS=--max-old-space-size=8192 pnpm ts:check`：项目全量检查返回失败；当前基线存在大量与活动无关的自动导入/类型错误，新增活动文件未出现在剩余错误中。
+- `(cd backend && mvn -pl yshop-module-activity/yshop-module-activity-biz -am -Dtest=WxappOrderClientTest -Dsurefire.failIfNoSpecifiedTests=false test)`：通过；验证 `we7_mall_host` 路径拼接、外部接口请求参数和 `has_confirmed_order` 响应解析。
+- `(cd backend && mvn -pl yshop-module-activity/yshop-module-activity-biz -am -DskipTests compile)`：通过；验证报名条件实时查询接口和报名流程复用条件执行逻辑。
+- `(cd h5 && pnpm run build)`：通过；包含 `vue-tsc --noEmit` 和 Vite 生产构建，验证报名条件结果展示和报名失败后的重新检测流程。
 
 ## 未执行
 
