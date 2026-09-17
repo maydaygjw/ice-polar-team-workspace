@@ -22,12 +22,13 @@
 | POST | `/period/registration-open` | 手工开启或关闭期次报名 | `activity:period:update` |
 | POST | `/period/qrcode` | 为指定期次生成临时小程序码 | `activity:period:qrcode` |
 | GET | `/registration/page?periodId={id}` | 查询报名记录 | `activity:registration:query` |
+| DELETE | `/registration/delete?id={id}` | 删除未开奖期次中的报名记录 | `activity:registration:delete` |
 | POST | `/registration/increase-chances` | 为指定报名用户增加抽奖次数 | `activity:registration:query` |
 | GET | `/winner/page?periodId={id}` | 查询中奖记录 | `activity:winner:query` |
 | GET | `/registration/export?periodId={id}` | 导出报名记录 | `activity:registration:export` |
 | GET | `/winner/export?periodId={id}` | 导出中奖记录 | `activity:winner:export` |
 
-创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动图、背景图、宣传素材引用、活动管理员、社群标签、活动群和奖品列表。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。登录态报名接口使用当前登录用户身份，并可选接收 `referrerUserId` 和 `channelCode`。
+创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动图、背景图、宣传素材引用、活动管理员、社群标签和奖品列表。社群配置只选择一个或多个社群标签，不指定具体活动群；报名校验时匹配所选标签关联的任一微信群。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。登录态报名接口使用当前登录用户身份，并可选接收 `referrerUserId` 和 `channelCode`。
 
 模板详情和分页响应中的 `data.prizes` 返回模板保存的奖品配置数组，字段包括 `prizeName`、`image`、`quantity` 和 `claimInstruction`，顺序与模板配置一致；数据库中的 `prize_config` JSON 由后端负责解析，客户端不得根据缺失字段自行重建奖品配置。
 
@@ -127,11 +128,9 @@
 | `template_id` | `BIGINT NOT NULL` | 活动模板 ID |
 | `tag_id` | `BIGINT NOT NULL` | 本地社群标签 ID |
 | `tag_name` | `VARCHAR(128) NOT NULL` | 标签名称快照 |
-| `group_id` | `VARCHAR(64) NOT NULL` | 本地企业微信客户群 ID |
-| `group_name` | `VARCHAR(128) NOT NULL` | 群名称快照 |
 | `sort` | `INT NOT NULL DEFAULT 0` | 展示顺序 |
 
-唯一约束：`uk_template_group (tenant_id, template_id, tag_id, group_id, deleted)`；索引：`idx_template_tag (tenant_id, template_id, tag_id, deleted)`。
+唯一约束：`uk_template_group (tenant_id, template_id, tag_id, deleted)`；索引：`idx_template_tag (tenant_id, template_id, tag_id, deleted)`。
 
 ### `yshop_activity_period` 活动期次
 
