@@ -25,7 +25,7 @@
 
 ### 报名
 
-报名接口在事务内校验当前租户、期次状态、报名时间、用户唯一性，以及本地管理员客户关系和本地群成员/标签关系。请求中的 `user_id` 先按 `yshop_user.external_user_id` 找到会员，再通过 `yshop_user.id = mp_wecom_customer_contact.member_id` 获取企微联系人 `external_user_id`；联系人不存在时，开启的企微/社群校验均失败。成功后只产生一条期次报名记录，报名表保存会员主键 `yshop_user.id`。
+报名接口在事务内校验当前租户、期次状态、报名时间、用户唯一性，以及本地管理员客户关系和本地群成员/标签关系。用户身份从当前登录态获取，再通过 `yshop_user.id = mp_wecom_customer_contact.member_id` 获取企微联系人 `external_user_id`；联系人不存在时，开启的企微/社群校验均失败。成功后只产生一条期次报名记录，报名表保存会员主键、可选推荐人用户 ID 和渠道标识。
 
 ### 抽奖次数与开奖
 

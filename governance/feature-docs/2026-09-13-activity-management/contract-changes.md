@@ -18,7 +18,8 @@
 | GET | `/period/page` | 查询活动期次及人数统计 | `activity:period:query` |
 | GET | `/period/get?id={id}` | 查询期次详情和快照 | `activity:period:query` |
 | POST | `/period/draw` | 到开奖时间后手动触发开奖 | `activity:period:draw` |
-| POST | `/period/abandon` | 废弃未开奖期次并清理报名/中奖记录 | `activity:period:abandon` |
+| POST | `/period/abandon` | 废弃未开奖期次并清理报名/中奖记录 | `activity:period:update` |
+| POST | `/period/registration-open` | 手工开启或关闭期次报名 | `activity:period:update` |
 | POST | `/period/qrcode` | 为指定期次生成临时小程序码 | `activity:period:qrcode` |
 | GET | `/registration/page?periodId={id}` | 查询报名记录 | `activity:registration:query` |
 | POST | `/registration/increase-chances` | 为指定报名用户增加抽奖次数 | `activity:registration:query` |
@@ -26,7 +27,7 @@
 | GET | `/registration/export?periodId={id}` | 导出报名记录 | `activity:registration:export` |
 | GET | `/winner/export?periodId={id}` | 导出中奖记录 | `activity:winner:export` |
 
-创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动图、背景图、宣传素材引用、活动管理员、社群标签、活动群和奖品列表。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。报名接口的 `user_id` 参数第一版承载调用方传入的 `yshop_user.external_user_id`，服务先查出 `yshop_user.id` 写入报名记录，再通过 `yshop_user.id = mp_wecom_customer_contact.member_id` 获取企微外部联系人 ID 做群成员校验。
+创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动图、背景图、宣传素材引用、活动管理员、社群标签、活动群和奖品列表。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。登录态报名接口使用当前登录用户身份，并可选接收 `referrerUserId` 和 `channelCode`。
 
 模板详情和分页响应中的 `data.prizes` 返回模板保存的奖品配置数组，字段包括 `prizeName`、`image`、`quantity` 和 `claimInstruction`，顺序与模板配置一致；数据库中的 `prize_config` JSON 由后端负责解析，客户端不得根据缺失字段自行重建奖品配置。
 
@@ -58,7 +59,7 @@
 
 期次状态：`NOT_STARTED` 未开始、`IN_PROGRESS` 进行中、`ENDED` 已结束；内部可使用短暂的 `DRAWING` 开奖中状态，但不对前端作为业务展示状态开放。
 
-- `POST /admin-api/activity/period/abandon` 请求体为 `{"periodId":123}`。仅允许在开奖前废弃期次；服务在租户和数据权限校验后逻辑删除原期次及其报名、中奖、奖品和快照记录。新期次继续通过原期次生成接口创建。
+- `POST /admin-api/activity/period/abandon` 请求体为 `{"periodId":123}`。允许废弃任意状态的期次；服务在租户和数据权限校验后逻辑删除原期次及其报名、中奖、奖品和快照记录。新期次继续通过原期次生成接口创建。
 
 - 模板或期次不存在、跨租户或无数据权限：按现有资源不存在/无权限语义处理。
 - 时间区间非法、奖品数量非法、必填素材缺失：参数校验失败。
@@ -67,7 +68,7 @@
 - 管理员客户关系不存在：返回 `ACTIVITY_ADMIN_NOT_ADDED`。
 - 用户不在配置社群的本地群成员数据中：返回 `ACTIVITY_GROUP_MEMBER_REQUIRED`。
 - 社群校验规则为：活动配置的任一标签下，任一关联群的本地成员表包含该 `external_user_id` 即通过；标签之间、同标签下的群之间均为 OR 关系。
-- 报名身份解析规则为：请求参数 `user_id` 先匹配 `yshop_user.external_user_id`；再用得到的 `yshop_user.id` 匹配 `mp_wecom_customer_contact.member_id`，取联系人记录中的企微 `external_user_id` 进行后续校验。
+- 报名身份解析规则为：从当前登录态获取 `yshop_user.id`，再匹配 `mp_wecom_customer_contact.member_id`，取联系人记录中的企微 `external_user_id` 进行后续校验；可选的 `referrerUserId` 和 `channelCode` 原样保存到报名记录。
 - 查不到 `yshop_user`、查不到对应企微客户联系人，或联系人未同步成功时：若对应校验开关开启，均按校验失败处理；两项校验均关闭时不要求企微联系人记录。
 - 没有有效报名：开奖成功但实际中奖人数为 0，奖品均标记为未分配。
 - 小程序账户、微信生成或临时文件上传失败：沿用现有小程序码错误语义，不返回成功空 URL。
@@ -147,6 +148,7 @@
 | `registration_end_time` | `DATETIME NOT NULL` | 报名截止时间 |
 | `draw_time` | `DATETIME NOT NULL` | 计划开奖时间 |
 | `status` | `TINYINT NOT NULL DEFAULT 1` | `1` 未开始、`2` 进行中、`3` 已结束；开奖锁定可用内部状态 `4` |
+| `registration_open` | `BIT NOT NULL DEFAULT 0` | 是否允许报名，由后台手工控制，默认关闭 |
 | `draw_status` | `TINYINT NOT NULL DEFAULT 0` | `0` 未开奖、`1` 开奖中、`2` 已开奖、`3` 开奖失败 |
 | `planned_winner_count` | `INT NOT NULL DEFAULT 0` | 奖品数量合计 |
 | `actual_winner_count` | `INT NOT NULL DEFAULT 0` | 实际中奖人数 |
@@ -201,6 +203,8 @@
 | `tenant_id` | `BIGINT NOT NULL` | 租户 ID |
 | `period_id` | `BIGINT NOT NULL` | 期次 ID |
 | `user_id` | `BIGINT NOT NULL` | `yshop_user.id`，企微校验时取其 `external_user_id` |
+| `referrer_user_id` | `BIGINT NULL` | 推荐人用户 ID |
+| `channel_code` | `VARCHAR(64) NULL` | 报名渠道标识 |
 | `register_time` | `DATETIME NOT NULL` | 报名时间 |
 | `status` | `TINYINT NOT NULL DEFAULT 1` | `1` 有效、`2` 取消/无效 |
 | `draw_chances` | `INT NOT NULL DEFAULT 1` | 累计获得的抽奖次数 |
