@@ -1,0 +1,8 @@
+feature: activity-prize-draw-rule-management
+status: implementation
+risk: high
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: true
+blocked: false
