@@ -32,6 +32,8 @@
 | GET | `/admin-api/activity/registration/export` | `activity:registration:export` | 导出报名记录 |
 | GET | `/admin-api/activity/winner/page` | `activity:winner:query` | 分页查询中奖记录 |
 | GET | `/admin-api/activity/winner/export` | `activity:winner:export` | 导出中奖记录 |
+| GET | `/admin-api/activity/condition/types` | `activity:condition:query` | 查询报名条件类型 |
+| PUT | `/admin-api/activity/condition/description` | `activity:condition:update` | 编辑报名条件说明 |
 
 ### 用户端
 

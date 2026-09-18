@@ -8,7 +8,8 @@
 
 - `GET /condition/page`：查询当前租户可用/已配置的条件类型及状态。
 - `POST /condition/enable`：启用或停用租户可用的内置条件；请求包含 `type`、`enabled`。
-- `GET /condition/types`：返回可被模板选择的条件元数据、配置 schema 和版本。
+- `GET /condition/types`：返回可被模板选择的条件元数据、类别（`BUILT_IN` 内置或 `EXTENSION` 扩展）、说明和版本。
+- `PUT /condition/description`：按当前租户更新已注册条件的展示说明，请求包含 `type`、`description`。
 - 模板创建/更新请求新增 `conditions`，每项至少包含 `type`、`sort`、`config`；旧 `checkWecomAdmin`、`checkGroupMember` 请求字段过渡期可读写，但后端统一转换为条件配置。
 - 模板详情/分页响应新增 `conditions`；保留旧 Boolean 字段，供旧前端兼容。
 - 期次详情响应新增快照条件列表；报名记录响应新增结构化 `conditionResults`。
@@ -22,7 +23,7 @@
 
 ## 条件类型契约
 
-条件类型是后端注册表的稳定字符串标识。元数据至少包含：`type`、`name`、`description`、`configSchema`、`version`、`enabled`。条件配置必须是 JSON object，禁止脚本、表达式和任意类名。
+条件类型是后端注册表的稳定字符串标识。元数据至少包含：`type`、`category`、`name`、`description`、`configSchema`、`version`、`enabled`。内置条件由模板复选框选择，扩展条件由模板下拉框选择。条件配置必须是 JSON object，禁止脚本、表达式和任意类名。
 
 条件处理器的运行上下文由服务端构造，至少包含当前登录用户 ID、租户 ID、期次 ID、请求时间和租户业务时区。需要业务数据的处理器只能调用后端已登记的查询客户端；客户端和管理端不得传入外部 URL、凭据、任意用户 ID 或任意日期范围。
 
@@ -40,7 +41,7 @@
 - `yshop_activity_template`：新增 `condition_config JSON` 和必要的配置版本字段；旧 Boolean 字段保留兼容期。
 - `yshop_activity_period_snapshot`：新增 `condition_snapshot JSON`，保存条件 type、配置、展示信息和处理器版本。
 - `yshop_activity_registration`：新增 `condition_result JSON`，保存每项通过状态、时间和安全摘要；旧管理员/群结果字段继续回填。
-- 新增租户级 `yshop_activity_condition`（或同等命名）配置表：`tenant_id`、`condition_type`、`enabled`、`config_version`、审计字段和逻辑删除字段；唯一键为租户 + 条件类型 + deleted。
+- 新增租户级 `yshop_activity_condition` 配置表：`tenant_id`、`condition_type`、`description`、审计字段和逻辑删除字段；唯一键为租户 + 条件类型 + deleted。
 - 数据迁移将旧 Boolean 条件转换为等价 `condition_config`；无条件模板转换为空数组。迁移必须限定租户/记录范围并提供回滚说明。
 - 升级脚本：`backend/sql/upgrade-2026-09-17-activity-management-refactor.sql`。
 
