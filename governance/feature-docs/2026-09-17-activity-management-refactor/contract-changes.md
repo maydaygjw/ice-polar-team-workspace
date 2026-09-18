@@ -29,8 +29,10 @@
 
 本期内置类型：
 
-- `WECOM_ADMIN_FOLLOWED`：配置指定企微客户管理员；命中任一管理员关系通过。
-- `WECOM_GROUP_MEMBER`：配置指定社群标签；命中任一标签下本地群成员通过。
+- `WECOM_ADMIN_FOLLOWED`：配置 `config.admins`（客户管理员企业微信 UserID 列表）；命中任一管理员关系通过。
+- `WECOM_GROUP_MEMBER`：配置 `config.tagIds`（群标签 ID 列表）；命中任一标签下本地群成员通过。
+
+活动模板保存时，后端从模板的 `admins` 和 `groups` 配置分别生成这两个内置条件的 `config.admins`、`config.tagIds`，不以调用方直接提交的条件配置为准；期次快照保存生成后的完整参数。
 
 `HAS_CONFIRMED_ORDER_WITHIN_DAYS`：配置 `config.days`（正整数，1 表示当天，7 表示近 7 天），按租户业务时区通过受控订单查询客户端判断当前用户是否存在已确认订单。外部商城请求使用 `do=HasConfirmedOrderWithinDays` 和 `days` 参数。
 
