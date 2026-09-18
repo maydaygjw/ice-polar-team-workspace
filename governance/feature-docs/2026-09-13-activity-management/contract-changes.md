@@ -55,9 +55,10 @@
 ```json
 [
   {
-    "type": "HAS_TODAY_CONFIRMED_ORDER",
-    "name": "当天已下过单",
-    "description": "用户当天在外部商城存在已确认订单即可报名",
+    "conditionId": "order-within-7-days",
+    "type": "HAS_CONFIRMED_ORDER_WITHIN_DAYS",
+    "name": "N天内有确认订单",
+    "description": "用户在指定天数内于外部商城存在已确认订单即可报名",
     "passed": false,
     "failureReason": "当天未下过已确认订单"
   }
@@ -66,13 +67,13 @@
 
 用户端应展示所有条件，并突出显示 `passed=false` 的条件及其 `failureReason`；报名提交前和报名失败后均可重新查询该接口。
 
-### 报名条件扩展：当天已下过单
+### 报名条件扩展：N天内有确认订单
 
-- 条件类型：`HAS_TODAY_CONFIRMED_ORDER`。
-- 展示名称：`当天已下过单`；配置为空对象 `{}`，不接受客户端传入商城域名、租户 ID 或其他外部身份参数。
+- 条件类型：`HAS_CONFIRMED_ORDER_WITHIN_DAYS`，同一类型允许多个条件实例。
+- 展示名称：`N天内有确认订单`；配置为 `{ "days": 7 }`，不接受客户端传入商城域名、租户 ID 或其他外部身份参数。
 - 条件通过口径：调用当前租户 `we7_mall_host` 配置对应的外部商城接口，查询当前会员的 `externalUserId`；外部接口返回 `data.has_confirmed_order=true` 时通过。
-- 外部接口：`GET {we7_mall_host}/app/index.php`，携带 `i=2`、`c=entry`、`a=wxapp`、`m=hlmall`、`businessModule=order`、`do=HasTodayConfirmedOrder` 和 `user_id={externalUserId}`。
-- 外部接口的“当天”由外部商城按其服务器时区和 `order_date` 判断；有效订单状态沿用 `wxapp_order` 文档定义的 `2、3、4、5、8、10`。
+- 外部接口：`GET {we7_mall_host}/app/index.php`，携带 `i=2`、`c=entry`、`a=wxapp`、`m=hlmall`、`businessModule=order`、`do=HasConfirmedOrderWithinDays`、`user_id={externalUserId}` 和 `days={days}`。
+- `days=1` 表示当天，`days=7` 表示近 7 天；时间范围由外部商城按其服务器时区和 `order_date` 判断。
 - `we7_mall_host` 从当前租户系统参数读取，拼接路径前去除末尾 `/`；服务端固定 10 秒请求超时。
 - 当前会员不存在、没有 `externalUserId`、未配置 `we7_mall_host`、接口 HTTP 非 2xx、返回 `status != success` 或响应结构无效时，条件按失败关闭处理，不得误放行报名。
 - 该条件与其他启用条件按 AND 关系执行；校验结果写入报名记录的 `condition_result` JSON 快照。

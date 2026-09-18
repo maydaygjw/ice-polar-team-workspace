@@ -9,8 +9,8 @@
 - `GET /condition/page`：查询当前租户可用/已配置的条件类型及状态。
 - `POST /condition/enable`：启用或停用租户可用的内置条件；请求包含 `type`、`enabled`。
 - `GET /condition/types`：返回可被模板选择的条件元数据、类别（`BUILT_IN` 内置或 `EXTENSION` 扩展）、说明和版本。
-- `PUT /condition/description`：按当前租户更新已注册条件的展示说明，请求包含 `type`、`description`。
-- 模板创建/更新请求新增 `conditions`，每项至少包含 `type`、`sort`、`config`；旧 `checkWecomAdmin`、`checkGroupMember` 请求字段过渡期可读写，但后端统一转换为条件配置。
+- 条件类型只读：展示后端注册的类型元数据；条件实例的名称、说明和参数由条件实例 CRUD 管理。
+- 模板创建/更新请求新增 `conditions`，每项包含唯一 `conditionId`、`type`、`sort`、`config`；同一 `type` 可以出现多个条件实例。旧 `checkWecomAdmin`、`checkGroupMember` 请求字段过渡期可读写，但后端统一转换为条件配置。
 - 模板详情/分页响应新增 `conditions`；保留旧 Boolean 字段，供旧前端兼容。
 - 期次详情响应新增快照条件列表；报名记录响应新增结构化 `conditionResults`。
 - 原有 `/template/*`、`/period/*`、`/registration/*`、`/winner/*` 端点保持路径兼容，权限归属迁移到对应子模块权限。
@@ -23,7 +23,7 @@
 
 ## 条件类型契约
 
-条件类型是后端注册表的稳定字符串标识。元数据至少包含：`type`、`category`、`name`、`description`、`configSchema`、`version`、`enabled`。内置条件由模板复选框选择，扩展条件由模板下拉框选择。条件配置必须是 JSON object，禁止脚本、表达式和任意类名。
+条件类型是后端注册表的稳定字符串标识，条件实例是模板中一次具体配置。元数据至少包含：`type`、`category`、`name`、`description`、`configSchema`、`version`、`enabled`。内置条件由模板复选框选择，扩展条件由模板下拉框添加实例；同一扩展类型可以添加多次。条件配置必须是 JSON object，禁止脚本、表达式和任意类名。
 
 条件处理器的运行上下文由服务端构造，至少包含当前登录用户 ID、租户 ID、期次 ID、请求时间和租户业务时区。需要业务数据的处理器只能调用后端已登记的查询客户端；客户端和管理端不得传入外部 URL、凭据、任意用户 ID 或任意日期范围。
 
@@ -32,7 +32,7 @@
 - `WECOM_ADMIN_FOLLOWED`：配置指定企微客户管理员；命中任一管理员关系通过。
 - `WECOM_GROUP_MEMBER`：配置指定社群标签；命中任一标签下本地群成员通过。
 
-后续可新增 `ORDER_PLACED_TODAY`：按租户业务时区计算当天时间范围，通过受控订单查询客户端判断当前用户是否存在符合条件的订单。其外部接口契约、超时、重试、数据映射和错误语义必须在新增功能契约中单独登记，本重构不假设具体订单系统 API。
+`HAS_CONFIRMED_ORDER_WITHIN_DAYS`：配置 `config.days`（正整数，1 表示当天，7 表示近 7 天），按租户业务时区通过受控订单查询客户端判断当前用户是否存在已确认订单。外部商城请求使用 `do=HasConfirmedOrderWithinDays` 和 `days` 参数。
 
 组合规则固定为 AND，条件顺序由 `sort` 决定，但不得改变通过语义。
 
@@ -55,13 +55,13 @@
 - `期次管理`：`activity:period:*`
 - `报名管理`：`activity:registration:*`
 - `中奖管理`：`activity:winner:*`
-- `条件管理`：`activity:condition:query`、`activity:condition:update`
+- `条件管理`：`activity:condition:query`；条件实例 CRUD 权限见活动条件实例管理契约。
 
 本次需把条件管理纳入活动管理树，并将现有隐藏的报名/中奖路由改为独立菜单入口。旧权限码尽量保持不变，通过菜单父子关系迁移减少角色授权回归；新增条件权限默认不自动授予超出原活动范围的角色，迁移脚本需明确默认授权策略。
 
 ## 兼容与错误语义
 
-- 旧管理端在过渡期仍可提交两个 Boolean 字段；后端转换后返回新旧字段，避免一次性破坏旧客户端。
+- 旧管理端在过渡期仍可提交两个 Boolean 字段；后端转换后返回新旧字段，避免一次性破坏旧客户端。`HAS_TODAY_CONFIRMED_ORDER` 不再注册或兼容，必须改用 `HAS_CONFIRMED_ORDER_WITHIN_DAYS` 配置 `days=1`。
 - 未知条件类型、条件停用、配置不合法、处理器版本不兼容：模板保存/期次生成失败。
 - 条件执行失败：报名失败，不创建报名记录；用户端只返回统一安全错误和条件结果。
 - 外部条件查询超时、限流、认证失败、非 2xx 或响应不完整均按条件执行失败处理；不得降级放行。
