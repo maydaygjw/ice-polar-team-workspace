@@ -28,7 +28,7 @@
 
 报名接口在事务内校验当前租户、期次状态、报名时间、用户唯一性，以及本地管理员客户关系和本地群成员/标签关系。用户身份从当前登录态获取，再通过 `yshop_user.id = mp_wecom_customer_contact.member_id` 获取企微联系人 `external_user_id`；联系人不存在时，开启的企微/社群校验均失败。成功后只产生一条期次报名记录，报名表保存会员主键、可选推荐人用户 ID 和渠道标识。
 
-新增 `HAS_CONFIRMED_ORDER_WITHIN_DAYS` 条件时，处理器先通过 `MemberUserApi` 获取当前会员，再读取其 `externalUserId` 和条件配置 `days`，从 `TenantConfigApi` 获取当前租户的 `we7_mall_host`，最后使用 GET 表单参数调用 `HasConfirmedOrderWithinDays`。外部接口返回失败、超时或结构异常统一按条件失败处理，并将失败原因写入报名条件结果快照。
+新增 `HAS_CONFIRMED_ORDER_WITHIN_DAYS` 条件时，处理器先通过 `MemberUserApi` 获取当前会员，再读取其 `externalUserId` 和条件配置 `days`，从 `TenantConfigApi` 获取当前租户的 `we7_mall_host`，最后使用 GET 表单参数调用订单接口。当前外部接口只支持当天查询，管理端暂配置 `days=1`；当配置其他天数时条件明确失败，不能静默按当天放行。外部接口返回失败、超时或结构异常统一按条件失败处理，并将失败原因写入报名条件结果快照。
 
 用户端通过受保护的 `GET /app-api/activity/period/eligibility` 获取当前用户的实时条件结果；报名接口复用同一套条件执行逻辑。H5 在进入确认报名页前检测一次，报名提交失败后再次检测并展示未通过条件，避免只显示笼统的报名失败信息。
 

@@ -34,7 +34,7 @@
 
 活动模板保存时，后端从模板的 `admins` 和 `groups` 配置分别生成这两个内置条件的 `config.admins`、`config.tagIds`，不以调用方直接提交的条件配置为准；期次快照保存生成后的完整参数。
 
-`HAS_CONFIRMED_ORDER_WITHIN_DAYS`：配置 `config.days`（正整数，1 表示当天，7 表示近 7 天），按租户业务时区通过受控订单查询客户端判断当前用户是否存在已确认订单。外部商城请求使用 `do=HasConfirmedOrderWithinDays` 和 `days` 参数。
+`HAS_CONFIRMED_ORDER_WITHIN_DAYS`：配置 `config.days`（正整数，条件定义支持多天）；当前管理端暂配置 `days=1`。后端通过受控订单查询客户端调用外部商城的 `do=HasTodayConfirmedOrder` 接口，不传递 `days` 参数；配置其他天数时明确失败，待外部接口支持范围查询后再扩展。
 
 组合规则固定为 AND，条件顺序由 `sort` 决定，但不得改变通过语义。
 
@@ -63,7 +63,7 @@
 
 ## 兼容与错误语义
 
-- 旧管理端在过渡期仍可提交两个 Boolean 字段；后端转换后返回新旧字段，避免一次性破坏旧客户端。`HAS_TODAY_CONFIRMED_ORDER` 不再注册或兼容，必须改用 `HAS_CONFIRMED_ORDER_WITHIN_DAYS` 配置 `days=1`。
+- 旧管理端在过渡期仍可提交两个 Boolean 字段；后端转换后返回新旧字段，避免一次性破坏旧客户端。当前内部条件类型仍使用 `HAS_CONFIRMED_ORDER_WITHIN_DAYS`，条件定义保留 `days` 参数；当前外部接口仅支持 `days=1` 对应的当天查询。
 - 未知条件类型、条件停用、配置不合法、处理器版本不兼容：模板保存/期次生成失败。
 - 条件执行失败：报名失败，不创建报名记录；用户端只返回统一安全错误和条件结果。
 - 外部条件查询超时、限流、认证失败、非 2xx 或响应不完整均按条件执行失败处理；不得降级放行。
