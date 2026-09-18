@@ -46,7 +46,9 @@
 
 服务内部调用既有小程序码能力，页面路径使用预留活动详情页，scene 使用受微信限制的短格式期次参数，例如 `activityPeriodId=123`。客户端不得传入 path、scene、appId 或其他租户信息。
 
-用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances` 和 `/app-api/activity/period/my-result`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期。
+用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances`、`/app-api/activity/period/my-result` 和 `/app-api/activity/period/my-referrals`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期。
+
+`GET /app-api/activity/period/my-referrals?periodId={id}` 要求当前用户登录，返回当前用户作为推荐人的有效报名记录，结果按报名时间倒序排列。返回字段包括报名记录 ID、活动期次 ID、被推荐用户 ID、渠道标识、报名时间和报名状态；不接受请求参数传入推荐人用户 ID，服务端从登录态获取。
 
 `GET /app-api/activity/period/eligibility?periodId={id}` 要求当前用户登录，按期次快照执行所有启用报名条件，返回条件数组：
 

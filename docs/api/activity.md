@@ -41,6 +41,7 @@
 | GET | `/app-api/activity/period/latest?templateId={id}` | 否 | 查询指定活动最近期次详情 |
 | POST | `/app-api/activity/period/register?periodId={id}` | 是 | 当前登录用户报名活动 |
 | GET | `/app-api/activity/period/my-result?periodId={id}` | 是 | 查询当前用户报名和中奖结果 |
+| GET | `/app-api/activity/period/my-referrals?periodId={id}` | 是 | 查询当前用户推荐的有效报名记录 |
 | POST | `/app-api/activity/period/increase-chances?periodId={id}&chances={n}` | 是 | 增加当前用户抽奖次数 |
 | POST | `/app-api/activity/registration/create?periodId={id}&userId={externalUserId}` | 兼容接口 | 按外部用户标识报名，旧调用方使用 |
 
@@ -365,6 +366,8 @@ GET /app-api/activity/period/latest?templateId=123
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|:---:|------|
 | periodId | long | 是 | 活动期次 ID |
+| referrerUserId | long | 否 | 推荐人用户 ID |
+| channelCode | string | 否 | 报名渠道标识，最长 64 个字符 |
 
 ```http
 POST /app-api/activity/period/register?periodId=123
@@ -386,6 +389,40 @@ Content-Type: application/json
 ```
 
 其中 `data` 为报名记录 ID。服务端从登录态获取会员 ID，并按该会员关联的企微外部联系人执行活动管理员和社群成员校验。重复点击时客户端应保持按钮 loading，避免重复请求；服务端也会通过期次和用户唯一约束拒绝重复报名。
+
+### 查询我推荐的报名记录 `GET /app-api/activity/period/my-referrals`
+
+需要登录。服务端从登录态获取推荐人用户 ID，不接受客户端传入推荐人用户 ID。
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| periodId | long | 是 | 活动期次 ID |
+
+```http
+GET /app-api/activity/period/my-referrals?periodId=123
+Authorization: Bearer <member-token>
+tenant-id: <tenant-id>
+```
+
+仅返回当前租户、指定活动期次内状态有效且推荐人为当前用户的报名记录，按报名时间倒序排列。响应中的 `userId` 为被推荐报名用户 ID：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": [
+    {
+      "id": 10002,
+      "periodId": 123,
+      "userId": 603698,
+      "nickname": "活动用户",
+      "channelCode": "poster",
+      "registerTime": "2026-09-18T12:11:10",
+      "status": 1
+    }
+  ]
+}
+```
 
 ### 查询我的结果 `GET /app-api/activity/period/my-result`
 
