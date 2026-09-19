@@ -60,12 +60,17 @@
     "name": "N天内有确认订单",
     "description": "用户在指定天数内于外部商城存在已确认订单即可报名",
     "passed": false,
-    "failureReason": "当天未下过已确认订单"
+    "failureReason": "当天未下过已确认订单",
+    "extraParams": {}
   }
 ]
 ```
 
 用户端应展示所有条件，并突出显示 `passed=false` 的条件及其 `failureReason`；报名提交前和报名失败后均可重新查询该接口。
+
+当 `type=WECOM_ADMIN_FOLLOWED` 且 `passed=false` 时，响应中的 `extraParams.qrCodeUrl` 返回当前活动商圈内，
+取活动管理员配置顺序中的第一个管理员，按联系我配置 ID 正序遍历后，第一条包含该管理员、状态有效且二维码地址不为空的联系我配置的企业微信二维码 URL；
+其他条件或通过时该字段为空。联系我配置的匹配仅使用当前租户数据。
 
 ### 报名条件扩展：N天内有确认订单
 
