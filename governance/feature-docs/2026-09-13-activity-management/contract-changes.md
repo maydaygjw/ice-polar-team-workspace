@@ -28,7 +28,7 @@
 | GET | `/registration/export?periodId={id}` | 导出报名记录 | `activity:registration:export` |
 | GET | `/winner/export?periodId={id}` | 导出中奖记录 | `activity:winner:export` |
 
-创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动图、背景图、宣传素材引用、活动管理员、社群标签和奖品列表。社群配置只选择一个或多个社群标签，不指定具体活动群；报名校验时匹配所选标签关联的任一微信群。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。登录态报名接口使用当前登录用户身份，并可选接收 `referrerUserId` 和 `channelCode`。
+创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动群链接、活动图、背景图、宣传素材引用、活动管理员、社群标签和奖品列表。活动群链接必填；社群配置只选择一个或多个社群标签，不指定具体活动群；报名校验时匹配所选标签关联的任一微信群。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。登录态报名接口使用当前登录用户身份，并可选接收 `referrerUserId` 和 `channelCode`。
 
 模板详情和分页响应中的 `data.prizes` 返回模板保存的奖品配置数组，字段包括 `prizeName`、`image`、`quantity` 和 `claimInstruction`，顺序与模板配置一致；数据库中的 `prize_config` JSON 由后端负责解析，客户端不得根据缺失字段自行重建奖品配置。
 
@@ -46,7 +46,7 @@
 
 服务内部调用既有小程序码能力，页面路径使用预留活动详情页，scene 使用受微信限制的短格式期次参数，例如 `activityPeriodId=123`。客户端不得传入 path、scene、appId 或其他租户信息。
 
-用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances`、`/app-api/activity/period/my-result` 和 `/app-api/activity/period/my-referrals`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期。
+用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances`、`/app-api/activity/period/my-result` 和 `/app-api/activity/period/my-referrals`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期，响应字段 `groupLink` 返回该期次快照中的活动群链接。
 
 `GET /app-api/activity/period/my-referrals?periodId={id}` 要求当前用户登录，返回当前用户作为推荐人的有效报名记录，结果按报名时间倒序排列。返回字段包括报名记录 ID、活动期次 ID、被推荐用户 ID、渠道标识、报名时间和报名状态；不接受请求参数传入推荐人用户 ID，服务端从登录态获取。
 
