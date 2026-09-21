@@ -8,7 +8,7 @@
 
 ## Swagger 分组
 
-活动模块的管理端和用户端接口均匹配 Swagger 分组“营销”，包括 `/activity/template/**`、`/activity/period/**`、`/activity/registration/**` 和 `/activity/winner/**`。
+活动模块的管理端和用户端接口均匹配 Swagger 分组“营销”，包括 `/activity/template/**`、`/activity/period/**`、`/activity/registration/**`、`/activity/winner/**`、`/activity/prize/**`、`/activity/draw-rule/**` 和 `/activity/share/**`。
 
 ## 接口总览
 
@@ -26,11 +26,16 @@
 | GET | `/admin-api/activity/period/get?id={id}` | `activity:period:query` | 查询期次详情和快照 |
 | POST | `/admin-api/activity/period/generate` | `activity:template:update` | 生成活动期次 |
 | POST | `/admin-api/activity/period/draw` | `activity:period:draw` | 手动开奖 |
+| POST | `/admin-api/activity/period/claim-winners` | `activity:winner:claim` | 批量处理本期中奖记录兑奖 |
 | POST | `/admin-api/activity/period/qrcode` | `activity:period:qrcode` | 生成期次小程序码 |
+| GET | `/admin-api/activity/draw-rule/list` | `activity:draw-rule:query` | 查询可用开奖规则 |
 | GET | `/admin-api/activity/registration/page` | `activity:registration:query` | 分页查询报名记录 |
 | POST | `/admin-api/activity/registration/increase-chances` | `activity:registration:query` | 增加报名用户抽奖次数 |
 | GET | `/admin-api/activity/registration/export` | `activity:registration:export` | 导出报名记录 |
 | GET | `/admin-api/activity/winner/page` | `activity:winner:query` | 分页查询中奖记录 |
+| POST | `/admin-api/activity/winner/claim` | `activity:winner:claim` | 单条中奖记录兑奖 |
+| POST | `/admin-api/activity/winner/claim-batch` | `activity:winner:claim` | 批量兑奖中奖记录 |
+| POST | `/admin-api/activity/winner/send-notification` | `activity:winner:claim` | 发送中奖企业微信通知 |
 | GET | `/admin-api/activity/winner/export` | `activity:winner:export` | 导出中奖记录 |
 | GET | `/admin-api/activity/condition/types` | `activity:condition:query` | 查询报名条件类型 |
 | PUT | `/admin-api/activity/condition/description` | `activity:condition:update` | 编辑报名条件说明 |
@@ -45,6 +50,7 @@
 | GET | `/app-api/activity/period/my-result?periodId={id}` | 是 | 查询当前用户报名和中奖结果 |
 | GET | `/app-api/activity/period/my-referrals?periodId={id}` | 是 | 查询当前用户推荐的有效报名记录 |
 | POST | `/app-api/activity/period/increase-chances?periodId={id}&chances={n}` | 是 | 增加当前用户抽奖次数 |
+| GET | `/app-api/activity/share/short-link?templateId={id}` | 是 | 生成活动页面小程序短链接 |
 | POST | `/app-api/activity/registration/create?periodId={id}&userId={externalUserId}` | 兼容接口 | 按外部用户标识报名，旧调用方使用 |
 
 ## 1. 活动模板
@@ -82,6 +88,37 @@
 | image | string | 否 | 奖品图片 URL |
 | quantity | int | 是 | 奖品数量，必须大于等于 1 |
 | claimInstruction | string | 否 | 领奖说明 |
+| drawRuleType | string | 是 | 开奖规则类型；线下兑奖使用 `OFFLINE_CLAIM` |
+| drawRuleParams | object | 是 | 开奖规则参数；`OFFLINE_CLAIM` 当前为空对象 `{}` |
+
+开奖规则通过 `GET /admin-api/activity/draw-rule/list` 查询。`OFFLINE_CLAIM` 表示由线下工作人员核验后发放，开奖时不执行外部发放动作，后台确认兑奖时仍沿用中奖记录兑奖流程。
+
+请求：
+
+```http
+GET /admin-api/activity/draw-rule/list
+Authorization: Bearer <admin-token>
+tenant-id: <tenant-id>
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": [
+    {
+      "type": "OFFLINE_CLAIM",
+      "name": "线下兑奖",
+      "description": "线下核验兑奖",
+      "version": 1,
+      "paramsSchema": {},
+      "enabled": true
+    }
+  ]
+}
+```
 
 管理员字段：`wecomUserid`（企业微信管理员 UserID）、`adminName`（名称快照）、`sort`（排序）。
 
@@ -110,7 +147,9 @@
       "prizeName": "奶茶兑换券",
       "image": "https://cdn.example.com/prize.png",
       "quantity": 10,
-      "claimInstruction": "凭中奖记录到店核销"
+      "claimInstruction": "凭中奖记录到店核销",
+      "drawRuleType": "OFFLINE_CLAIM",
+      "drawRuleParams": {}
     }
   ],
   "admins": [
@@ -227,6 +266,32 @@ Query 参数：
 
 仅允许在计划开奖时间后执行。成功时 `data` 为 `true`，重复触发不会重复开奖。
 
+### 批量兑奖本期中奖记录 `POST /admin-api/activity/period/claim-winners`
+
+需要权限 `activity:winner:claim`。
+
+```json
+{"periodId": 123}
+```
+
+按当前租户该期次的有效中奖记录批量兑奖，返回 `{total, successCount, skippedCount, failedCount, failedWinnerIds}`。
+
+响应：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "total": 2,
+    "successCount": 1,
+    "skippedCount": 1,
+    "failedCount": 0,
+    "failedWinnerIds": []
+  }
+}
+```
+
 ### 生成小程序码 `POST /admin-api/activity/period/qrcode`
 
 请求体：
@@ -290,10 +355,103 @@ Query 参数同报名记录分页查询。接口返回 Excel 文件；服务端�
 | userId | long | 否 | - | 会员用户 ID |
 | prizeName | string | 否 | - | 奖品名称模糊匹配 |
 | status | int | 否 | - | 中奖记录状态，`1` 有效 |
+| claimStatus | int | 否 | - | 兑奖状态，`0` 待兑奖，`1` 已兑奖，`2` 处理中 |
 
 ### 导出 `GET /admin-api/activity/winner/export`
 
 Query 参数同中奖记录分页查询。接口返回 Excel 文件；服务端会导出符合条件的全部记录。
+
+中奖记录返回字段还包括 `redemptionCode`（租户内唯一、不可变的线下兑奖码）、`claimTime`（成功兑奖时间）。兑奖码由服务端生成，客户端不得自行生成或修改。
+
+中奖记录分页响应示例：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "list": [
+      {
+        "id": 20001,
+        "periodId": 123,
+        "userId": 592901,
+        "prizeName": "当日霸王餐",
+        "redemptionCode": "ACT7K4M9Q2X8P",
+        "winnerTime": "2026-09-21T13:19:02",
+        "status": 1,
+        "claimStatus": 0,
+        "claimTime": null
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+### 单条兑奖 `POST /admin-api/activity/winner/claim`
+
+需要权限 `activity:winner:claim`。
+
+```json
+{"winnerId": 20001}
+```
+
+成功时 `data` 为 `true`。仅处理当前租户、有效且待兑奖的中奖记录。
+
+响应：
+
+```json
+{"code": 0, "msg": "", "data": true}
+```
+
+### 批量兑奖 `POST /admin-api/activity/winner/claim-batch`
+
+需要权限 `activity:winner:claim`。
+
+```json
+{"winnerIds": [20001, 20002]}
+```
+
+返回 `{total, successCount, skippedCount, failedCount, failedWinnerIds}`；已兑奖记录幂等跳过，单条规则执行失败不会回滚其他已成功记录。
+
+响应：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "total": 2,
+    "successCount": 2,
+    "skippedCount": 0,
+    "failedCount": 0,
+    "failedWinnerIds": []
+  }
+}
+```
+
+### 发送中奖企业微信通知 `POST /admin-api/activity/winner/send-notification`
+
+需要权限 `activity:winner:claim`。请求体只传中奖记录 ID，发送人和客户由服务端根据活动管理员及企业微信联系人关系选择。
+
+```json
+{"winnerId": 20001}
+```
+
+成功响应：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "msgId": "msg_123",
+    "senderUserId": "zhangsan"
+  }
+}
+```
+
+消息由服务端生成，包含活动标题、奖品名称和兑奖说明；重复操作会创建新的企业微信消息任务。
 
 ## 5. 用户端接口
 
@@ -448,7 +606,38 @@ tenant-id: <tenant-id>
 }
 ```
 
-已报名但尚未中奖或尚未开奖时，`registered` 为 `true`、`winner` 为 `false`。中奖后会返回 `winnerId`、`prizeId`、`prizeName`、`prizeImage`、`claimInstruction`、`winnerTime` 和 `winnerStatus`。
+已报名但尚未中奖或尚未开奖时，`registered` 为 `true`、`winner` 为 `false`。中奖后会返回 `winnerId`、`prizeId`、`prizeName`、`prizeImage`、`claimInstruction`、`redemptionCode`、`winnerTime` 和 `winnerStatus`。其中 `redemptionCode` 为服务端生成的线下兑奖码。
+
+### 生成活动页面小程序短链接 `GET /app-api/activity/share/short-link`
+
+需要登录。客户端只传活动模板 ID；服务端从 access token 获取当前会员，读取其 `external_user_id` 作为推荐人参数，并从模板关联的启用商圈解析 `region_code`。
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| templateId | long | 是 | 活动模板 ID，必须为正数 |
+```http
+GET /app-api/activity/share/short-link?templateId=1
+Authorization: Bearer <member-token>
+tenant-id: <tenant-id>
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": "#小程序://氧气学长/efrFZnrUkrq6Ydp"
+}
+```
+
+服务端调用当前租户小程序主账号生成短链接，固定页面路径及参数为：
+
+```text
+hlmall/pages/index/index.html?open_activity=1&templateId=1&referrer_user_Id=592901&region_code=SHLJZ001
+```
+
+成功时 `data` 为微信小程序短链接文本，例如 `#小程序://氧气学长/efrFZnrUkrq6Ydp`；短链接不持久化。
 
 ### 增加我的抽奖次数 `POST /app-api/activity/period/increase-chances`
 
