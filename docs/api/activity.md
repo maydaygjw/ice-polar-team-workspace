@@ -73,6 +73,7 @@
 | registrationEndTime | time | 是 | 每日结束报名时间，如 `22:00:00` |
 | drawTime | time | 是 | 每日开奖时间，如 `22:00:00` |
 | registrationLimit | int | 是 | 每期报名人数限制，`0` 表示不限 |
+| inviteRegistrationChance | boolean | 否 | 是否开启邀请报名增加推荐人 1 次抽奖机会，默认 `false` |
 | checkWecomAdmin | boolean | 否 | 是否校验已添加活动客户管理员 |
 | checkGroupMember | boolean | 否 | 是否校验活动社群成员 |
 | singleWinner | boolean | 否 | 是否限制每个人最多中奖一次，默认 `false` |
@@ -140,6 +141,7 @@ tenant-id: <tenant-id>
   "registrationEndTime": "22:00:00",
   "drawTime": "22:00:00",
   "registrationLimit": 100,
+  "inviteRegistrationChance": true,
   "checkWecomAdmin": true,
   "checkGroupMember": true,
   "singleWinner": false,
@@ -174,6 +176,8 @@ tenant-id: <tenant-id>
 ```
 
 成功时 `data` 为新建模板 ID。
+
+`inviteRegistrationChance` 开启后，用户报名成功且存在推荐人时，如果推荐人已报名同一期活动，推荐人的 `drawChances` 自动增加 1；推荐人未报名或推荐人是当前用户本人时不增加。
 
 ### 更新 `PUT /admin-api/activity/template/update`
 
