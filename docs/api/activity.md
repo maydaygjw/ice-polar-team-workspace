@@ -72,6 +72,7 @@
 | registrationStartTime | time | 是 | 每日开始报名时间，如 `00:00:00` |
 | registrationEndTime | time | 是 | 每日结束报名时间，如 `22:00:00` |
 | drawTime | time | 是 | 每日开奖时间，如 `22:00:00` |
+| registrationLimit | int | 是 | 每期报名人数限制，`0` 表示不限 |
 | checkWecomAdmin | boolean | 否 | 是否校验已添加活动客户管理员 |
 | checkGroupMember | boolean | 否 | 是否校验活动社群成员 |
 | singleWinner | boolean | 否 | 是否限制每个人最多中奖一次，默认 `false` |
@@ -138,6 +139,7 @@ tenant-id: <tenant-id>
   "registrationStartTime": "00:00:00",
   "registrationEndTime": "22:00:00",
   "drawTime": "22:00:00",
+  "registrationLimit": 100,
   "checkWecomAdmin": true,
   "checkGroupMember": true,
   "singleWinner": false,
@@ -243,7 +245,9 @@ Query 参数：
 
 ### 查询详情 `GET /admin-api/activity/period/get?id={id}`
 
-返回期次时间、报名人数、中奖人数、内容快照、企微/社群配置快照、`singleWinner` 规则和奖品列表。
+返回期次时间、报名人数、报名人数限制、中奖人数、内容快照、企微/社群配置快照、`singleWinner` 规则和奖品列表。
+
+其中 `registrationLimit` 为 `0` 时表示不限；当当前 `registrationCount` 达到大于 `0` 的限制值后，用户端报名接口返回业务错误码 `1009000031`。
 
 ### 生成期次 `POST /admin-api/activity/period/generate`
 
