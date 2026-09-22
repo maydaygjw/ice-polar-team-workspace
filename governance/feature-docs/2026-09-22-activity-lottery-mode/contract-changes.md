@@ -114,6 +114,7 @@
 
 - `/register` 不自动抽奖；报名成功后由客户端调用 `/draw`。
 - `/increase-chances` 在 `LOTTERY` 模式下的截止点为报名结束时间。
+- `/draw` 是否开放仅以期次 `registrationOpen=true` 为准；报名起止时间用于前台展示及自动触发开放报名，不作为即时抽奖接口的直接拦截条件。
 - `/my-result` 继续返回报名记录和中奖记录，不新增抽奖尝试明细。
 - 期次详情返回模式、报名窗口和奖品概率，客户端不得自行计算中奖结果。
 - 本期仅定义 app-api 契约，不修改 `miniapp` 或其他客户端代码；客户端接入另行立项。
@@ -123,7 +124,7 @@
 | 场景 | 建议语义 |
 |---|---|
 | 期次不是 `LOTTERY` 模式 | `ACTIVITY_LOTTERY_MODE_REQUIRED` |
-| 期次不在报名时间窗口 | `REGISTRATION_CLOSED` 或现有统一活动状态错误 |
+| 期次尚未开放报名（`registrationOpen=false`） | `REGISTRATION_CLOSED` 或现有统一活动状态错误 |
 | 当前用户未有效报名 | `REGISTRATION_NOT_EXISTS` |
 | 抽奖次数已用完 | `DRAW_CHANCE_NOT_ENOUGH` |
 | requestId 为空或超长 | 参数校验错误 |
