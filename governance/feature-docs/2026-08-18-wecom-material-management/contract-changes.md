@@ -101,6 +101,19 @@
 
 `content` 字段删除且不再接受。`materialGroupId` 必填，必须属于 `accountId`。响应继续返回：`msgId`、`targetCount`、`failedChatIds`。
 
+客户群列表的“推送素材”单群操作复用上述接口和 `mp:wecom-customer-group:send` 权限，请求可提交单群目标：
+
+```json
+{
+  "accountId": 1,
+  "groupId": 101,
+  "sender": "zhangsan",
+  "materialGroupId": 10
+}
+```
+
+提交 `groupId` 时不需要 `tagIds`；服务端必须校验目标客户群属于当前企业微信配置，并沿用素材组归属、租户隔离和企业微信群发校验。单群操作使用官方企业微信通道。
+
 ## API 校验与错误语义
 
 - 企业微信配置不存在、凭据缺失或素材组越权：拒绝请求。
