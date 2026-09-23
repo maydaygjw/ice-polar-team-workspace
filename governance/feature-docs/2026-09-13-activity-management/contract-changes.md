@@ -35,8 +35,10 @@
 小程序码请求：
 
 ```json
-{"periodId":123}
+{"periodId":123,"channelCode":"poster"}
 ```
+
+`channelCode` 可选，最大 64 个字符。
 
 成功响应：
 
@@ -44,7 +46,7 @@
 {"url":"https://oss.example/temporary/miniapp-qrcode/153/activity.png","expiresAt":"2026-09-15T00:00:00Z"}
 ```
 
-服务内部调用既有小程序码能力，页面路径使用预留活动详情页，scene 使用受微信限制的短格式期次参数，例如 `activityPeriodId=123`。客户端不得传入 path、scene、appId 或其他租户信息。
+服务内部调用既有小程序码能力，生成页面路径必须与活动分享短链接保持一致：固定使用 `hlmall/pages/index/index.html`，查询参数包含 `open_activity=1`、期次所属模板的 `templateId` 和服务端解析的启用商圈 `region_code`；请求传入 `channelCode` 时追加同名查询参数。二维码不携带 `referrer_user_Id`，也不携带 `periodId` 作为页面参数；`periodId` 仅用于后台定位期次。客户端不得传入 path、scene、appId、templateId、region_code、referrer_user_Id 或其他租户信息。
 
 用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances`、`/app-api/activity/period/my-result` 和 `/app-api/activity/period/my-referrals`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期，响应字段 `groupLink` 返回该期次快照中的活动群链接。
 
