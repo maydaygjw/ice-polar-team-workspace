@@ -113,17 +113,17 @@ H5 是静态前端，生产与测试均由 Nginx 提供服务。首次部署或�
 | 环境 | 服务器 | 静态目录 | 域名 | API 构建地址 |
 |---|---|---|---|---|
 | 测试 | `rprod18` | `/opt/holun/yshop-h5/dist` | `yshop-h5-test.holuntech.cn` | `https://yshop-api-test.holuntech.cn/app-api` |
-| 生产 | `yprod1` | `/opt/holun/yshop-h5/dist` | `${DOMAIN_H5}` | `https://yshop-api.holuntech.cn/app-api` |
+| 生产 | `yprod1` | `/opt/holun/yshop-h5/dist` | `yshop-h5.holuntech.cn` / `yshop-h5.holuntech.com` | `https://yshop-api.holuntech.cn/app-api` |
 
 生产连接方式为 `ssh root@yprod1`。生产 H5 不启用测试登录入口，也不在 bundle 中固定 `tenant-id`；ticket 换取的 backend Token 负责恢复租户上下文。
 
 ### 初始化清单
 
-- [ ] 确认 DNS 将测试/生产域名指向对应入口
+- [ ] 确认 DNS 将测试/生产域名指向对应入口（生产 `.cn` 与 `.com` 均需确认）
 - [ ] 安装并启用 Nginx
 - [ ] 创建 `${H5_REMOTE_PATH}` 对应的父目录
 - [ ] 配置 Vue Router history fallback
-- [ ] 配置 HTTPS、证书和 HTTP 到 HTTPS 跳转（如由该服务器负责）
+- [ ] 配置 HTTPS、证书和 HTTP 到 HTTPS 跳转（如由该服务器负责）；`.cn` 使用 `holuntech.cn.pem/key`，`.com` 使用 `holuntech.com.pem/key`
 - [ ] 执行 `nginx -t && systemctl reload nginx`
 - [ ] 确认 `systemctl is-active nginx` 返回 `active`
 
@@ -161,10 +161,44 @@ server {
 }
 ```
 
+生产 `.com` 别名（使用 `.com` 专用证书）：
+
+```nginx
+server {
+    listen 80;
+    server_name yshop-h5.holuntech.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name yshop-h5.holuntech.com;
+
+    ssl_certificate /opt/holun/holun-cert/13223576_holuntech.com_nginx/holuntech.com.pem;
+    ssl_certificate_key /opt/holun/holun-cert/13223576_holuntech.com_nginx/holuntech.com.key;
+
+    root /opt/holun/yshop-h5/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
 将配置放入 Nginx 配置目录后执行：
 
 ```bash
 ssh root@yprod1 'nginx -t && systemctl reload nginx && systemctl is-active nginx'
+```
+
+生产双域名验收：
+
+```bash
+curl -fsSI https://yshop-h5.holuntech.cn/
+curl -fsSI https://yshop-h5.holuntech.com/
+curl -fsSI 'https://yshop-h5.holuntech.cn/activity.html?templateId=1&channelCode=wecomg'
+curl -fsSI 'https://yshop-h5.holuntech.com/activity.html?templateId=1&channelCode=wecomg'
 ```
 
 如果 HTTPS 终止、证书或 443 跳转由现有网关负责，沿用现有生产网关配置，不在应用版本发布时临时修改。

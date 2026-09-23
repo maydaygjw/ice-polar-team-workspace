@@ -303,8 +303,10 @@ Query 参数：
 请求体：
 
 ```json
-{"periodId": 123}
+{"periodId": 123, "channelCode": "poster"}
 ```
+
+`channelCode` 可选，最大长度为 64 个字符。服务端根据期次所属模板和商圈生成与活动分享页面一致的二维码页面参数：固定页面路径为 `hlmall/pages/index/index.html`，携带 `open_activity=1`、`templateId`、`region_code`，传入渠道码时追加 `channelCode`。二维码不携带推荐人参数；客户端不得传入 `path`、`scene`、`appId`、`templateId`、`region_code`、推荐人或租户信息。
 
 仅允许在计划开奖时间后执行，且只适用于 `drawMode=1`（开奖模式）。抽奖模式不会进入统一开奖任务，也不能通过此接口开奖。成功时 `data` 为 `true`，重复触发不会重复开奖。
 
@@ -355,7 +357,7 @@ Query 参数：
 }
 ```
 
-二维码绑定具体活动期次，不接受客户端传入 `path`、`scene`、`appId` 或租户信息。
+`periodId` 仅用于后台定位期次，二维码每次生成独立的临时文件，预计保留 48 小时，不保存永久二维码业务记录。
 
 ## 3. 活动报名记录
 
@@ -375,7 +377,7 @@ Query 参数同报名记录分页查询。接口返回 Excel 文件；服务端�
 
 ### 增加抽奖次数 `POST /admin-api/activity/registration/increase-chances`
 
-需要权限 `activity:registration:query`，仅允许在开奖前为有效报名增加次数。
+需要权限 `activity:registration:query`，仅允许在报名开始时间（含）至报名截止时间（不含）之间为有效报名增加次数；即使当前抽奖次数已全部使用，只要仍在报名时间内也允许追加。
 
 请求体：
 
@@ -752,7 +754,7 @@ Content-Type: application/json
 
 ### 增加我的抽奖次数 `POST /app-api/activity/period/increase-chances`
 
-需要登录，使用当前登录用户在指定期次的报名记录。开奖模式仅允许在开奖前调用；抽奖模式仅允许在报名结束前调用。
+需要登录，使用当前登录用户在指定期次的报名记录。仅允许在报名开始时间（含）至报名截止时间（不含）之间调用；开奖模式和抽奖模式规则一致。即使当前抽奖次数已全部使用，只要仍在报名时间内也允许追加。
 
 ```http
 POST /app-api/activity/period/increase-chances?periodId=123&chances=2
