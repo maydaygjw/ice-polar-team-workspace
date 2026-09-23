@@ -113,6 +113,8 @@ bash governance/SCRIPTS/build-backend-test.sh
 3. 将同一份 tar 包上传到 `rprod18`，备份 `${H5_REMOTE_PATH}`，解压后执行 `nginx -t && systemctl reload nginx`。
 4. 页面或 API 验证失败时，恢复带时间戳的备份目录并 reload Nginx。
 
+H5 生产发布的完整操作手册见 [`PLAYBOOKS/deployment.md`](../PLAYBOOKS/deployment.md) 的“生产环境配置”和“生产发布”章节。生产目标为 `ssh root@yprod1`，使用 `governance/SCRIPTS/deploy-h5-prod.sh`；生产候选包必须改用 `H5_API_BASE_URL=https://yshop-api.holuntech.cn/app-api` 构建，`VITE_TEST_AUTH_ENABLED=false`，并在上传前校验 SHA-256。由于 API 地址在构建时写入 bundle，测试 API 构建产物不得直接发布到生产。
+
 ### 6. DMS 制品晋级
 
 1. 测试和生产均使用固定 Git commit、干净工作区和记录过的 Python/依赖版本；生产禁止直接 `git pull` 当前分支后即启动。

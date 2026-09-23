@@ -104,9 +104,74 @@ sudo systemctl start nginx
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
+## 5. icepolar H5 活动前端专用
+
+H5 是静态前端，生产与测试均由 Nginx 提供服务。首次部署或域名变更时完成以下初始化；日常版本发布只执行 `deployment.md` 中的构建、上传、校验和回滚步骤。
+
+### 环境信息
+
+| 环境 | 服务器 | 静态目录 | 域名 | API 构建地址 |
+|---|---|---|---|---|
+| 测试 | `rprod18` | `/opt/holun/yshop-h5/dist` | `yshop-h5-test.holuntech.cn` | `https://yshop-api-test.holuntech.cn/app-api` |
+| 生产 | `yprod1` | `/opt/holun/yshop-h5/dist` | `${DOMAIN_H5}` | `https://yshop-api.holuntech.cn/app-api` |
+
+生产连接方式为 `ssh root@yprod1`。生产 H5 不启用测试登录入口，也不在 bundle 中固定 `tenant-id`；ticket 换取的 backend Token 负责恢复租户上下文。
+
+### 初始化清单
+
+- [ ] 确认 DNS 将测试/生产域名指向对应入口
+- [ ] 安装并启用 Nginx
+- [ ] 创建 `${H5_REMOTE_PATH}` 对应的父目录
+- [ ] 配置 Vue Router history fallback
+- [ ] 配置 HTTPS、证书和 HTTP 到 HTTPS 跳转（如由该服务器负责）
+- [ ] 执行 `nginx -t && systemctl reload nginx`
+- [ ] 确认 `systemctl is-active nginx` 返回 `active`
+
+### Nginx 配置示例
+
+测试环境：
+
+```nginx
+server {
+    listen 80;
+    server_name yshop-h5-test.holuntech.cn;
+
+    root /opt/holun/yshop-h5/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+生产环境：
+
+```nginx
+server {
+    listen 80;
+    server_name yshop-h5.holuntech.cn;
+
+    root /opt/holun/yshop-h5/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+将配置放入 Nginx 配置目录后执行：
+
+```bash
+ssh root@yprod1 'nginx -t && systemctl reload nginx && systemctl is-active nginx'
+```
+
+如果 HTTPS 终止、证书或 443 跳转由现有网关负责，沿用现有生产网关配置，不在应用版本发布时临时修改。
+
 ---
 
-## 5. icepolar-dms 设备管理系统专用
+## 6. icepolar-dms 设备管理系统专用
 
 - [ ] 安装 Python 3.10+
 - [ ] 创建代码目录 `${DMS_CODE_PATH}`
@@ -123,7 +188,7 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ---
 
-## 6. mock-external-server
+## 7. mock-external-server
 
 用于在 rprod18 上运行链科云打印协议 Mock，供 API、集成测试和端到端测试使用。首次初始化只执行一次；完成后，版本更新统一按 `governance/PLAYBOOKS/deployment.md` 通过 Git 提交和拉取完成。
 
@@ -153,7 +218,7 @@ bash governance/SCRIPTS/provision-mock-external-server.sh
 
 ---
 
-## 7. 可选 / 根据业务需要
+## 8. 可选 / 根据业务需要
 
 - [ ] MQ 中间件（RocketMQ / RabbitMQ）—— 当前生产暂未使用；启用相关异步链路前再部署并恢复对应自动配置
 - [ ] 日志收集（ELK、Loki、Promtail）
@@ -163,7 +228,7 @@ bash governance/SCRIPTS/provision-mock-external-server.sh
 
 ---
 
-## 8. 部署前置检查
+## 9. 部署前置检查
 
 完成以上步骤后，请执行以下检查，确认环境已就绪：
 

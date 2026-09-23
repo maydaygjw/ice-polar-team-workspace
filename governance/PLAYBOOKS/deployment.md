@@ -139,7 +139,11 @@ ssh "$DEPLOY_USER@$SERVER_HOST" "
 
 ## H5 活动前端
 
-H5 部署到测试服务器 `rprod18`，域名为 `${DOMAIN_H5}`。先使用测试 API 地址构建，再发布同一份静态制品：
+H5 必须在本地构建。测试包使用测试 API 做验证；生产候选包使用生产 API 构建并由同一套发布脚本上传到 `yprod1`。生产不在服务器安装依赖、不重新构建，也不启用测试登录入口。
+
+### 测试环境部署
+
+测试环境部署到 `rprod18`，域名为 `${DOMAIN_H5}`：
 
 ```bash
 source governance/SCRIPTS/deploy-helper.sh && load_env test
@@ -150,23 +154,76 @@ bash governance/SCRIPTS/deploy-h5-test.sh
 
 `deploy-h5-test.sh` 会校验 `dist/index.html`、源码 commit 和 tar 包 SHA-256，上传并校验远端文件，备份 `${H5_REMOTE_PATH}`，解压新产物后执行 `nginx -t && systemctl reload nginx`。
 
-首次部署前配置 Nginx，将 `${DOMAIN_H5}` 指向 `${H5_REMOTE_PATH}`，并为 Vue Router 保留 history fallback：
+部署后验证首页、静态资源、`/auth/callback?ticket=...` 路由和 ticket 换 Token 请求。首次部署、DNS、目录和 Nginx 配置见 [`environment-provisioning.md`](environment-provisioning.md) 的“H5 活动前端专用”章节；失败时恢复 `${H5_REMOTE_PATH}.bak.<timestamp>`，再执行 `nginx -t && systemctl reload nginx`。
 
-```nginx
-server {
-    listen 80;
-    server_name yshop-h5-test.holuntech.cn;
+### 生产发布前检查
 
-    root /opt/holun/yshop-h5/dist;
-    index index.html;
+生产发布必须已经完成测试环境验证，并获得明确生产发布授权。发布人应记录：H5 源码 commit、Node/pnpm 版本、构建参数、dist tar SHA-256、测试验证 URL 和发布时间。
 
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
+```bash
+source governance/SCRIPTS/deploy-helper.sh && load_env test
+cd "$H5_LOCAL_PATH"
+pnpm install --frozen-lockfile
+pnpm type-check
+VITE_API_BASE_URL="$H5_API_BASE_URL" \
+VITE_TENANT_ID="$H5_TENANT_ID" \
+VITE_TEST_AUTH_ENABLED="$H5_TEST_AUTH_ENABLED" \
+pnpm build
+bash governance/SCRIPTS/deploy-h5-test.sh
 ```
 
-部署后验证首页、静态资源、`/auth/callback?ticket=...` 路由和 ticket 换 Token 请求。失败时恢复 `${H5_REMOTE_PATH}.bak.<timestamp>`，再执行 `nginx -t && systemctl reload nginx`。
+确认测试站点的首页、静态资源、`/auth/callback?ticket=...` 和 ticket 换 Token 请求均通过后，再构建生产候选包。由于 API 地址是在 Vite 构建时写入 bundle，不能把带测试 API 地址的测试包直接发布到生产。
+
+### 生产发布
+
+生产脚本强制校验目标环境为 `prod`、目标主机为 `yprod1`、测试登录已关闭，并要求显式确认。脚本会先在本地打包，再通过 SSH 上传、校验 SHA-256、在生产目录外准备临时目录、备份旧目录、切换新目录，最后执行 `nginx -t` 和 reload。
+
+```bash
+source governance/SCRIPTS/deploy-helper.sh && load_env prod
+cd "$H5_LOCAL_PATH"
+
+# 使用已完成测试验证的同一源码 commit，在本地生成生产候选包；不在 yprod1 构建。
+VITE_API_BASE_URL="$H5_API_BASE_URL" \
+VITE_TENANT_ID="$H5_TENANT_ID" \
+VITE_TEST_AUTH_ENABLED=false \
+pnpm build
+
+CONFIRM_PROD_H5=YES bash governance/SCRIPTS/deploy-h5-prod.sh
+```
+
+脚本输出中的 `h5_commit` 和 `h5_tar_sha256` 必须写入发布记录。若本地 tar 与 yprod1 上的 SHA-256 不一致，脚本会立即停止，不会替换线上目录。
+
+### 生产 Nginx
+
+首次部署、域名、目录、HTTPS 和 Nginx 配置见 [`environment-provisioning.md`](environment-provisioning.md) 的“H5 活动前端专用”章节。版本发布阶段只执行 `nginx -t` 和 reload，不临时改动证书或网关配置。
+
+### 生产验收
+
+发布后使用生产域名检查：
+
+```bash
+curl -fsSI "https://${DOMAIN_H5}/"
+curl -fsSI "https://${DOMAIN_H5}/activity.html"
+ssh root@yprod1 'test -s /opt/holun/yshop-h5/dist/index.html && systemctl is-active nginx'
+```
+
+浏览器还必须验证首页、活动页、静态资源、`/auth/callback?ticket=...` 路由和 ticket 换 Token 请求。不得把真实 ticket、Token、Cookie 或用户隐私写入发布记录。
+
+### 生产回滚
+
+发布后页面、静态资源、Nginx 或认证链路验证失败时，立即恢复脚本输出的备份目录：
+
+```bash
+ssh root@yprod1
+BACKUP_PATH="$(ls -dt /opt/holun/yshop-h5/dist.bak.* | head -1)"
+test -n "$BACKUP_PATH"
+mv /opt/holun/yshop-h5/dist /opt/holun/yshop-h5/dist.failed.$(date +%Y%m%d%H%M%S)
+mv "$BACKUP_PATH" /opt/holun/yshop-h5/dist
+nginx -t && systemctl reload nginx
+systemctl is-active nginx
+```
+
+回滚后重新验证首页、活动页和认证链路，并记录失败版本的 commit、SHA-256、现象、日志证据和回滚结果。不要在生产重新安装依赖或构建。
 
 ## icepolar-dms
 
