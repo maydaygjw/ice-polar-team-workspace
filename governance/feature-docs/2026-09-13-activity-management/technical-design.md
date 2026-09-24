@@ -42,7 +42,7 @@
 
 ### 二维码
 
-后台对具体期次调用生成接口，服务端根据期次所属模板和商圈组装与活动分享短链接一致的页面路径：固定使用 `hlmall/pages/index/index.html`，携带 `open_activity=1`、`templateId`、`region_code`，并按请求追加可选 `channelCode`；不携带推荐人参数。二维码接口的 `periodId` 只用于定位后台期次，服务复用现有小程序码生成和临时文件 URL 返回约定，返回 URL 与预期过期时间；不创建永久文件记录。
+后台对具体期次调用生成接口，页面路径固定使用不带查询参数的 `hlmall/pages/index/index.html`。微信小程序码接口的 `page` 不允许携带查询参数，因此服务端将 `open_activity`、模板 ID、商圈代码和可选渠道码压缩到不超过 32 个字符的 `scene`（格式为 `a=1&t={templateId(base36)}&r={region_code}[&c={channelCode}]`）；参数超限或包含不支持字符时明确失败，不截断。二维码接口的 `periodId` 只用于定位后台期次，服务复用现有小程序码生成和临时文件 URL 返回约定，返回 URL 与预期过期时间；不创建永久文件记录。
 
 ## 风险与迁移
 

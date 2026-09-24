@@ -46,7 +46,7 @@
 2. 后端运行 JAR 的完整 Git commit、SHA-256、构建时间和启动 profile 不完整。
 3. 只检查了 `${YSHOP_START_PATH}/target` 或代码目录，没有从运行进程的实际 JAR 路径采集身份。
 4. 测试 JAR 的内嵌 commit 与本次批准发布的 commit 不一致，或测试代码目录有未说明的修改。
-5. JAR 内 `application-prod.yaml` 仍含 `localhost`、`127.0.0.1`、本地数据库/Redis/DMS/MQ 地址、占位符或与 `prod.env` 不一致的生产端点。
+5. JAR 内 `application-prod.yaml` 仍含 `localhost`、`127.0.0.1`、本地数据库/Redis/DMS/MQ 地址或与 `prod.env` 不一致的生产端点。
 6. 生产 systemd 的 `ExecStart`、工作目录、JDK 路径或 `SPRING_PROFILES_ACTIVE=prod` 未核对；必须核对服务实际使用的 Java，不以 shell 默认 Java 版本代替。
 7. 前端没有在测试环境完成目标 mode 的构建、健康检查和关键页面/API 验证，或生产上传的 bundle hash 与测试 bundle 不同。
 8. DMS 没有固定 commit、依赖安装记录、`--no-reload` 运行参数和健康检查；生产不得使用开发热重载。
