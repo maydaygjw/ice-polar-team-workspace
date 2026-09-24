@@ -267,8 +267,13 @@ Authorization: Bearer <access-token>
 #### 微信小程序无手机号登录 `POST /app-api/member/auth/auth-session`
 
 ```json
-{ "code": "code-from-wx.login" }
+{
+  "code": "code-from-wx.login",
+  "externalUserId": "186917"
+}
 ```
+
+`externalUserId` 可选，表示外部系统中的用户 ID。传入非空值时，服务端会将其关联到当前会员；未传入时保留当前会员已有的外部用户 ID。最大长度为 128 个字符。
 
 接口服务端通过微信 `code` 换取并校验 `openid`，缓存小程序会话信息；随后按当前租户查询 `routine_openid`。
 如果用户尚未注册，则创建一个手机号为空的会员并绑定该 `routine_openid`。查询或创建完成后统一签发 Token。
