@@ -53,6 +53,8 @@
 
 `GET /app-api/activity/period/my-referrals?periodId={id}` 要求当前用户登录，返回当前用户作为推荐人的有效报名记录，结果按报名时间倒序排列。返回字段包括报名记录 ID、活动期次 ID、被推荐用户 ID、渠道标识、报名时间和报名状态；不接受请求参数传入推荐人用户 ID，服务端从登录态获取。
 
+`POST /app-api/activity/registration/create` 要求当前用户登录，创建当前登录用户的活动报名。请求参数为必填 `periodId`，可选 `referrerExternalUserId` 和 `channelCode`；不再接收或要求客户端传入当前用户的 `externalUserId`。服务端从登录态获取 `userId`，查询当前租户会员及其 `externalUserId`，再执行报名条件校验；需要外部身份的条件在会员未关联 `externalUserId` 时按条件失败处理。推荐人外部 ID 仅用于解析推荐人，不用于解析当前报名用户。
+
 `GET /app-api/activity/period/eligibility?periodId={id}` 要求当前用户登录，按期次快照执行所有启用报名条件，返回条件数组：
 
 ```json

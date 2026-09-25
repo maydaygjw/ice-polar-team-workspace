@@ -46,13 +46,12 @@
 |------|------|:---:|------|
 | GET | `/app-api/activity/period/detail?periodId={id}` | 否 | 查询活动期次详情 |
 | GET | `/app-api/activity/period/latest?templateId={id}` | 否 | 查询指定活动最近期次详情 |
-| POST | `/app-api/activity/period/register?periodId={id}` | 是 | 当前登录用户报名活动 |
+| POST | `/app-api/activity/registration/create?periodId={id}` | 是 | 当前登录用户报名活动 |
 | POST | `/app-api/activity/period/draw` | 是 | 抽奖模式即时抽奖，报名后直接返回结果 |
 | GET | `/app-api/activity/period/my-result?periodId={id}` | 是 | 查询当前用户报名和中奖结果 |
 | GET | `/app-api/activity/period/my-referrals?periodId={id}` | 是 | 查询当前用户推荐的有效报名记录 |
 | POST | `/app-api/activity/period/increase-chances?periodId={id}&chances={n}` | 是 | 增加当前用户抽奖次数 |
 | GET | `/app-api/activity/share/short-link?templateId={id}` | 是 | 生成活动页面小程序短链接 |
-| POST | `/app-api/activity/registration/create?periodId={id}&userId={externalUserId}` | 兼容接口 | 按外部用户标识报名，旧调用方使用 |
 
 ## 1. 活动模板
 
@@ -573,24 +572,23 @@ GET /app-api/activity/period/latest?templateId=123
 
 当返回的报名条件中存在 `type=WECOM_GROUP_MEMBER` 且 `passed=false` 时，客户端应使用本响应的 `groupQrcodeImage` 展示活动群二维码供用户扫码入群，不应跳转 `groupLink`。`groupQrcodeImage` 与活动期次一起取最近期次的快照；为空时不展示“去加群”入口。
 
-### 报名活动 `POST /app-api/activity/period/register`
+### 报名活动 `POST /app-api/activity/registration/create`
 
 需要登录，请求体为空，使用 Query 参数：
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|:---:|------|
 | periodId | long | 是 | 活动期次 ID |
-| referrerUserId | long | 否 | 推荐人用户 ID |
+| referrerExternalUserId | string | 否 | 推荐人外部系统用户 ID |
 | channelCode | string | 否 | 报名渠道标识，最长 64 个字符 |
 
 ```http
-POST /app-api/activity/period/register?periodId=123
+POST /app-api/activity/registration/create?periodId=123&channelCode=poster
 Authorization: Bearer <member-token>
 tenant-id: <tenant-id>
-Content-Type: application/json
 ```
 
-请求体为空，不要在请求体中传入用户 ID、租户 ID 或管理员身份。
+请求体为空。不要传入当前用户的 `externalUserId`、数据库用户 ID、租户 ID 或管理员身份；服务端从登录态获取当前用户，并在当前租户内查询会员及其 `externalUserId`。推荐人通过可选的 `referrerExternalUserId` 解析，不能用它替代当前用户身份。
 
 成功响应：
 
@@ -602,7 +600,7 @@ Content-Type: application/json
 }
 ```
 
-其中 `data` 为报名记录 ID。服务端从登录态获取会员 ID，并按该会员关联的企微外部联系人执行活动管理员和社群成员校验。重复点击时客户端应保持按钮 loading，避免重复请求；服务端也会通过期次和用户唯一约束拒绝重复报名。
+其中 `data` 为报名记录 ID。服务端从登录态获取会员 ID，并按该会员关联的企微外部联系人执行活动管理员和社群成员校验；需要外部身份的报名条件在当前会员未关联 `externalUserId` 时按条件失败处理。重复点击时客户端应保持按钮 loading，避免重复请求；服务端也会通过期次和用户唯一约束拒绝重复报名。
 
 ### 查询我推荐的报名记录 `GET /app-api/activity/period/my-referrals`
 
@@ -768,17 +766,6 @@ Authorization: Bearer <member-token>
 ```
 
 `chances` 范围为 `1-10`。成功时 `data` 为增加后的抽奖总次数。用户端结果中的 `drawChances`、`drawChancesUsed` 和 `remainingDrawChances` 分别表示总次数、已使用次数和剩余次数；`winners` 返回全部中奖记录。
-
-### 旧版报名接口 `POST /app-api/activity/registration/create`
-
-兼容旧调用方使用，参数通过 Query 传递：
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| periodId | long | 是 | 活动期次 ID |
-| userId | string | 是 | `yshop_user.external_user_id`，不是数据库用户 ID，也不是企微内部 UserID |
-
-新客户端应使用 `/app-api/activity/period/register`，由服务端从登录态解析用户身份。
 
 ## 常见业务错误
 
