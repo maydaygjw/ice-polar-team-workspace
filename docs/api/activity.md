@@ -65,6 +65,8 @@
 | title | string | 是 | 活动标题 |
 | businessRegionId | long | 是 | 活动商圈 ID |
 | content | string | 是 | 活动富文本正文 |
+| groupLink | string | 否 | 活动群链接，保留用于兼容旧客户端 |
+| groupQrcodeImage | string | 否 | 活动群活码图片 URL；用户端未满足 `WECOM_GROUP_MEMBER` 条件时展示此二维码 |
 | coverImage | string | 是 | 活动主图 URL |
 | backgroundImage | string | 否 | 页面背景图 URL |
 | promoteImages | string[] | 否 | 宣传素材图片 URL 列表 |
@@ -528,6 +530,8 @@ Query 参数同中奖记录分页查询。接口返回 Excel 文件；服务端�
     "actualWinnerCount": 0,
     "singleWinner": false,
     "content": "<h2>周五霸王餐</h2><p>本周五到店参与霸王餐活动</p>",
+    "groupLink": "https://work.weixin.qq.com/gm/5fdd2cb348c86f9b99d7577b5d383541",
+    "groupQrcodeImage": "https://cdn.example.com/activity-group-qrcode.png",
     "coverImage": "https://cdn.example.com/activity-cover.png",
     "backgroundImage": "https://cdn.example.com/activity-background.png",
     "promoteImages": [],
@@ -566,6 +570,8 @@ GET /app-api/activity/period/latest?templateId=123
 ```
 
 返回结构与 `/app-api/activity/period/detail` 相同。
+
+当返回的报名条件中存在 `type=WECOM_GROUP_MEMBER` 且 `passed=false` 时，客户端应使用本响应的 `groupQrcodeImage` 展示活动群二维码供用户扫码入群，不应跳转 `groupLink`。`groupQrcodeImage` 与活动期次一起取最近期次的快照；为空时不展示“去加群”入口。
 
 ### 报名活动 `POST /app-api/activity/period/register`
 
