@@ -9,7 +9,7 @@
 
 ## 生成规则
 
-- 页面路径固定为 `hlmall/pages/index/index.html`。
+- 页面路径固定为 `hlmall/pages/index/index`。
 - 服务端从 access token 获取当前会员，并读取其 `external_user_id` 作为 `referrer_user_Id`；客户端不得传入或覆盖推荐人。
 - 查询参数固定包含 `open_activity=1`、`templateId`、`referrer_user_Id` 和活动模板所属启用商圈的 `region_code`。
 - `region_code` 从服务端活动模板和商圈配置解析，客户端不能传入或覆盖。

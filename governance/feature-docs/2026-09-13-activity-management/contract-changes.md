@@ -47,7 +47,7 @@
 {"url":"https://oss.example/temporary/miniapp-qrcode/153/activity.png","expiresAt":"2026-09-15T00:00:00Z"}
 ```
 
-服务内部调用既有小程序码能力，页面路径固定为不带查询参数的 `hlmall/pages/index/index.html`。由于微信小程序码接口要求 `page` 不得携带查询参数，活动参数放入不超过 32 个微信允许字符的紧凑 `scene`：`a=1&t={templateId(base36)}&r={region_code}[&c={channelCode}]`。二维码不携带 `referrer_user_Id`，也不携带 `periodId` 作为页面参数；`periodId` 仅用于后台定位期次。`scene` 超长或包含微信不支持的字符时返回参数错误，不截断、不调用微信接口。客户端不得传入 path、scene、appId、templateId、region_code、referrer_user_id 或其他租户信息。
+服务内部调用既有小程序码能力，页面路径固定为不带查询参数的 `hlmall/pages/index/index`。由于微信小程序码接口要求 `page` 不得携带查询参数，活动参数放入不超过 32 个微信允许字符的紧凑 `scene`：`a=1&t={templateId(base36)}&r={region_code}[&c={channelCode}]`。二维码不携带 `referrer_user_Id`，也不携带 `periodId` 作为页面参数；`periodId` 仅用于后台定位期次。`scene` 超长或包含微信不支持的字符时返回参数错误，不截断、不调用微信接口。客户端不得传入 path、scene、appId、templateId、region_code、referrer_user_id 或其他租户信息。
 
 用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances`、`/app-api/activity/period/my-result` 和 `/app-api/activity/period/my-referrals`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期，响应字段 `groupLink` 返回该期次快照中的活动群链接。
 

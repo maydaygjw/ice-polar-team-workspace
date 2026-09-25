@@ -306,7 +306,7 @@ Query 参数：
 {"periodId": 123, "channelCode": "poster"}
 ```
 
-`channelCode` 可选，最大长度为 64 个字符。服务端根据期次所属模板和商圈生成与活动分享页面一致的二维码页面参数：固定页面路径为 `hlmall/pages/index/index.html`，携带 `open_activity=1`、`templateId`、`region_code`，传入渠道码时追加 `channelCode`。二维码不携带推荐人参数；客户端不得传入 `path`、`scene`、`appId`、`templateId`、`region_code`、推荐人或租户信息。
+`channelCode` 可选，最大长度为 64 个字符。服务端根据期次所属模板和商圈生成与活动分享页面一致的二维码页面参数：固定页面路径为 `hlmall/pages/index/index`，携带 `open_activity=1`、`templateId`、`region_code`，传入渠道码时追加 `channelCode`。二维码不携带推荐人参数；客户端不得传入 `path`、`scene`、`appId`、`templateId`、`region_code`、推荐人或租户信息。
 
 仅允许在计划开奖时间后执行，且只适用于 `drawMode=1`（开奖模式）。抽奖模式不会进入统一开奖任务，也不能通过此接口开奖。成功时 `data` 为 `true`，重复触发不会重复开奖。
 
@@ -682,7 +682,7 @@ tenant-id: <tenant-id>
 服务端调用当前租户小程序主账号生成短链接，固定页面路径及参数为：
 
 ```text
-hlmall/pages/index/index.html?open_activity=1&templateId=1&referrer_user_Id=592901&region_code=SHLJZ001
+hlmall/pages/index/index?open_activity=1&templateId=1&referrer_user_Id=592901&region_code=SHLJZ001
 ```
 
 成功时 `data` 为微信小程序短链接文本，例如 `#小程序://氧气学长/efrFZnrUkrq6Ydp`；短链接不持久化。
