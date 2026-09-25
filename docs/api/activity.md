@@ -378,7 +378,7 @@ Query 参数同报名记录分页查询。接口返回 Excel 文件；服务端�
 
 ### 增加抽奖次数 `POST /admin-api/activity/registration/increase-chances`
 
-需要权限 `activity:registration:query`，仅允许在报名开始时间（含）至报名截止时间（不含）之间为有效报名增加次数；即使当前抽奖次数已全部使用，只要仍在报名时间内也允许追加。
+需要权限 `activity:registration:query`，仅允许为有效报名增加次数，且活动期次尚未开奖；不受报名开始和截止时间限制。即使当前抽奖次数已全部使用，也允许追加。
 
 请求体：
 
@@ -758,7 +758,7 @@ Content-Type: application/json
 
 ### 增加我的抽奖次数 `POST /app-api/activity/period/increase-chances`
 
-需要登录，使用当前登录用户在指定期次的报名记录。仅允许在报名开始时间（含）至报名截止时间（不含）之间调用；开奖模式和抽奖模式规则一致。即使当前抽奖次数已全部使用，只要仍在报名时间内也允许追加。
+需要登录，使用当前登录用户在指定期次的报名记录。仅允许在活动期次尚未开奖时调用，开奖模式和抽奖模式规则一致；不受报名开始和截止时间限制。即使当前抽奖次数已全部使用，也允许追加。
 
 ```http
 POST /app-api/activity/period/increase-chances?periodId=123&chances=2

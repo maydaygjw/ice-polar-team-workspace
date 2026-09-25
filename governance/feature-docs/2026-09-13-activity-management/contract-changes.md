@@ -91,8 +91,8 @@
 
 - 活动模板新增 `singleWinner`，生成期次时复制到期次快照；为 `true` 时同一会员在该期最多生成一条中奖记录，为 `false` 时同一报名记录可按其抽奖次数生成多条中奖记录。
 - 报名成功时 `drawChances=1`、`drawChancesUsed=0`。抽奖机会按报名记录保存，不改变报名唯一性。
-- `POST /admin-api/activity/registration/increase-chances` 请求体为 `{"registrationId":10001,"chances":2}`，仅允许在报名开始时间（含）至报名截止时间（不含）之间为有效报名增加次数；即使当前抽奖次数已用完，只要仍在报名时间内也允许追加，返回增加后的抽奖总次数。
-- `POST /app-api/activity/period/increase-chances?periodId={id}&chances={n}` 使用当前登录用户的报名记录，仅允许在报名开始时间（含）至报名截止时间（不含）之间增加 `1-10` 次，返回增加后的抽奖总次数。
+- `POST /admin-api/activity/registration/increase-chances` 请求体为 `{"registrationId":10001,"chances":2}`，仅允许为有效报名增加次数，且活动期次尚未开奖；不受报名开始和截止时间限制。即使当前抽奖次数已用完，也允许追加，返回增加后的抽奖总次数。
+- `POST /app-api/activity/period/increase-chances?periodId={id}&chances={n}` 使用当前登录用户的报名记录，仅允许在活动期次尚未开奖时增加 `1-10` 次，不受报名开始和截止时间限制，返回增加后的抽奖总次数。
 - 开奖时每个抽奖次数作为一个抽签位；开奖完成后该期所有有效报名的 `drawChancesUsed` 更新为 `drawChances`。用户端结果同时返回总次数、已使用次数、剩余次数及全部中奖记录。
 
 ## 状态与错误语义
