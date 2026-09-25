@@ -23,13 +23,18 @@
 | POST | `/period/registration-open` | 手工开启或关闭期次报名 | `activity:period:update` |
 | POST | `/period/qrcode` | 为指定期次生成临时小程序码 | `activity:period:qrcode` |
 | GET | `/registration/page?periodId={id}` | 查询报名记录 | `activity:registration:query` |
+| POST | `/registration/create?periodId={id}&externalUserId={externalUserId}` | 按外部用户 ID 创建报名并转换为内部用户 ID | 登录态 |
 | DELETE | `/registration/delete?id={id}` | 删除未开奖期次中的报名记录 | `activity:registration:delete` |
 | POST | `/registration/increase-chances` | 为指定报名用户增加抽奖次数 | `activity:registration:query` |
 | GET | `/winner/page?periodId={id}` | 查询中奖记录 | `activity:winner:query` |
 | GET | `/registration/export?periodId={id}` | 导出报名记录 | `activity:registration:export` |
 | GET | `/winner/export?periodId={id}` | 导出中奖记录 | `activity:winner:export` |
 
-创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动群链接、活动图、背景图、宣传素材引用、活动管理员、社群标签和奖品列表。活动群链接必填；社群配置只选择一个或多个社群标签，不指定具体活动群；报名校验时匹配所选标签关联的任一微信群。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。登录态报名接口使用当前登录用户身份，并可选接收 `referrerUserId` 和 `channelCode`。
+报名管理响应和导出记录中的 `userId`、`referrerUserId` 均使用会员内部用户 ID，不使用
+`external_user_id`。报名记录额外返回 `userNickname`（会员昵称）和
+`wecomNickname`（已关联企业微信客户联系人昵称；未关联时为空）。
+
+创建/更新请求至少包含：商圈、周期规则、报名起止时间、开奖时间、标题、富文本正文、活动群链接、活动图、背景图、宣传素材引用、活动管理员、社群标签和奖品列表。活动群链接必填；社群配置只选择一个或多个社群标签，不指定具体活动群；报名校验时匹配所选标签关联的任一微信群。时间使用带时区的 ISO 日期时间；服务按租户时区解释周期规则。报名接口使用外部用户 ID，并可选接收 `referrerExternalUserId` 和 `channelCode`。
 
 模板详情和分页响应中的 `data.prizes` 返回模板保存的奖品配置数组，字段包括 `prizeName`、`image`、`quantity` 和 `claimInstruction`，顺序与模板配置一致；数据库中的 `prize_config` JSON 由后端负责解析，客户端不得根据缺失字段自行重建奖品配置。
 
@@ -49,7 +54,9 @@
 
 服务内部调用既有小程序码能力，页面路径固定为不带查询参数的 `hlmall/pages/index/index`。由于微信小程序码接口要求 `page` 不得携带查询参数，活动参数放入不超过 32 个微信允许字符的紧凑 `scene`：`a=1&t={templateId(base36)}&r={region_code}[&c={channelCode}]`。二维码不携带 `referrer_user_Id`，也不携带 `periodId` 作为页面参数；`periodId` 仅用于后台定位期次。`scene` 超长或包含微信不支持的字符时返回参数错误，不截断、不调用微信接口。客户端不得传入 path、scene、appId、templateId、region_code、referrer_user_id 或其他租户信息。
 
-用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/period/register`、`/app-api/activity/period/increase-chances`、`/app-api/activity/period/my-result` 和 `/app-api/activity/period/my-referrals`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期，响应字段 `groupLink` 返回该期次快照中的活动群链接。
+用户端 API 使用 `/app-api/activity/period/detail`、`/app-api/activity/period/latest`、`/app-api/activity/registration/create`、`/app-api/activity/period/increase-chances`、`/app-api/activity/period/my-result` 和 `/app-api/activity/period/my-referrals`；本期不实现小程序页面和调用方，但其业务主键统一为 `periodId`。其中 `/app-api/activity/period/latest?templateId={id}` 必须传入活动模板 ID，服务端只在该活动模板的期次中返回最近的一期，响应字段 `groupLink` 返回该期次快照中的活动群链接。
+
+报名接口可接收 `externalUserId` 和 `referrerExternalUserId`；服务端分别通过会员的 `externalUserId` 转换为内部 `userId` 和推荐人内部 ID，报名记录只保存内部 ID。未传 `externalUserId` 时，兼容使用当前登录会员身份；客户端不得将外部 ID 以 `userId` 或 `referrerUserId` 参数名传递。
 
 `GET /app-api/activity/period/my-referrals?periodId={id}` 要求当前用户登录，返回当前用户作为推荐人的有效报名记录，结果按报名时间倒序排列。返回字段包括报名记录 ID、活动期次 ID、被推荐用户 ID、渠道标识、报名时间和报名状态；不接受请求参数传入推荐人用户 ID，服务端从登录态获取。
 
