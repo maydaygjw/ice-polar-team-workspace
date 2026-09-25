@@ -6,6 +6,7 @@
 - [活动页面小程序短链接](feature-docs/2026-09-21-activity-miniapp-short-link/contract-changes.md)：app-api 根据活动模板和推荐人生成微信小程序短链接文本。
 - [企业微信外部素材](feature-docs/2026-09-08-wecom-external-material/contract-changes.md)：素材组支持由系统 Provider 配置驱动的有序多结果外部素材。
 - [会员企微客户筛选](feature-docs/2026-09-11-member-wecom-customer-filter/contract-changes.md)：会员分页接口支持按是否存在已匹配企微客户关联记录筛选。
+- [会员 ID 查询](feature-docs/2026-09-25-member-id-query/contract-changes.md)：会员分页接口支持按会员 ID 精确查询。
 - [会员外部用户 ID](feature-docs/2026-09-13-member-external-user-id/contract-changes.md)：会员增加可选外部系统用户 ID，供后台维护和查询展示。
 - [企业微信客户朋友圈](feature-docs/2026-09-11-wecom-customer-moments/contract-changes.md)：朋友圈素材组支持文字、图片或单个链接附件，并按企业微信接口规则校验附件类型。
 - [企业微信客户联系人客户标签](feature-docs/2026-09-20-wecom-customer-contact-tags/contract-changes.md)：客户联系人支持单个和批量添加、移除企业微信客户标签，不使用内部标签。
@@ -16,8 +17,11 @@
 - [活动报名条件分类与说明编辑](feature-docs/2026-09-17-activity-management-refactor/contract-changes.md)：报名条件分为内置和扩展两类，支持按租户编辑条件说明。
 - [活动报名条件实例管理](feature-docs/2026-09-18-activity-condition-instance-management/contract-changes.md)：条件类型由后端注册，租户可管理带参数的条件实例，并按模板引用阻止删除。
 - [活动模板奖品回显](feature-docs/2026-09-13-activity-management/contract-changes.md)：管理端活动模板详情和分页响应返回 `prizes`，用于编辑表单回显模板奖品配置。
+- [活动群活码配置](feature-docs/2026-09-13-activity-management/contract-changes.md)：活动模板支持从图片素材库选择群活码图片，并在生成期次时写入快照供用户端详情返回。
 - [活动中奖记录兑奖](feature-docs/2026-09-19-activity-winner-claim/contract-changes.md)：开奖只生成中奖记录；后台支持单条中奖记录兑奖、中奖管理批量兑奖和期次批量兑奖，兑奖状态随中奖记录返回。
 - [活动中奖企业微信通知](feature-docs/2026-09-21-activity-winner-notification/contract-changes.md)：中奖管理支持由活动管理员向中奖客户发送企业微信中奖通知。
+- [活动中奖通知状态](feature-docs/2026-09-21-activity-winner-notification/contract-changes.md)：中奖记录持久化企业微信通知状态，后台支持展示和筛选。
+- [活动中奖批量通知](feature-docs/2026-09-25-activity-winner-batch-notification/contract-changes.md)：中奖管理支持按勾选记录批量创建企业微信中奖通知任务。
 - [活动线下兑奖码](feature-docs/2026-09-21-activity-offline-claim-code/contract-changes.md)：开奖规则支持线下兑奖，并为每条中奖记录生成唯一兑奖码。
 - [活动模板报名人数限制](feature-docs/2026-09-21-activity-registration-limit/contract-changes.md)：后台按活动模板配置每期报名人数上限，报名时由后端原子校验。
 - [活动中奖公示长图](feature-docs/2026-09-21-activity-winner-public-poster/contract-changes.md)：管理端和用户端按活动期次查询最多展示 100 条有效中奖记录，管理端生成公示长图，用户端展示脱敏中奖名单。
