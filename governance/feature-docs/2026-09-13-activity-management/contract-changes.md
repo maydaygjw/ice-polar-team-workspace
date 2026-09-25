@@ -9,7 +9,7 @@
 | 方法 | 路径 | 说明 | 权限 |
 |---|---|---|---|
 | POST | `/template/create` | 创建活动模板及奖品 | `activity:template:create` |
-| PUT | `/template/update` | 更新未生成期次的模板配置 | `activity:template:update` |
+| PUT | `/template/update` | 更新不存在未结束期次的模板配置 | `activity:template:update` |
 | GET | `/template/page` | 分页查询活动模板 | `activity:template:query` |
 | GET | `/template/get?id={id}` | 查询模板详情 | `activity:template:query` |
 | POST | `/template/enable` | 启用/停用模板 | `activity:template:update` |
@@ -18,6 +18,7 @@
 | GET | `/period/page` | 查询活动期次及人数统计 | `activity:period:query` |
 | GET | `/period/get?id={id}` | 查询期次详情和快照 | `activity:period:query` |
 | POST | `/period/draw` | 到开奖时间后手动触发开奖 | `activity:period:draw` |
+| POST | `/period/end` | 结束期次，关闭报名并保留业务历史，不自动开奖 | `activity:period:update` |
 | POST | `/period/abandon` | 废弃未开奖期次并清理报名/中奖记录 | `activity:period:update` |
 | POST | `/period/registration-open` | 手工开启或关闭期次报名 | `activity:period:update` |
 | POST | `/period/qrcode` | 为指定期次生成临时小程序码 | `activity:period:qrcode` |
@@ -94,12 +95,18 @@
 
 ## 状态与错误语义
 
-期次状态：`NOT_STARTED` 未开始、`IN_PROGRESS` 进行中、`ENDED` 已结束；内部可使用短暂的 `DRAWING` 开奖中状态，但不对前端作为业务展示状态开放。
+期次状态：`NOT_STARTED` 未开始、`IN_PROGRESS` 进行中、`ENDED` 已结束；内部可使用短暂的 `DRAWING` 开奖中状态，但不对前端作为业务展示状态开放。期次状态是独立的生命周期字段，报名开关 `registration_open` 只表示当前是否允许报名，二者不可相互推导。
+
+- 状态扫描任务每 5 分钟执行一次：当期次到达活动开始时间时将 `1` 未开始推进为 `2` 进行中，并根据期次日期和报名起止时间维护 `registration_open`。
+- `POST /admin-api/activity/period/end` 请求体为 `{"periodId":123}`。允许结束未开始或进行中的期次，设置状态为 `3` 已结束并关闭报名，不自动开奖、不删除报名或中奖历史；已结束期次重复调用保持幂等。
+- 手工开启/关闭报名只修改 `registration_open`，不改变期次生命周期状态；已结束期次不允许重新开启报名。
+- 普通开奖成功只更新开奖状态和中奖结果，期次仍保持 `2` 进行中，需由后台显式结束期次。抽奖模式也不再依据报名截止时间临时推导期次状态。
 
 - `POST /admin-api/activity/period/abandon` 请求体为 `{"periodId":123}`。允许废弃任意状态的期次；服务在租户和数据权限校验后逻辑删除原期次及其报名、中奖、奖品和快照记录。新期次继续通过原期次生成接口创建。
 
 - 模板或期次不存在、跨租户或无数据权限：按现有资源不存在/无权限语义处理。
 - 时间区间非法、奖品数量非法、必填素材缺失：参数校验失败。
+- 存在任一未结束期次时修改模板：业务状态不允许；所有关联期次均已结束后允许编辑模板，历史期次继续使用原快照。
 - 期次已生成后修改快照字段、删除有记录模板、非开奖时间手动开奖：业务状态不允许。
 - 重复报名：返回已报名业务错误，不产生新记录。
 - 管理员客户关系不存在：返回 `ACTIVITY_ADMIN_NOT_ADDED`。
@@ -184,7 +191,7 @@
 | `registration_end_time` | `DATETIME NOT NULL` | 报名截止时间 |
 | `draw_time` | `DATETIME NOT NULL` | 计划开奖时间 |
 | `status` | `TINYINT NOT NULL DEFAULT 1` | `1` 未开始、`2` 进行中、`3` 已结束；开奖锁定可用内部状态 `4` |
-| `registration_open` | `BIT NOT NULL DEFAULT 0` | 是否允许报名，由后台手工控制，默认关闭 |
+| `registration_open` | `BIT NOT NULL DEFAULT 0` | 是否允许报名，由 5 分钟状态扫描任务和后台手工操作维护，默认关闭；与期次生命周期状态独立 |
 | `draw_status` | `TINYINT NOT NULL DEFAULT 0` | `0` 未开奖、`1` 开奖中、`2` 已开奖、`3` 开奖失败 |
 | `planned_winner_count` | `INT NOT NULL DEFAULT 0` | 奖品数量合计 |
 | `actual_winner_count` | `INT NOT NULL DEFAULT 0` | 实际中奖人数 |
@@ -277,7 +284,7 @@
 
 ## MQ / 定时任务
 
-新增周期开奖任务，按开奖时间扫描 `activity_period`，使用“租户 + 期次”锁和数据库状态条件保证幂等。首期不新增 MQ topic；开奖结果在同一事务内落库，失败不发出成功事件。后续通知或权益发放需新增事件契约。
+新增活动状态扫描任务，建议每 5 分钟执行一次：按活动开始时间将期次从未开始推进为进行中，并按期次日期、报名起止时间维护报名开关。新增周期开奖任务按开奖时间扫描 `activity_period`，使用“租户 + 期次”锁和数据库状态条件保证幂等。首期不新增 MQ topic；开奖结果在同一事务内落库，失败不发出成功事件。后续通知或权益发放需新增事件契约。
 
 ## 权限与数据范围
 
