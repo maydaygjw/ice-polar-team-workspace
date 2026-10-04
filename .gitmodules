@@ -2,22 +2,28 @@
 	path = backend
 	url = https://gitee.com/icepolar/yshop-drink.git
 	branch = master
+	ignore = all
 [submodule "admin"]
 	path = admin
 	url = https://gitee.com/icepolar/yshop-drink-vue.git
 	branch = master
+	ignore = all
 [submodule "miniapp"]
 	path = miniapp
 	url = https://gitee.com/icepolar/icepolarminiapp.git
 	branch = main
+	ignore = all
 [submodule "icepolar-dms"]
 	path = icepolar-dms
 	url = https://gitee.com/icepolar/dms.git
+	ignore = all
 [submodule "mock-external-server"]
 	path = mock-external-server
 	url = https://gitee.com/icepolar/mock-external-server.git
+	ignore = all
 
 [submodule "h5"]
 	path = h5
 	url = https://gitee.com/icepolar/yshop-activity-h5.git
 	branch = main
+	ignore = all
