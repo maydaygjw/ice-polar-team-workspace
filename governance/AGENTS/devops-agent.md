@@ -5,7 +5,7 @@
 ## 目标与边界
 
 - 目标是证明“测试通过的同一制品”已经安全进入生产，而不是只证明两套代码目录看起来相同。
-- 部署遵循 [`PLAYBOOKS/deployment.md`](../PLAYBOOKS/deployment.md)；环境创建遵循 [`PLAYBOOKS/environment-provisioning.md`](../PLAYBOOKS/environment-provisioning.md)；事故遵循 [`PLAYBOOKS/incident-response.md`](../PLAYBOOKS/incident-response.md)。
+- 测试环境部署遵循 [`PLAYBOOKS/test-environment-pipeline-deployment.md`](../PLAYBOOKS/test-environment-pipeline-deployment.md)；生产部署遵循 [`PLAYBOOKS/deployment.md`](../PLAYBOOKS/deployment.md)；环境创建遵循 [`PLAYBOOKS/environment-provisioning.md`](../PLAYBOOKS/environment-provisioning.md)；事故遵循 [`PLAYBOOKS/incident-response.md`](../PLAYBOOKS/incident-response.md)。
 - 执行前必须从 workspace 根目录加载目标环境：
 
   ```bash
@@ -13,7 +13,7 @@
   ```
 
 - 可修改部署、CI/CD、容器、Nginx、环境模板和运维脚本；不修改业务代码、API 契约或数据库迁移定义。需要业务修复时，提交诊断证据给对应开发 Agent。
-- 负责 `h5/` 测试环境静态部署：在本地构建固定产物，发布到 `rprod18`，通过 `yshop-h5-test.holuntech.cn` 验证页面、资源和 API 连通性，并保留备份与回滚路径。
+- 负责 `backend/`、`admin/`、`h5/` 测试环境部署：通过云效 OpenAPI 分别触发 `yshop-dev-server`、`yshop-dev-admin`、`yshop-dev-h5` 三条流水线，记录 `pipelineRunId`，完成运行态、页面、资源和 API 验证，并通过流水线恢复已知良好版本。
 - 不自动提交 Git。生产操作、数据库迁移、数据修复和凭据轮换必须获得用户明确授权，并具备回滚方案。
 
 ## 当前环境差异基线
@@ -37,6 +37,7 @@
 - 后端测试启动脚本会设置 `ADAPAY_DEBUG=true`、`AI_IMAGE_ENABLED=true`，并要求从测试机 `~/.bash_profile` 读取 `DASHSCOPE_API_KEY`；生产必须清除这些临时调试环境变量。
 - 管理后台测试构建使用 `build:dev`，生产使用 `build:prod`；生产构建应删除 `debugger`、`console` 并关闭 sourcemap，测试构建是否包含调试信息必须在发布记录中明确。
 - `backend/script/shell/deploy.sh` 和 `backend/script/docker/docker-compose.yml` 是旧的本地/容器流程（分别使用 `48080`、`development/local` 等默认值），不能用于判断当前远端生产状态，也不能直接作为生产发布入口。
+- 测试环境日常部署只使用 [`PLAYBOOKS/test-environment-pipeline-deployment.md`](../PLAYBOOKS/test-environment-pipeline-deployment.md)，不得绕过流水线直接上传或替换制品。
 
 ## 发布硬门禁
 
@@ -66,29 +67,19 @@
 
 ### 2. 测试环境验证
 
+测试环境部署不再由本地脚本直接构建和上传。先按 [`PLAYBOOKS/test-environment-pipeline-deployment.md`](../PLAYBOOKS/test-environment-pipeline-deployment.md) 通过云效 OpenAPI 依次触发三条流水线，再执行本节的测试与运行态验收。流水线必须记录源码 commit、构建/部署阶段状态和 `pipelineRunId`；本节命令只用于发布前测试和发布后证据采集。
+
 在测试机或固定构建机使用干净、固定 commit 的工作区构建，不从有未提交修改的目录生成发布制品：
 
 ```bash
-# 后端：开发/测试/生产环境统一使用 Java 17；按变更范围执行模块测试，发布前按项目规则执行完整测试
-(cd backend && mvn clean test)
-# 测试发布候选包：clean + javac + 嵌套 JAR 编译错误扫描 + commit/dirty 校验
-bash governance/SCRIPTS/build-backend-test.sh
-
-# 管理后台：锁文件安装、类型检查、目标生产构建
-(cd admin && pnpm install --frozen-lockfile)
-(cd admin && pnpm ts:check)
-(cd admin && pnpm build:prod)
-
-# DMS：编译、测试和静态检查
-(cd icepolar-dms && python -m compileall -q app && pytest -v && ruff check .)
-
+# 后端/前端的构建和部署由云效流水线执行；本地只执行与变更范围匹配的测试。
 # workspace E2E/API：只允许测试租户和测试账号
 (cd governance/e2e && npm test)
 ```
 
 - 全量测试失败时，必须记录失败用例、是否为既有基线问题、影响范围和补测计划；不得把失败简单标记为通过。
 - 管理后台 `ts:check` 或后端全量测试存在既有基线失败时，仍需完成目标模块定向测试和目标构建，并在发布审批中显式接受风险。
-- 测试后端可以使用 `dev` profile 和测试专用调试开关，但发布前必须再次检查 JAR 内的 `prod` 配置；测试运行正常不代表生产配置正确。
+- 测试后端可以使用 `dev` profile 和测试专用调试开关，但必须以流水线实际部署的 commit 和运行态 JAR 为准；测试运行正常不代表生产配置正确。
 - DMS 测试必须实际监听 `${DMS_PORT}` 并通过健康检查；当前测试环境未监听 8001 时，DMS 相关发布自动判定为未验证。
 
 ### 3. 后端制品晋级
@@ -113,7 +104,7 @@ bash governance/SCRIPTS/build-backend-test.sh
 3. 将同一份 tar 包上传到 `rprod18`，备份 `${H5_REMOTE_PATH}`，解压后执行 `nginx -t && systemctl reload nginx`。
 4. 页面或 API 验证失败时，恢复带时间戳的备份目录并 reload Nginx。
 
-H5 生产发布的完整操作手册见 [`PLAYBOOKS/deployment.md`](../PLAYBOOKS/deployment.md) 的“生产环境配置”和“生产发布”章节。生产目标为 `ssh root@yprod1`，使用 `governance/SCRIPTS/deploy-h5-prod.sh`；生产候选包必须使用 `prod.env` 中的 H5 API 和租户配置构建，`VITE_TEST_AUTH_ENABLED=false`，并在上传前校验 SHA-256。由于 API 地址和租户号在构建时写入 bundle，测试环境构建产物不得直接发布到生产。
+H5 生产发布遵循 [`PLAYBOOKS/deployment.md`](../PLAYBOOKS/deployment.md)。生产目标为 `ssh root@yprod1`，使用 `governance/SCRIPTS/deploy-h5-prod.sh`；生产候选包必须使用 `prod.env` 中的 H5 API 和租户配置构建，`VITE_TEST_AUTH_ENABLED=false`，并在上传前校验 SHA-256。由于 API 地址和租户号在构建时写入 bundle，测试环境构建产物不得直接发布到生产。
 
 ### 6. DMS 制品晋级
 
