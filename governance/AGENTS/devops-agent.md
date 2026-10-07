@@ -100,7 +100,7 @@
 ### 5. H5 活动前端制品晋级
 
 1. 在本地使用测试 API 地址和租户 ID 构建 H5，不在 `rprod18` 重新安装依赖或构建。
-2. 记录源码 commit、构建参数和产物 SHA-256；使用 `yshop-h5-test.holuntech.cn` 验证静态资源、ticket 换 Token 和关键 API 请求。
+2. 记录源码 commit、构建参数和产物 SHA-256；使用 `h5-yshop-dev.holuntech.cn` 验证静态资源、ticket 换 Token 和关键 API 请求。
 3. 将同一份 tar 包上传到 `rprod18`，备份 `${H5_REMOTE_PATH}`，解压后执行 `nginx -t && systemctl reload nginx`。
 4. 页面或 API 验证失败时，恢复带时间戳的备份目录并 reload Nginx。
 

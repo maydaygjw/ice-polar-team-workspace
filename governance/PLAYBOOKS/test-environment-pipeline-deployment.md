@@ -4,11 +4,11 @@
 
 ## 流水线
 
-| 项目 | 流水线 | ID | 验收地址 |
-|---|---|---|---|
-| backend | `yshop-dev-server` | `1408445` | `https://yshop-api-test.holuntech.cn` |
-| admin | `yshop-dev-admin` | `1409672` | `https://yshop-admin-test.holuntech.cn` |
-| h5 | `yshop-dev-h5` | `1409664` | `https://yshop-h5-test.holuntech.cn` |
+| 项目 | 流水线 | ID | 运行参数 | 验收地址 |
+|---|---|---|---|---|
+| backend | `yshop-dev-server` | `1408445` | `YSHOP_ENV=dev2` | `https://api-yshop-dev.holuntech.cn` |
+| admin | `yshop-dev-admin` | `1409672` | — | `https://admin-yshop-dev.holuntech.cn` |
+| h5 | `yshop-dev-h5` | `1409664` | `H5_ENV=dev2` | `https://h5-yshop-dev.holuntech.cn` |
 
 表中的 ID 必须使用云效流水线 URL 中的数字 ID，不使用控制台列表里的其他标识。
 
@@ -25,10 +25,11 @@ chmod 600 .env.local
 
 ```bash
 run_pipeline() {
-  local name="$1" pipeline_id="$2" h5_env="${3:-}" params body
-  if [[ -n "$h5_env" ]]; then
-    params="$(jq -cn --arg comment "$name test deployment $(date '+%F %T %z')" --arg h5_env "$h5_env" \
-      '{envs: {H5_ENV: $h5_env}, comment: $comment}')"
+  local name="$1" pipeline_id="$2" env_key="${3:-}" env_value="${4:-}" params body
+  if [[ -n "$env_key" ]]; then
+    params="$(jq -cn --arg comment "$name test deployment $(date '+%F %T %z')" \
+      --arg env_key "$env_key" --arg env_value "$env_value" \
+      '{envs: {($env_key): $env_value}, comment: $comment}')"
   else
     params="$(jq -cn --arg comment "$name test deployment $(date '+%F %T %z')" \
       '{comment: $comment}')"
@@ -41,12 +42,12 @@ run_pipeline() {
     --data-raw "$body"
 }
 
-run_pipeline backend "$YUNXIAO_PIPELINE_BACKEND_ID"
+run_pipeline backend "$YUNXIAO_PIPELINE_BACKEND_ID" YSHOP_ENV dev2
 run_pipeline admin   "$YUNXIAO_PIPELINE_ADMIN_ID"
-run_pipeline h5      "$YUNXIAO_PIPELINE_H5_ID" dev2
+run_pipeline h5      "$YUNXIAO_PIPELINE_H5_ID" H5_ENV dev2
 ```
 
-返回值是 `pipelineRunId`，必须记录。当前组织是 Region 版，使用上述不带 `organizationId` 的 API 路径。H5 流水线必须传 `envs.H5_ENV=dev2`；若需指定分支、Tag 或其他流水线变量，将真实参数放入 `params`，不要猜测参数名，也不要通过 `envs` 传递秘密。
+返回值是 `pipelineRunId`，必须记录。当前组织是 Region 版，使用上述不带 `organizationId` 的 API 路径；按表中运行参数传递流水线变量。若需指定分支、Tag 或其他变量，将真实参数放入 `params`，不要猜测参数名，也不要通过 `envs` 传递秘密。
 
 ## 验收
 

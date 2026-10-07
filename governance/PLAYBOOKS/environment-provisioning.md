@@ -112,7 +112,7 @@ H5 是静态前端，生产与测试均由 Nginx 提供服务。首次部署或�
 
 | 环境 | 服务器 | 静态目录 | 域名 | API 构建地址 |
 |---|---|---|---|---|
-| 测试 | `rprod18` | `/opt/holun/yshop-h5/dist` | `yshop-h5-test.holuntech.cn` | `https://yshop-api-test.holuntech.cn/app-api` |
+| 测试 | `rprod18` | `/opt/holun/yshop-h5/dist` | `h5-yshop-dev.holuntech.cn` | `https://api-yshop-dev.holuntech.cn/app-api` |
 | 生产 | `yprod1` | `/opt/holun/yshop-h5/dist` | `yshop-h5.holuntech.cn` / `yshop-h5.holuntech.com` | `https://yshop-api.holuntech.cn/app-api` |
 
 生产连接方式为 `ssh root@yprod1`。生产 H5 不启用测试登录入口；生产租户号由 `prod.env` 的 `H5_TENANT_ID` 注入 bundle，禁止写死在代码中。
@@ -134,7 +134,7 @@ H5 是静态前端，生产与测试均由 Nginx 提供服务。首次部署或�
 ```nginx
 server {
     listen 80;
-    server_name yshop-h5-test.holuntech.cn;
+    server_name h5-yshop-dev.holuntech.cn;
 
     root /opt/holun/yshop-h5/dist;
     index index.html;
