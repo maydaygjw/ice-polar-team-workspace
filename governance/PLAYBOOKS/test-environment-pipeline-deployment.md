@@ -7,7 +7,7 @@
 | 项目 | 流水线 | ID | 运行参数 | 验收地址 |
 |---|---|---|---|---|
 | backend | `yshop-dev-server` | `1408445` | `YSHOP_ENV=dev2` | `https://api-yshop-dev.holuntech.cn` |
-| admin | `yshop-dev-admin` | `1409672` | — | `https://admin-yshop-dev.holuntech.cn` |
+| admin | `yshop-dev-admin` | `1409672` | `ADMIN_ENV=dev2` | `https://admin-yshop-dev.holuntech.cn` |
 | h5 | `yshop-dev-h5` | `1409664` | `H5_ENV=dev2` | `https://h5-yshop-dev.holuntech.cn` |
 
 表中的 ID 必须使用云效流水线 URL 中的数字 ID，不使用控制台列表里的其他标识。
