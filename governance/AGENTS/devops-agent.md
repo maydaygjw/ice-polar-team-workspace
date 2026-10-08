@@ -1,24 +1,26 @@
 # DevOps Agent
 
-负责部署、环境、生产事件和在线诊断。仅在用户要求远程环境、发布或事故处理时启用。
+负责测试环境部署、环境、生产事件和在线诊断。仅在用户要求测试环境操作、远程环境诊断或事故处理时启用。
+
+生产部署不属于 Agent 的执行范围。生产发布必须由具备权限的人员人工登录云效平台，审核并执行生产流水线；Agent 只能提供发布前检查结果、风险说明和发布后的只读诊断，不得代为触发、批准或执行生产部署及回滚。
 
 ## 目标与边界
 
-- 目标是证明“测试通过的同一制品”已经安全进入生产，而不是只证明两套代码目录看起来相同。
-- 测试环境部署遵循 [`PLAYBOOKS/test-environment-pipeline-deployment.md`](../PLAYBOOKS/test-environment-pipeline-deployment.md)；生产部署遵循 [`PLAYBOOKS/deployment.md`](../PLAYBOOKS/deployment.md)；环境创建遵循 [`PLAYBOOKS/environment-provisioning.md`](../PLAYBOOKS/environment-provisioning.md)；事故遵循 [`PLAYBOOKS/incident-response.md`](../PLAYBOOKS/incident-response.md)。
+- 目标是证明测试环境使用了预期制品，并为人工生产发布提供完整、可复核的证据。
+- 测试环境部署遵循 [`PLAYBOOKS/test-environment-pipeline-deployment.md`](../PLAYBOOKS/test-environment-pipeline-deployment.md)；环境创建遵循 [`PLAYBOOKS/environment-provisioning.md`](../PLAYBOOKS/environment-provisioning.md)；事故遵循 [`PLAYBOOKS/incident-response.md`](../PLAYBOOKS/incident-response.md)。生产部署流程不在本 Agent 手册中维护，统一由人工登录云效平台执行生产流水线。
 - 执行前必须从 workspace 根目录加载目标环境：
 
   ```bash
-  source governance/SCRIPTS/deploy-helper.sh && load_env test  # 或 prod
+  source governance/SCRIPTS/deploy-helper.sh && load_env test
   ```
 
-- 可修改部署、CI/CD、容器、Nginx、环境模板和运维脚本；不修改业务代码、API 契约或数据库迁移定义。需要业务修复时，提交诊断证据给对应开发 Agent。
-- 负责 `backend/`、`admin/`、`h5/` 测试环境部署：通过云效 OpenAPI 分别触发 `yshop-dev-server`、`yshop-dev-admin`、`yshop-dev-h5` 三条流水线，记录 `pipelineRunId`，完成运行态、页面、资源和 API 验证，并通过流水线恢复已知良好版本。
-- 不自动提交 Git。生产操作、数据库迁移、数据修复和凭据轮换必须获得用户明确授权，并具备回滚方案。
+- 可修改测试环境部署、CI/CD、容器、Nginx、环境模板和运维脚本；不修改业务代码、API 契约或数据库迁移定义。需要业务修复时，提交诊断证据给对应开发 Agent。
+- 负责 `backend/`、`admin/`、`h5/` 测试环境部署：通过云效 OpenAPI 分别触发 `yshop-dev-server`、`yshop-dev-admin`、`yshop-dev-h5` 三条测试流水线，记录 `pipelineRunId`，完成运行态、页面、资源和 API 验证，并通过测试流水线恢复已知良好版本。
+- 不自动提交 Git。生产部署、生产回滚、生产数据库迁移、生产数据修复和生产凭据轮换均由人工登录云效平台或按人工审批流程执行；Agent 不得执行这些操作。
 
 ## 当前环境差异基线
 
-以下是 2026-08-22 的只读盘点结果，用于识别漂移；每次发布仍必须重新采集，不得把本节的 commit、时间或 hash 当作永久配置。
+以下是 2026-08-22 的只读盘点结果，仅用于诊断和人工发布交接时识别漂移；不得把本节的 commit、时间或 hash 当作永久配置。生产发布由人工按云效流水线流程重新采集和确认。
 
 | 项目 | 测试环境 | 生产环境 | 风险/要求 |
 |---|---|---|---|
@@ -39,9 +41,9 @@
 - `backend/script/shell/deploy.sh` 和 `backend/script/docker/docker-compose.yml` 是旧的本地/容器流程（分别使用 `48080`、`development/local` 等默认值），不能用于判断当前远端生产状态，也不能直接作为生产发布入口。
 - 测试环境日常部署只使用 [`PLAYBOOKS/test-environment-pipeline-deployment.md`](../PLAYBOOKS/test-environment-pipeline-deployment.md)，不得绕过流水线直接上传或替换制品。
 
-## 发布硬门禁
+## 测试发布与生产交接门禁
 
-以下任一条件不满足，必须停止发布并向用户报告，不得用“服务能访问”替代验证：
+以下测试发布或生产交接条件任一不满足，必须停止并向用户报告，不得用“服务能访问”替代验证。涉及生产的检查只用于向人工发布人员提供交接信息，不构成 Agent 的生产操作授权：
 
 1. 测试和生产目标、授权、回滚窗口未明确，或未先完成测试环境验证。
 2. 后端运行 JAR 的完整 Git commit、SHA-256、构建时间和启动 profile 不完整。
@@ -51,11 +53,11 @@
 6. 生产 systemd 的 `ExecStart`、工作目录、JDK 路径或 `SPRING_PROFILES_ACTIVE=prod` 未核对；必须核对服务实际使用的 Java，不以 shell 默认 Java 版本代替。
 7. 前端没有在测试环境完成目标 mode 的构建、健康检查和关键页面/API 验证，或生产上传的 bundle hash 与测试 bundle 不同。
 8. DMS 没有固定 commit、依赖安装记录、`--no-reload` 运行参数和健康检查；生产不得使用开发热重载。
-9. 需要数据库迁移、数据修复、凭据轮换或修改 Nginx/防火墙，但没有单独授权和回滚方案。
+9. 生产发布所需的制品、验证证据、变更范围、审批人或回滚方案不完整。Agent 不得自行补齐并执行生产操作。
 
-## 制品晋级流程
+## 测试制品与人工生产交接
 
-### 1. 采集运行态身份
+### 1. 采集测试运行态身份
 
 每次发布记录以下信息，报告中只记录公开元数据，禁止记录密码、Token、Cookie 或完整 API Key：
 
@@ -82,36 +84,11 @@
 - 测试后端可以使用 `dev` profile 和测试专用调试开关，但必须以流水线实际部署的 commit 和运行态 JAR 为准；测试运行正常不代表生产配置正确。
 - DMS 测试必须实际监听 `${DMS_PORT}` 并通过健康检查；当前测试环境未监听 8001 时，DMS 相关发布自动判定为未验证。
 
-### 3. 后端制品晋级
+### 3. 生产人工交接
 
-1. 在测试环境确认运行的是本次 JAR，而不是仅确认 `target` 目录存在；保存完整 commit 和 SHA-256。
-2. 检查 JAR 内生产配置的端点、profile、禁用的 MQ 自动配置和敏感配置来源；命中默认地址、占位符或未批准凭据时停止。
-3. 通过临时文件上传生产，上传后再次计算 SHA-256；仅在两次 hash 完全一致时替换。
-4. 生产替换前备份当前 JAR；替换后校验 JAR 内 commit，启动 `yshop.service`，检查 systemd 状态、端口、健康接口和最近日志。
-5. 生产启动失败、端口未监听或健康检查失败时，停止服务并恢复带时间戳的备份 JAR；禁止在生产重新 Maven 编译、下载依赖或手工修改 JAR。
-
-### 4. 管理后台制品晋级
-
-1. 在测试环境用明确的 mode 构建并打包 dist；测试环境若要验证生产候选包，必须使用 `pnpm build:prod`，不能只用 `build:dev`。
-2. 记录源码 commit、构建 mode、产物 hash 和关键运行地址；用测试域名完成登录、权限、上传和关键 API 烟测。
-3. 将测试验证过的同一个 tar 包上传生产并校验 hash；生产只做备份、解包和 `nginx -t && systemctl reload nginx`，不在服务器重新执行 pnpm 构建。
-4. 检查生产域名、静态资源、Nginx 状态和关键页面；失败时恢复上一版 dist 备份并 reload Nginx。
-
-### 5. H5 活动前端制品晋级
-
-1. 在本地使用测试 API 地址和租户 ID 构建 H5，不在 `rprod18` 重新安装依赖或构建。
-2. 记录源码 commit、构建参数和产物 SHA-256；使用 `h5-yshop-dev.holuntech.cn` 验证静态资源、ticket 换 Token 和关键 API 请求。
-3. 将同一份 tar 包上传到 `rprod18`，备份 `${H5_REMOTE_PATH}`，解压后执行 `nginx -t && systemctl reload nginx`。
-4. 页面或 API 验证失败时，恢复带时间戳的备份目录并 reload Nginx。
-
-H5 生产发布遵循 [`PLAYBOOKS/deployment.md`](../PLAYBOOKS/deployment.md)。生产目标为 `ssh root@yprod1`，使用 `governance/SCRIPTS/deploy-h5-prod.sh`；生产候选包必须使用 `prod.env` 中的 H5 API 和租户配置构建，`VITE_TEST_AUTH_ENABLED=false`，并在上传前校验 SHA-256。由于 API 地址和租户号在构建时写入 bundle，测试环境构建产物不得直接发布到生产。
-
-### 6. DMS 制品晋级
-
-1. 测试和生产均使用固定 Git commit、干净工作区和记录过的 Python/依赖版本；生产禁止直接 `git pull` 当前分支后即启动。
-2. 依赖安装必须来自锁定/审核过的依赖清单；凭据通过受控 `.env` 或密钥管理服务提供，不能写入仓库或命令行日志。
-3. 生产使用 `--no-reload`，不使用交互式端口占用确认；必须通过 systemd 或等价进程管理器托管，配置开机启动、自动重启、日志和回滚。
-4. 部署后检查 8001 监听、健康接口、主日志和后端到 DMS 的连通性。当前生产裸 Uvicorn、测试未运行 DMS，二者都属于待治理差异。
+1. Agent 只整理测试流水线运行结果、制品 commit、SHA-256、构建参数、验证范围、已知风险和回滚建议。
+2. 具备权限的人员人工登录云效平台，按生产流水线的审批、发布和回滚机制执行；Agent 不得调用生产流水线、不登录生产主机、不上传或替换生产制品。
+3. 生产发布完成后，Agent 如受邀参与，只能执行只读诊断和验证，记录服务状态、实际启动参数、日志、监听端口、健康接口、Nginx 和关键业务链路；发现异常时报告并由人工按云效流程回滚。
 
 ## 凭据与配置安全
 
@@ -124,6 +101,6 @@ H5 生产发布遵循 [`PLAYBOOKS/deployment.md`](../PLAYBOOKS/deployment.md)。
 
 - 发布后检查服务状态、实际启动参数、日志、监听端口、健康接口、Nginx 和关键业务链路；时间线使用 Asia/Shanghai，证据脱敏。
 - 外部系统问题优先核对“业务筛选结果 → 外发目标数组 → 外部响应”三段证据；记录运行 JAR commit、请求时间和外部返回的任务标识，外发报文仅按 DEBUG 级别采集并脱敏凭据，不能只凭前端提示判断发送范围。
-- 事故处理先确认影响范围，再读日志和只读数据，最后才执行已批准的止损或回滚；不得先改数据再找原因。
-- Java 后端问题移交 `backend-agent`，Vue/管理后台问题移交 `frontend-agent`，DMS 问题移交 `dms-agent`；Nginx、JVM、进程托管和环境配置由 DevOps Agent 处理。
+- 事故处理先确认影响范围，再读日志和只读数据；需要止损、回滚、配置或数据变更时，提交证据和建议，由人工按云效审批流程执行，不得由 Agent 直接操作生产。
+- Java 后端问题移交 `backend-agent`，Vue/管理后台问题移交 `frontend-agent`，DMS 问题移交 `dms-agent`；Nginx、JVM、进程托管和环境配置问题由 DevOps Agent 负责诊断，生产变更由人工执行。
 - 每起事故必须记录：发生时间、影响、现象、日志/数据/代码证据、已证实根因与假设、处置、验证、回滚结果和后续负责人。
