@@ -1,301 +1,37 @@
-# Environment Provisioning Playbook
+# 环境初始化手册
 
-> 新服务器 / 新环境首次启用前的基础软件、运行时和目录初始化手册。
-> 本文件只列通用要求与检查清单，具体包管理命令请根据实际操作系统发行版调整。
-> MySQL 与 Redis 均使用外部托管服务（如阿里云 RDS / Redis），应用服务器上只需安装客户端，不需要本地启动 Server。
-> 完成本 playbook 后，再按 `governance/PLAYBOOKS/deployment.md` 执行应用部署。
+供新服务器或新环境首次启用使用。日常测试部署见 [测试流水线手册](test-environment-pipeline-deployment.md)，生产操作边界见 [生产发布与交接](deployment.md)。
 
----
+## 基础设施
 
-## 1. 操作系统基础
+- 从 workspace 根目录使用 `governance/SCRIPTS/deploy-helper.sh` 的 `load_env <环境>` 加载目标；主机、域名、目录和端口统一维护在 `governance/ENVIRONMENTS/`，不在本手册复制环境清单。
+- 配置部署用户、SSH key、时区与时间同步、防火墙和必要的网络白名单。
+- MySQL、Redis 使用外部服务；应用侧仅按需提供客户端，确认连通性和最小访问权限。
+- 按部署方式准备运行时：后端 Java 17，DMS/Mock Python 版本以各仓库要求为准；容器部署验证镜像内运行时。Maven、Node、pnpm 等构建工具仅部署在构建执行环境。
+- 配置凭据来源、持久化目录、日志轮转、监控和备份恢复机制；秘密不进入 Git 或构建日志。
 
-- [ ] Linux 服务器（推荐 Ubuntu 22.04 LTS / CentOS 7+）
-- [ ] 创建部署用户并配置 SSH key 登录，禁止密码登录
-- [ ] 配置时区（如 `Asia/Shanghai`）和 NTP 同步
-- [ ] 配置防火墙，仅开放必要端口（SSH、HTTP、HTTPS、业务端口）
-- [ ] 配置合理的 swap 或关闭 swap（根据业务要求）
-- [ ] 配置主机名和 `/etc/hosts`
+## 应用与入口
 
----
+| 应用 | 初始化要求 |
+|---|---|
+| 后端 | 明确容器或进程托管方式、自动恢复策略、profile、端口及外部依赖；生产显式使用 `prod` |
+| 管理后台 / H5 | 准备静态资源目录或镜像、Vue Router history fallback、API 路由；H5 同时验收首页与 `activity.html`，生产关闭测试登录 |
+| DMS | 按 `.gitmodules` 确认仓库；固定版本和依赖、隔离运行环境、配置数据库及后端访问，禁止生产热重载 |
+| 网关 / Nginx | 配置域名到应用的映射、HTTPS 证书及跳转；已有网关负责 TLS 时沿用其职责，不重复配置 |
 
-## 2. 通用运行时与工具
+数据库初始化或迁移单独纳入变更流程，不作为应用启动的隐含步骤。Nginx 配置须通过 `nginx -t`；生产应用配置由人工按审批流程生效。
 
-| 组件 | 用途 | 当前版本要求 |
-|------|------|-------------|
-| OpenJDK 17 | yshop 后端运行；测试环境打包 | 17 |
-| Maven 3.8+ | 测试环境 yshop 后端构建；生产不构建 | 3.8.x |
-| Node.js 18+ | yshop-drink-vue 构建 | 18.x |
-| pnpm 8+ | yshop-drink-vue 包管理 | 8.x |
-| Python 3.10+ | icepolar-dms 运行 | 3.10+ |
-| venv + pip | icepolar-dms 依赖隔离 | 随 Python 自带 |
-| Nginx | 管理后台静态资源 / 反向代理 | 1.20+ |
-| MySQL 8.0 Client | 命令行连接、导入 SQL、排查数据 | 8.0 |
-| Redis CLI | 缓存排查、命令行操作 Redis | 6.x / 7.x |
-| Git | 代码拉取 | 2.x |
+## Mock 服务
 
----
-
-## 3. yshop 后端专用
-
-- [ ] 安装 OpenJDK 17
-- [ ] 安装 Maven 3.8+
-- [ ] 创建代码目录 `${YSHOP_CODE_PATH}`
-- [ ] 配置 SSH key 登录 Gitee，确保可拉取仓库
-  - 仓库地址统一从 workspace 根目录 `.gitmodules` 读取
-  - 后端示例：`git@gitee.com:icepolar/yshop-drink.git`（SSH 协议）
-- [ ] 安装 MySQL 8.0 Client（`mysql` 命令行工具），用于连接外部 MySQL/RDS 实例、导入 SQL 和排查数据
-- [ ] 安装 Redis CLI，用于连接外部 Redis 实例和排查缓存
-- [ ] 确认应用服务器可访问外部 MySQL 与 Redis 的网络和端口（如安全组、白名单）
-- [ ] 将 `application-*.yaml` 或对应环境配置放置到正确位置，确保数据库与 Redis 连接信息指向外部实例
-- [ ] 生产 `yshop.service` 配置 `Environment=SPRING_PROFILES_ACTIVE=prod`，确保服务器重启后不会回退到 `local`
-
----
-
-## 4. yshop-drink-vue 管理后台专用
-
-- [ ] 安装 Node.js 18+ 和 pnpm 8+
-- [ ] 创建远程静态资源目录 `${ADMIN_REMOTE_PATH}`
-- [ ] 安装并启动 Nginx
-- [ ] 配置 Nginx server 块，将请求指向 `${ADMIN_REMOTE_PATH}`
-- [ ] （可选）配置 Nginx 反向代理到 `${YSHOP_PORT}` 端口，统一管理后台 API 调用
-- [ ] 确认 Nginx 服务已启用并运行
-
-**Nginx 配置示例**
-
-管理后台静态资源 + 反向代理后端 API 的参考配置：
-
-```nginx
-server {
-    listen 80;
-    server_name _; # 或填写实际域名
-
-    # 管理后台静态资源
-    location / {
-        root ${ADMIN_REMOTE_PATH};
-        index index.html index.htm;
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    # 反向代理到 yshop 后端 API（可选）
-    location /admin-api/ {
-        proxy_pass http://127.0.0.1:${YSHOP_PORT}/admin-api/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    location /app-api/ {
-        proxy_pass http://127.0.0.1:${YSHOP_PORT}/app-api/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-}
-```
-
-放置到 Nginx 配置目录后重载：
-
-```bash
-# Rocky / CentOS
-sudo systemctl enable nginx
-sudo systemctl start nginx
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-## 5. icepolar H5 活动前端专用
-
-H5 是静态前端，生产与测试均由 Nginx 提供服务。首次部署或域名变更时完成以下初始化；日常版本发布只执行 `deployment.md` 中的构建、上传、校验和回滚步骤。
-
-### 环境信息
-
-| 环境 | 服务器 | 静态目录 | 域名 | API 构建地址 |
-|---|---|---|---|---|
-| 测试 | `rprod18` | `/opt/holun/yshop-h5/dist` | `h5-yshop-dev.holuntech.cn` | `https://api-yshop-dev.holuntech.cn/app-api` |
-| 生产 | `yprod1` | `/opt/holun/yshop-h5/dist` | `yshop-h5.holuntech.cn` / `yshop-h5.holuntech.com` | `https://yshop-api.holuntech.cn/app-api` |
-
-生产连接方式为 `ssh root@yprod1`。生产 H5 不启用测试登录入口；生产租户号由 `prod.env` 的 `H5_TENANT_ID` 注入 bundle，禁止写死在代码中。
-
-### 初始化清单
-
-- [ ] 确认 DNS 将测试/生产域名指向对应入口（生产 `.cn` 与 `.com` 均需确认）
-- [ ] 安装并启用 Nginx
-- [ ] 创建 `${H5_REMOTE_PATH}` 对应的父目录
-- [ ] 配置 Vue Router history fallback
-- [ ] 配置 HTTPS、证书和 HTTP 到 HTTPS 跳转（如由该服务器负责）；`.cn` 使用 `holuntech.cn.pem/key`，`.com` 使用 `holuntech.com.pem/key`
-- [ ] 执行 `nginx -t && systemctl reload nginx`
-- [ ] 确认 `systemctl is-active nginx` 返回 `active`
-
-### Nginx 配置示例
-
-测试环境：
-
-```nginx
-server {
-    listen 80;
-    server_name h5-yshop-dev.holuntech.cn;
-
-    root /opt/holun/yshop-h5/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-生产环境：
-
-```nginx
-server {
-    listen 80;
-    server_name yshop-h5.holuntech.cn;
-
-    root /opt/holun/yshop-h5/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-生产 `.com` 别名（使用 `.com` 专用证书）：
-
-```nginx
-server {
-    listen 80;
-    server_name yshop-h5.holuntech.com;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name yshop-h5.holuntech.com;
-
-    ssl_certificate /opt/holun/holun-cert/13223576_holuntech.com_nginx/holuntech.com.pem;
-    ssl_certificate_key /opt/holun/holun-cert/13223576_holuntech.com_nginx/holuntech.com.key;
-
-    root /opt/holun/yshop-h5/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-将配置放入 Nginx 配置目录后执行：
-
-```bash
-ssh root@yprod1 'nginx -t && systemctl reload nginx && systemctl is-active nginx'
-```
-
-生产双域名验收：
-
-```bash
-curl -fsSI https://yshop-h5.holuntech.cn/
-curl -fsSI https://yshop-h5.holuntech.com/
-curl -fsSI 'https://yshop-h5.holuntech.cn/activity.html?templateId=1&channelCode=wecomg'
-curl -fsSI 'https://yshop-h5.holuntech.com/activity.html?templateId=1&channelCode=wecomg'
-```
-
-如果 HTTPS 终止、证书或 443 跳转由现有网关负责，沿用现有生产网关配置，不在应用版本发布时临时修改。
-
----
-
-## 6. icepolar-dms 设备管理系统专用
-
-- [ ] 安装 Python 3.10+
-- [ ] 创建代码目录 `${DMS_CODE_PATH}`
-- [ ] 配置 SSH key 登录 Gitee，确保可拉取仓库
-  - 仓库地址统一从 workspace 根目录 `.gitmodules` 读取
-  - DMS 示例：`git@gitee.com:icepolar/dms.git`（SSH 协议）
-- [ ] 创建 Python 虚拟环境 `venv/`
-- [ ] 安装 `requirements.txt` 依赖
-- [ ] 确认 `${DMS_PORT}` 端口可被访问
-- [ ] 配置 MySQL 数据库连接：
-  - 在 `${DMS_CODE_PATH}/.env` 中配置 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASSWORD`
-  - 数据库连接信息以 `${DMS_CODE_PATH}/.env` 为准
-  - 执行 `python scripts/init_db.py` 初始化表结构
-
----
-
-## 7. mock-external-server
-
-用于在 rprod18 上运行链科云打印协议 Mock，供 API、集成测试和端到端测试使用。首次初始化只执行一次；完成后，版本更新统一按 `governance/PLAYBOOKS/deployment.md` 通过 Git 提交和拉取完成。
-
-**当前目标信息**
-
-| 属性 | 值 |
-|------|-----|
-| 服务器 | `rprod18` |
-| 代码目录 | `/opt/holun/mock-external-server` |
-| 运行用户 | `holun-mock` |
-| systemd 服务 | `mock-external-server.service` |
-| 监听地址 | `127.0.0.1:8085` |
-| 响应配置 | `/opt/holun/mock-external-server/config/responses.yaml` |
-
-**首次初始化步骤**
-
-执行前必须确认 `mock-external-server` 的代码已经提交并推送到 Gitee `master` 分支：
+仅用于受控测试环境，首次初始化前确认目标仓库版本已推送：
 
 ```bash
 source governance/SCRIPTS/deploy-helper.sh && load_env dev
 bash governance/SCRIPTS/provision-mock-external-server.sh
 ```
 
-脚本会创建系统用户、代码目录、虚拟环境、生产环境文件和 systemd 单元，并启动服务。
+核对脚本目标与实际后端所在环境。默认仅监听回环地址、关闭管理接口；后端地址必须在其网络命名空间内可达。Mock 不属于生产发布流程。
 
-服务只监听本机回环地址，生产管理接口关闭。后端接入时使用 `LIANKE_PRINT_HOST=http://127.0.0.1:8085/api`；异常场景应在受控测试实例中开启管理面，不要直接开放生产管理接口。
+## 验收与交接
 
----
-
-## 8. 可选 / 根据业务需要
-
-- [ ] MQ 中间件（RocketMQ / RabbitMQ）—— 当前生产暂未使用；启用相关异步链路前再部署并恢复对应自动配置
-- [ ] 日志收集（ELK、Loki、Promtail）
-- [ ] 监控告警（Prometheus + Grafana、Node Exporter、Blackbox Exporter）
-- [ ] MySQL 定时备份脚本
-- [ ] SSL 证书（Let's Encrypt / 自签 / 商业证书）
-
----
-
-## 9. 部署前置检查
-
-完成以上步骤后，请执行以下检查，确认环境已就绪：
-
-```bash
-# 加载目标环境配置
-source governance/SCRIPTS/deploy-helper.sh && load_env test
-
-# 检查 Java 版本
-ssh ${DEPLOY_USER}@${SERVER_HOST} "java -version"
-
-# 检查 Maven 版本
-ssh ${DEPLOY_USER}@${SERVER_HOST} "mvn -version"
-
-# 检查 Node 和 pnpm 版本
-ssh ${DEPLOY_USER}@${SERVER_HOST} "node -v && pnpm -v"
-
-# 检查 Python 版本
-ssh ${DEPLOY_USER}@${SERVER_HOST} "python3 --version && pip3 --version"
-
-# 检查 MySQL Client 是否可用
-ssh ${DEPLOY_USER}@${SERVER_HOST} "mysql --version"
-
-# 检查 Redis CLI 是否可用
-ssh ${DEPLOY_USER}@${SERVER_HOST} "redis-cli --version || redis-cli -v"
-
-# 检查 Nginx 服务
-ssh ${DEPLOY_USER}@${SERVER_HOST} "systemctl status nginx"
-
-# 检查外网连通性（示例：阿里云 RDS MySQL 端口）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "nc -zv ${DB_HOST} ${DB_PORT}"
-
-# 检查外网连通性（示例：阿里云 Redis 端口）
-ssh ${DEPLOY_USER}@${SERVER_HOST} "nc -zv ${REDIS_HOST} ${REDIS_PORT}"
-```
-
-检查全部通过后，再继续执行 `governance/PLAYBOOKS/deployment.md` 中的应用部署步骤。
+按 [诊断手册](incident-response.md) 验证域名到实际实例及数据源的完整链路，检查运行时、自动恢复、日志、依赖连通性和健康接口。记录环境元数据与受控配置来源，再进入对应发布流程；不得用代码目录或宿主机默认运行时替代实际实例验证。

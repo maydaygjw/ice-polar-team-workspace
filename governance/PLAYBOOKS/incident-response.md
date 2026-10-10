@@ -1,132 +1,44 @@
-# 线上故障响应与诊断手册
+# 故障诊断手册
 
-> 供 devops-agent 和值班工程师处理用户报障。目标是在不扩大影响的前提下，快速定位根因、保留证据并完成移交。部署、回滚、连接和健康检查详见 [`deployment.md`](deployment.md)。
+供 DevOps Agent 和值班工程师定位故障、保留证据并移交。生产只读诊断可登录主机；生产变更由人工执行，边界见 [生产发布与交接](deployment.md)。
 
-## 1. 开始前
+## 1. 确认实际环境
 
-### 1.1 加载环境
+记录请求时间（Asia/Shanghai）、域名、方法、路径、租户、业务标识及脱敏响应，同时检查 HTTP 状态和业务码。
 
-所有命令都使用环境变量，禁止在文档、脚本或报告中写入主机、密码等敏感信息。
+从 workspace 根目录加载候选环境；环境文件和历史盘点仅作线索，不代表实际路由：
 
 ```bash
-# 在 workspace 根目录执行；将 test 替换为目标环境
-source governance/SCRIPTS/deploy-helper.sh && load_env test
-
-# 生产环境使用 prod.env 中的 SSH_KEY_PATH；其他环境未配置时沿用 SSH 默认认证。
+source governance/SCRIPTS/deploy-helper.sh && load_env prod # 按目标选择 test/prod
 SSH_ARGS=()
 if [[ -n "${SSH_KEY_PATH:-}" ]]; then
   SSH_ARGS=(-i "${SSH_KEY_PATH}")
 fi
 ```
 
-### 1.2 关键证据源
+依次确认 **域名 → 网关/Nginx → upstream → 运行进程或容器 → 实际数据源**。不得按域名后缀推断环境；链路未确认前，其他环境的数据不能作为故障结论。
 
-| 类型 | 位置/对象 |
-|------|-----------|
-| yshop 日志 | `${YSHOP_LOG_FILE:-${YSHOP_START_PATH}/app.log}`；生产当前为 `/mnt/yshop-nas/applogs/yshop-server/server.log`，按日期轮转的压缩日志也在同目录 |
-| 数据库 | MySQL 8.0；连接参数取自目标环境配置 |
-| 常查表 | `yshop_store_order`、`yshop_coupon_user`、`yshop_coupon`、`yshop_user`、`yshop_store_product` |
+## 2. 采集证据
 
-> 日志未自动轮转：优先按时间、订单号、用户 ID、IMEI 精确过滤，避免一次读取整个文件。
+| 对象 | 检查方法 |
+|---|---|
+| 入口 | 核对生效的虚拟主机、代理目标与访问日志；DNS 结果需排除本地代理影响 |
+| 运行实例 | 先识别 systemd、Docker 或裸进程，再检查服务/容器状态、PID、启动参数及监听端口 |
+| 制品与配置 | 从运行实例定位实际 JAR，记录 SHA-256、内嵌 commit、JDK 和 profile；核对 JAR 配置、外置配置、环境变量及启动参数的覆盖关系 |
+| 日志 | 从实例确认日志输出位置，按时间和业务标识限量检索；轮转日志按需读取 |
+| 数据 | 使用运行实例实际连接的数据源，在只读事务中按租户、主键或业务标识查询必要字段 |
+| 代码 | 对照运行版本，沿 Controller → Service → Mapper/外部依赖还原筛选条件 |
 
-## 2. 诊断流程
+凭据只在受控连接过程中使用，不回显完整配置、进程环境或认证报文。宿主机没有客户端时可使用已有客户端或 SSH 隧道，不为诊断临时安装生产依赖。
 
-1. **收集线索**：环境、发生时间及时区、现象/报错、截图、订单号、用户 ID、IMEI、影响范围、复现步骤。
-2. **确认影响**：判断单用户/单设备还是全局故障；检查服务进程、端口和依赖。影响持续扩大时，先按已批准的降级/回滚方案止损。
-3. **检索日志**：以故障时间为中心，用业务标识串联请求链路；保留关键上下文和时间戳。
-4. **补充动态诊断**：日志不足且已知疑似 Java 类/方法时，按第 4 节使用 Arthas 观测；不重启、不临时加日志。
-5. **核对数据**：只读查询相关表，核对状态、时间、租户和关联记录；不得先改数据再找原因。
-6. **对照代码**：沿 Controller → Service → Mapper/外部依赖还原路径，标注文件和行号。
-7. **验证假设**：用日志、数据库和代码证据交叉验证；明确区分已证实根因、高概率假设和待确认项。
-8. **处置并记录**：按第 5 节修复或移交，验证恢复后按第 6 节输出诊断报告。
+数据查询先复现接口的租户、状态和逻辑删除条件；再按相同租户和业务范围检查被过滤记录及关联对象，区分接口可见数据与诊断数据。外部调用核对业务筛选结果、实际外发目标和外部响应，报文脱敏。
 
-## 3. 命令速查
+现有证据不足时才使用 Arthas 限次观测已知类/方法；禁止热更新、重启或临时修改日志配置，结束后执行 `stop`。
 
-### 3.1 yshop
+## 3. 移交与复验
 
-```bash
-# 最近日志
-ssh "${SSH_ARGS[@]}" "${DEPLOY_USER}@${SERVER_HOST}" "tail -n 200 ${YSHOP_LOG_FILE:-${YSHOP_START_PATH}/app.log}"
+业务代码问题交对应开发角色；环境问题由 DevOps 准备修复方案。生产数据修复须提供限定租户和主键的 SQL、影响行预查及回滚方案，由人工审批并执行；生产发布和回滚按 [发布手册](deployment.md) 处理。
 
-# 按订单号/时间过滤；替换占位符
-ssh "${SSH_ARGS[@]}" "${DEPLOY_USER}@${SERVER_HOST}" "grep -nF -- 'ORDER_ID' ${YSHOP_LOG_FILE:-${YSHOP_START_PATH}/app.log} | tail -n 50"
-ssh "${SSH_ARGS[@]}" "${DEPLOY_USER}@${SERVER_HOST}" "grep -nF -- 'YYYY-MM-DD HH:MM' ${YSHOP_LOG_FILE:-${YSHOP_START_PATH}/app.log} | tail -n 50"
+处置后按原始请求复验，并检查关联数据、日志和业务副作用。诊断期间不得把未执行的修复记为已恢复。
 
-# 实时观察（结束时按 Ctrl-C）
-ssh "${SSH_ARGS[@]}" "${DEPLOY_USER}@${SERVER_HOST}" "tail -f ${YSHOP_LOG_FILE:-${YSHOP_START_PATH}/app.log}"
-
-# 健康检查
-ssh "${SSH_ARGS[@]}" "${DEPLOY_USER}@${SERVER_HOST}" "systemctl status yshop.service --no-pager | head -n 20"
-ssh "${SSH_ARGS[@]}" "${DEPLOY_USER}@${SERVER_HOST}" "ss -tlnp | grep \":${YSHOP_PORT}\b\""
-```
-
-### 3.2 数据库
-
-```bash
-# 从应用配置确认当前 profile 和数据源；禁止复制密码到报告
-PROFILE=dev  # 替换为目标环境的实际 profile
-ssh "${SSH_ARGS[@]}" "${DEPLOY_USER}@${SERVER_HOST}" "grep -nA8 'datasource' ${YSHOP_START_PATH}/src/main/resources/application-${PROFILE}.yaml"
-
-# 从应用服务器连接 MySQL，-p 使密码通过交互输入
-ssh "${SSH_ARGS[@]}" -t "${DEPLOY_USER}@${SERVER_HOST}" "mysql -h ${DB_HOST} -P ${DB_PORT} -u ${DB_USER} -p ${DB_NAME}"
-```
-
-查询时先按主键/业务标识精确限定，并显式带上 `tenant_id`；只取诊断所需字段，避免 `SELECT *` 和无条件全表扫描。
-
-## 4. Arthas 动态诊断
-
-**触发条件**：现有日志无法确定根因，但已知疑似服务、类或方法。
-
-调用 **`arthas-doctor`** skill，按 CPU、内存、线程或方法跟踪场景执行最小必要观测。诊断期间：
-
-- 仅观测，禁止使用 `redefine` 热更新；修复必须走正常部署流程。
-- 限制跟踪范围和次数，避免高频方法观测放大线上负载。
-- 结束后必须执行 `stop` 退出 Arthas。
-
-## 5. 处置与升级
-
-| 根因/修复类型 | 动作 |
-|---------------|------|
-| Java 后端 | 将诊断报告移交 **backend-agent** |
-| Vue/管理后台 | 移交 **frontend-agent** |
-| 微信小程序 | 移交 **miniapp-agent** |
-| Nginx、DB、JVM 参数等配置/环境 | 测试环境验证后修复，记录变更和回滚方案 |
-| 微信支付等外部依赖 | 记录依赖方证据和临时规避方案，通知用户并升级 |
-| 需手工修复数据 | 准备可审核 SQL、影响行预查和回滚方案；获得用户明确批准后才执行 |
-
-处置后必须按原始报障路径复验，同时检查日志、数据状态及关联链路，确认无新增错误。
-
-## 6. 诊断报告模板
-
-```markdown
-# 故障：[简述]
-
-- 时间/时区：[发生时间]
-- 环境：[测试/生产]
-- 报告人：[用户/Agent]
-- 影响：[范围、订单号/用户 ID/IMEI]
-- 状态：[已恢复/已止损/诊断中]
-
-## 现象
-[用户可见现象和复现步骤]
-
-## 证据
-- 日志：[时间戳、关键摘要；脱敏]
-- 数据：[查询条件和关键结果；脱敏]
-- 代码路径：[文件:行号]
-
-## 结论
-- 根因：[已证实结论；未证实时明确标注“假设”]
-- 处置：[已执行动作及结果]
-- 验证：[复验方法及结果]
-- 后续：[修复/预防措施、负责 Agent]
-```
-
-## 7. 安全红线
-
-1. devops-agent 只读取业务代码用于诊断，不直接修改业务逻辑；代码修复移交对应开发 Agent。
-2. 未经用户明确批准，禁止执行 `DELETE`、`DROP`、无 `WHERE` 的 `UPDATE` 等破坏性 SQL。
-3. 禁止在命令、脚本、诊断报告或 Git 中写入密码、密钥、Token 等凭证；证据必须脱敏。
-4. 配置变更必须先在测试环境验证，再按部署手册应用到生产并保留回滚能力。
-5. Arthas 仅用于观测：禁止 `redefine`，诊断后必须 `stop`。
-6. 每起故障必须记录时间线、根因、处置、验证和预防措施。
+在 `governance/REPORTS/` 记录：时间与影响、实际环境和运行版本、脱敏请求/日志/数据/代码证据、已证实根因与待验证假设、处置与复验结果、后续负责人。
