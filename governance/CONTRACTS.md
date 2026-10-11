@@ -1,5 +1,9 @@
 # 跨模块接口契约索引
 
+## 活动报名推荐人 ID（2026-10-11）
+
+`POST /app-api/activity/registration/create` 新增可选 query 参数 `referrerUserId`（Long，backend 会员 ID）。H5 原样透传入口同名参数，不得映射为外部 ID。后端按当前租户校验该会员存在；不存在则报名失败。移除 `referrerExternalUserId` 参数支持。活动分享短链接也统一使用 `referrerUserId`（当前登录会员 ID）。`channelCode` 保持不变，无数据库变更。
+
 平台规则见 [ARCHITECTURE.md](ARCHITECTURE.md)，机器快照见 `CONTRACT/`；功能契约按功能目录维护。
 
 - [小程序码生成](feature-docs/2026-09-07-miniapp-qrcode/contract-changes.md)：新增 app-api，复用微信 SDK 与 infra 临时文件存储。
