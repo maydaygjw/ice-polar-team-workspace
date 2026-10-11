@@ -15,4 +15,4 @@
 - `region_code` 从服务端活动模板和商圈配置解析，客户端不能传入或覆盖。
 - 使用当前租户的小程序主账号调用微信 Short Link 接口，不保存短链接记录。
 
-- H5 入口仅读取 `referrer_user_Id`；报名 API 仍以 `referrerUserId` 传递会员 ID。
+- H5 接收小程序传入的 `referrerUserId`，并以同名参数提交报名 API。此入口参数保持原有约定；它与小程序短链接 `pageUrl` 中的 `referrer_user_Id` 是不同边界。
