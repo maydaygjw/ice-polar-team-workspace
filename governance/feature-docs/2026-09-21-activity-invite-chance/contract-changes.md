@@ -10,7 +10,9 @@
 ## 接口字段
 
 - 管理端活动模板创建、更新请求和详情/分页响应增加 `inviteRegistrationChance`。
+- 用户端 `GET /app-api/activity/period/detail` 和 `latest` 响应增加 `inviteRegistrationChance`（Boolean），取该期次快照值；缺少快照时返回 `false`。
 - 用户端报名接口行为保持原路径和参数不变；符合条件时自动更新推荐人的 `drawChances`。
+- H5 即时抽奖完成后，开关开启时在结果页提示“分享给好友并报名，增加一次抽奖机会”，复制分享链接时将提示文本与短链接一并复制。
 
 ## 权限与兼容性
 
