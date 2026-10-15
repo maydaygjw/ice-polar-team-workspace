@@ -116,6 +116,8 @@
 - `/increase-chances` 在 `LOTTERY` 模式下的截止点为报名结束时间。
 - `/draw` 是否开放仅以期次 `registrationOpen=true` 为准；报名起止时间用于前台展示及自动触发开放报名，不作为即时抽奖接口的直接拦截条件。
 - `/my-result` 继续返回报名记录和中奖记录，不新增抽奖尝试明细。
+- `POST /app-api/activity/period/claim?winnerId={winnerId}` 允许当前登录用户兑奖自己的有效中奖记录；成功返回 `true`，已兑奖记录幂等返回成功。自动发放规则失败时接口返回业务错误，中奖记录保持 `claimStatus=0`，用户可重试；线下兑奖规则不自动核销，返回“线下奖品无法自动兑奖，请联系企业微信客服兑奖”，记录保持待兑奖。
+- `/my-result` 的顶层结果及 `winners[]` 每条记录增加 `claimStatus`（0 待兑奖、1 已兑奖、2 处理中）、`claimTime` 和 `offlineClaim`；即时抽奖响应中的中奖对象也返回相同字段。H5 对 `offlineClaim=true` 的中奖记录显示企微客服兑奖入口，不展示自动兑奖操作。
 - 期次详情返回模式、报名窗口和奖品概率，客户端不得自行计算中奖结果。
 - 本期仅定义 app-api 契约，不修改 `miniapp` 或其他客户端代码；客户端接入另行立项。
 
