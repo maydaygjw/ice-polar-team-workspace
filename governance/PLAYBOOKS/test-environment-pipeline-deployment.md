@@ -12,6 +12,14 @@
 
 表中的 ID 必须使用云效流水线 URL 中的数字 ID，不使用控制台列表里的其他标识。
 
+## 测试数据库迁移
+
+测试数据库使用云效 Flyway 流水线 `rytsna3nguz8c1fs`，基线已建立。运行前确认 `DB_URL`、`DB_USER`、`DB_PASSWORD` 指向测试库；私有数据库使用能访问其 VPC 的构建集群，密码不得写入日志。
+
+- 发布前运行 `info` 确认目标库和待执行版本。存在预期的 `PENDING` 迁移时，直接运行 `migrate`；不要先单独运行 `validate`，它会因待执行迁移而失败。`migrate` 会校验已应用历史。
+- 发布后运行 `info` 和 `validate` 确认迁移状态。
+- 回退需使用经审核的迁移回退 SQL/方案和备份。当前流水线没有 `rollback` 命令；未实现受控回退步骤前停止回退，不删除 `flyway_schema_history` 记录，也不以 `repair` 代替回退。
+
 ## 触发
 
 从 workspace 根目录加载未跟踪的 `.env.local`：

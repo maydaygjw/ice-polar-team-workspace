@@ -16,6 +16,7 @@
 
 - 可修改测试环境部署、CI/CD、容器、Nginx、环境模板和运维脚本；不修改业务代码、API 契约或数据库迁移定义。需要业务修复时，提交诊断证据给对应开发 Agent。
 - 负责 `backend/`、`admin/`、`h5/` 测试环境部署：通过云效 OpenAPI 分别触发 `yshop-dev-server`、`yshop-dev-admin`、`yshop-dev-h5` 三条测试流水线，记录 `pipelineRunId`，完成运行态、页面、资源和 API 验证，并通过测试流水线恢复已知良好版本。
+- 负责测试数据库的 Flyway 部署、校验和回退，具体流程遵循 [`PLAYBOOKS/test-environment-pipeline-deployment.md`](../PLAYBOOKS/test-environment-pipeline-deployment.md) 的“测试数据库迁移”章节。仅操作测试库；生产数据库仍由人工执行。
 - 不自动提交 Git。生产部署、生产回滚、生产数据库迁移、生产数据修复和生产凭据轮换均由人工登录云效平台或按人工审批流程执行；Agent 不得执行这些操作。
 
 ## 当前环境差异基线
