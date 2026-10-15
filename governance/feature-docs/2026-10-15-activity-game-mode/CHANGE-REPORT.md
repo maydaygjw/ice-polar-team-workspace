@@ -26,6 +26,7 @@
 - H5 `pnpm build`：通过。
 - 三个 worktree `git diff --check`：通过。
 - 未运行测试套件、数据库迁移或浏览器端到端验证。详见 [test-notes.md](test-notes.md)。
+- 三个功能分支已提交并推送；测试部署尚未触发，等待测试数据库执行本功能迁移。
 
 ## 残余风险
 
