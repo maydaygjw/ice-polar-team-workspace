@@ -2,11 +2,11 @@
 
 ## 活动游戏管理 API
 
-不新增游戏专属接口域。游戏配置通过现有 `/admin-api/activity/template` 接口管理，以 `recordType` 区分游戏配置记录和活动模板记录；活动模板创建、更新、详情和分页接口扩展游戏字段。响应使用 `CommonResult`，沿用管理端登录、租户隔离和现有活动模板权限。游戏配置与活动模板存放在同一张表。
+不新增游戏专属接口域。游戏配置通过现有 `/admin-api/activity/template` 接口管理；活动模板创建、更新、详情和分页接口扩展游戏字段。响应使用 `CommonResult`，沿用管理端登录、租户隔离和现有活动模板权限。游戏配置独立存放在 `yshop_activity_game_config` 表。
 
-- 现有模板分页接口通过 `recordType` 筛选；游戏配置入口只查询和维护 `recordType=GAME_CONFIG` 的记录。
-- 游戏配置沿用模板接口域，路由为 `GET /game-config/page`、`POST /game-config/create`、`PUT /game-config/update`。新增请求只提交 `name` 和 `enabled`；`gameCode` 是前后端关联字段，由后端按游戏名称映射并随活动详情/游戏会话返回。当前映射为 `企业蓄力跳跃` → `ENTERPRISE_JUMP`，名称不在已实现映射中时拒绝新增或修改。管理员手动录入名称，不选择内置类型，也不能上传或执行自定义游戏程序；停用不删除被模板或期次引用的历史配置。
-- 游戏配置列表仅展示名称和启用状态，不向管理端暴露内部 `gameCode`。已有使用旧内置代码的游戏配置、模板和期次继续兼容。
+- 游戏配置入口只查询和维护 `yshop_activity_game_config` 中当前租户的记录。
+- 游戏配置沿用模板接口域，路由为 `GET /game-config/page`、`POST /game-config/create`、`PUT /game-config/update`。新增请求提交 `gameCode`、`name` 和 `enabled`；`gameCode` 由管理员填写并与 H5 实际实现保持一致，后端只做格式和租户内唯一性校验，不维护游戏白名单，也不按名称映射代码。更新只允许修改展示名称和启用状态，稳定代码不可修改。管理员不能上传或执行自定义游戏程序；停用不删除被模板或期次引用的历史配置。
+- 游戏配置列表展示代码、名称和启用状态。已有游戏配置、模板和期次继续兼容。
 
 使用现有 `activity:template:query`、`activity:template:create`、`activity:template:update` 权限，不新增权限点。
 
@@ -65,17 +65,17 @@ H5 按跳跃结果提交 `passed`。服务端校验用户、报名、会话状�
 
 ## 数据库增量
 
-升级脚本：`backend/sql/upgrade-2026-10-15-activity-game-mode.sql`。不新增业务表；所有涉及数据的查询显式限制当前租户，不加数据库外键。
+升级脚本：`backend/sql/upgrade-2026-10-15-activity-game-mode.sql`。游戏配置使用独立业务表；所有涉及数据的查询显式限制当前租户，不加数据库外键。
 
-1. `yshop_activity_template` 增加 `record_type`（活动模板/游戏配置，历史数据默认活动模板）、可空 `game_code` 和可空 `game_id`。游戏配置记录保存租户、按游戏名称映射的稳定代码、展示名、启用状态；当前 `企业蓄力跳跃` 映射为 `ENTERPRISE_JUMP`。活动模板的 `game_id` 引用同表游戏配置记录。按租户+记录类型+游戏代码唯一约束保证代码唯一。该表现有若干活动字段为非空，游戏配置记录创建时需写入中性占位值（例如通用标题、空正文/图片、默认周期和有效的占位时间），模板列表、期次生成、活动详情和报名查询必须按 `record_type` 过滤，避免占位数据进入活动流程。
+1. `yshop_activity_template` 增加 `record_type`（历史数据默认活动模板）、可空 `game_code` 和可空 `game_id`。游戏配置迁移到独立表，保存租户、稳定代码、展示名和启用状态；代码由后台维护并按租户唯一。活动模板的 `game_id` 引用游戏配置表。
 2. `yshop_activity_template_prize` 增加可空 `level_no`；游戏模式取值 1–3 且唯一，非游戏模式为空。
 3. `yshop_activity_period_snapshot` 增加游戏 ID、类型代码和名称快照。
 4. `yshop_activity_period_prize` 增加可空 `level_no`，将逐关映射冻结到期次。
 5. `yshop_activity_registration` 增加游戏状态、当前关、最高通过关和关卡幂等结果 JSON 字段。一个报名记录对应一局；终态不可重开。该表在游戏启动和提交时行锁更新进度。
 
-新增字段及唯一键应有索引以支持按租户、记录类型、期次、用户和报名定位。不新增任何业务表。回滚仅删除本功能新增字段和索引；不删除或修改历史业务数据。
+新增字段及唯一键应有索引以支持按租户、期次、用户和报名定位。回滚仅删除本功能新增字段和索引；不删除或修改历史业务数据。
 
-Flyway 迁移：`backend/sql/migrations/V2026101601__seed_enterprise_jump_game.sql`。Flyway 会在 `V2026101501__activity_game_mode.sql` 后执行；该迁移为当前未停用租户初始化启用的“企业蓄力跳跃”配置，并将已有同名配置的代码规范为 `ENTERPRISE_JUMP`。
+Flyway 迁移：`backend/sql/migrations/V2026101601__seed_enterprise_jump_game.sql`、`V2026101701__rename_enterprise_jump_game.sql`、`V2026101702__extract_activity_game_config.sql` 和 `V2026101703__remove_number_sorting_game.sql`。迁移会初始化并抽取游戏配置、将展示名称更新为“企鹅蓄力跳跃”，并删除“数字排序”配置。当前 H5 蓄力跳跃实现使用稳定代码 `ENTERPRISE_JUMP`。
 
 ## 事务、权限与幂等
 
