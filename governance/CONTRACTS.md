@@ -34,6 +34,7 @@
 - [活动推荐阶梯奖励](feature-docs/2026-10-16-activity-referral-rewards/contract-changes.md)：保留推荐增加抽奖/游戏机会配置，另按期次统计新人和普通推荐阶梯并使用独立奖品数量；推荐人通过用户端自助兑奖。
 - [活动即时抽奖模式](feature-docs/2026-09-22-activity-lottery-mode/contract-changes.md)：活动模板支持开奖/抽奖两种模式，抽奖模式由 app-api 按概率即时抽奖并以 requestId 幂等。
 - [活动游戏模式](feature-docs/2026-10-15-activity-game-mode/contract-changes.md)：管理员手动新增游戏展示名称，活动模板选择游戏并配置三关奖品；新配置使用现有 H5 跳跃玩法，用户端会话由后端推进和结算。
+- [活动期次更换群活码](feature-docs/2026-10-18-activity-period-group-qrcode/contract-changes.md)：管理后台可为未结束活动期次更新群活码图片快照，不影响活动模板和历史业务记录。
 - 活动游戏关卡提交不再使用数字挑战：`POST /app-api/activity/period/game/submit` 改为接收客户端报告的 `passed` 布尔值；后端保留会话、关卡顺序、幂等和奖品结算校验，响应移除 `challenge`。
 - [活动用户端兑奖](feature-docs/2026-09-19-activity-winner-claim/contract-changes.md)：用户端可兑奖自己的中奖记录，报名和中奖结果返回兑奖状态；执行失败保持待兑奖并可重试。
 - [活动期次状态与结束操作](feature-docs/2026-09-13-activity-management/contract-changes.md)：期次生命周期状态与报名开关解耦，后台支持显式结束期次，状态扫描任务每 5 分钟推进期次状态和报名开关。
