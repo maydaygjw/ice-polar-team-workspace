@@ -1,5 +1,12 @@
 # 跨模块接口契约索引
 
+## 会员详情微信打款
+
+- `POST /admin-api/pay/member-transfer/create`：请求 `userId`、`amount`、`outBillNo`（客户端生成并在同一次打款重试中复用）。后端按当前租户读取会员，仅使用 `routineOpenid`；缺失时拒绝打款。金额以元传入，必须大于 0，精度最多两位。
+- 成功响应包含 `outBillNo`、`transferBillNo`、`state`、`packageInfo`。该接口创建微信支付 API v3 商家转账单；微信可能要求用户确认收款，接口受理不等于款项到账。
+- `GET /admin-api/pay/member-transfer/query?outBillNo={outBillNo}`：查询该商户转账单，返回单号、状态、转账金额（分）、备注和失败原因。管理端显示公众号 OpenID 与小程序 OpenID；只有存在 `routineOpenid` 时允许发起打款。
+- 接口权限为独立的 `member:user:transfer`。复用当前租户微信小程序支付商户配置及商家转账能力。
+
 ## 活动报名推荐人 ID（2026-10-11）
 
 `POST /app-api/activity/registration/create` 新增可选 query 参数 `referrerUserId`（Long，backend 会员 ID）。H5 从小程序入口 `referrerUserId` 读取推荐人，报名时以 API 参数 `referrerUserId` 原样传递，不得映射为外部 ID。后端按当前租户校验该会员存在；不存在则报名失败。移除 `referrerExternalUserId` 参数支持。活动分享短链接统一使用下划线参数 `referrer_user_Id`（当前登录会员 ID）。`channelCode` 保持不变，无数据库变更。
@@ -40,6 +47,7 @@
 - [活动期次状态与结束操作](feature-docs/2026-09-13-activity-management/contract-changes.md)：期次生命周期状态与报名开关解耦，后台支持显式结束期次，状态扫描任务每 5 分钟推进期次状态和报名开关。
 - [活动用户端奖品展示](feature-docs/2026-09-23-activity-app-prize-display/contract-changes.md)：用户端活动详情奖品响应移除库存、已中奖数量和中奖概率字段，保留内部抽奖数据。
 - [活动 H5 Ticket 认证](feature-docs/2026-09-15-activity-h5-auth/contract-changes.md)：已登录客户端通过一次性 ticket 安全进入 H5，兑换 backend Bearer Token。
+- [外卖用户画像](feature-docs/2026-10-19-member-user-profile/contract-changes.md)：新增租户隔离的每日画像快照表、由 Quartz 定时任务按订单频率字段计算并持久化的用户阶段及只读管理端分页筛选。
 
 活动 H5 认证在测试环境额外支持 Mock Ticket：当 `yshop.security.mock-enable` 和
 `yshop.security.mock-webview-ticket-enable` 同时开启时，`test` 前缀加数字用户 ID（例如
