@@ -102,6 +102,7 @@ Root history uses Conventional Commit subjects such as `feat(device): ...`, `doc
 - **Commit messages**: `feat(scope): description` (Conventional Commits)
 - **Feature branches**: `feat/<feature-name>`
 - **Keep commits scoped** to one concern and update submodule pointers deliberately.
+- **Governance documentation**: Changes limited to `governance/` documentation may be committed directly to the main branch; do not create a PR for them.
 
 Pull requests should:
 - Summarize behavior
