@@ -1,5 +1,12 @@
 # 跨模块接口契约索引
 
+## 会员详情微信打款
+
+- `POST /admin-api/pay/member-transfer/create`：请求 `userId`、`amount`、`outBillNo`（客户端生成并在同一次打款重试中复用）。后端按当前租户读取会员，仅使用 `routineOpenid`；缺失时拒绝打款。金额以元传入，必须大于 0，精度最多两位。
+- 成功响应包含 `outBillNo`、`transferBillNo`、`state`、`packageInfo`。该接口创建微信支付 API v3 商家转账单；微信可能要求用户确认收款，接口受理不等于款项到账。
+- `GET /admin-api/pay/member-transfer/query?outBillNo={outBillNo}`：查询该商户转账单，返回单号、状态、转账金额（分）、备注和失败原因。管理端显示公众号 OpenID 与小程序 OpenID；只有存在 `routineOpenid` 时允许发起打款。
+- 接口权限为独立的 `member:user:transfer`。复用当前租户微信小程序支付商户配置及商家转账能力。
+
 ## 活动报名推荐人 ID（2026-10-11）
 
 `POST /app-api/activity/registration/create` 新增可选 query 参数 `referrerUserId`（Long，backend 会员 ID）。H5 从小程序入口 `referrerUserId` 读取推荐人，报名时以 API 参数 `referrerUserId` 原样传递，不得映射为外部 ID。后端按当前租户校验该会员存在；不存在则报名失败。移除 `referrerExternalUserId` 参数支持。活动分享短链接统一使用下划线参数 `referrer_user_Id`（当前登录会员 ID）。`channelCode` 保持不变，无数据库变更。
