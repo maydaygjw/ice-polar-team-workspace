@@ -15,4 +15,4 @@
 
 ## 内部会员 API
 
-会员批量查询 `MemberUserApi.getUsers(ids)` 的 `MemberUserRespDTO` 新增可空 `userStage`，按当前租户关联会员 `externalUserId` 返回其最新用户画像阶段。此字段仅供服务端内部模块复用，不改变会员管理 HTTP API。
+新增批量查询 `MemberUserApi.getUserStages(ids)`，返回以会员 ID 为键、最新画像阶段编码为值的 Map；未关联会员或没有画像的会员不出现在结果中。查询按当前租户关联会员 `externalUserId` 匹配画像。此接口仅供服务端模块复用，不改变会员管理 HTTP API。
