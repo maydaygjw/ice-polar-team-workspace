@@ -51,7 +51,24 @@
 }
 ```
 
-`externalUserId` 对应数据库列 `external_user_id`，是画像导入的外部系统用户标识；`memberId` 是通过当前租户会员表关联得到的内部会员 ID，未匹配到会员时为 `null`。同时返回 `registerTime`（注册时间）、`primaryBusinessRegionCode`（主商圈代码）及会员详情路由所需标识；管理端展示注册时间和主商圈代码，并将已关联会员 ID 链接到会员信息页。会员管理分页响应也返回 `primaryBusinessRegionCode` 并展示该字段，且支持按主商圈代码精确筛选。画像列表和阶段分布接口均支持按主商圈代码筛选。列表支持按 `memberId` 精确筛选及按 `isNewUser` 筛选。`lastOrderTime` 可为 `null`；`userTags` 始终返回数组。用户阶段由后端按近 7 天订单数和下单天数计算；注册未满 7 天且仅下单 1 次的用户归为新用户。阶段编码及管理端显示元数据由 `member_user_profile_stage` 系统数据字典提供，通过现有 `/admin-api/system/dict-data/simple-list` 接口读取。字典数据由系统/数据字典功能维护，不新增专用字典 API 或数据库迁移；阶段编码和名称见需求说明。查询按当前登录管理员的租户隔离。默认排序为业务更新时间和 ID 倒序。
+`externalUserId` 对应数据库列 `external_user_id`，是画像导入的外部系统用户标识；`memberId` 是通过当前租户会员表关联得到的内部会员 ID，未匹配到会员时为 `null`。同时返回 `registerTime`（注册时间）、`primaryBusinessRegionCode`（主商圈代码）及会员详情路由所需标识；管理端展示注册时间和主商圈代码，并将已关联会员 ID 链接到会员信息页。会员管理分页响应也返回 `primaryBusinessRegionCode` 并展示该字段，且支持按主商圈代码精确筛选。画像列表和阶段分布接口均支持按主商圈代码筛选。列表支持按 `memberId` 精确筛选及按 `isNewUser` 筛选。`lastOrderTime` 可为 `null`；`userTags` 始终返回数组。用户阶段由后端按近 7 天订单数和下单天数计算；注册未满 7 天且仅下单 1 次的用户归为新用户。阶段编码、中文名称和颜色统一由后端 `MemberUserProfileStageEnum` 维护，管理端通过阶段选项 API 获取，不再依赖系统数据字典。查询按当前登录管理员的租户隔离。默认排序为业务更新时间和 ID 倒序。
+
+### 阶段选项
+
+`GET /admin-api/member/user-profile/stage-options`
+
+无查询参数。返回全部阶段，按枚举顺序排列。拥有 `member:user-profile:query` 或 `activity:registration:query` 权限的后台用户可调用。
+
+```json
+[
+  { "code": "high_frequency", "label": "高频用户", "color": "#67c23a" },
+  { "code": "mid_frequency", "label": "中频用户", "color": "#409eff" },
+  { "code": "low_frequency", "label": "低频用户", "color": "#909399" },
+  { "code": "at_risk", "label": "流失中", "color": "#e6a23c" },
+  { "code": "churned", "label": "已流失", "color": "#f56c6c" },
+  { "code": "new", "label": "新用户", "color": "#36a3a8" }
+]
+```
 
 ## 权限与菜单
 
@@ -59,7 +76,7 @@
 
 `GET /admin-api/member/user-profile/stage-distribution`
 
-查询参数与分页查询的筛选参数一致（`externalUserId`、`memberId`、`primaryBusinessRegionCode`、`isNewUser`、`userStage`、`tagName`），不接收分页参数。后端在当前租户范围内对全部符合条件的画像记录按 `user_stage` 分组统计，不受列表页码和每页条数影响。响应为数组，每项包含阶段编码 `stage`、记录数 `count`；此接口只返回统计结果，不返回用户明细。查询权限为 `member:user-profile:query`。
+查询参数与分页查询的筛选参数一致（`externalUserId`、`memberId`、`primaryBusinessRegionCode`、`isNewUser`、`userStage`、`tagName`），不接收分页参数。后端在当前租户范围内对全部符合条件的画像记录按 `user_stage` 分组统计，不受列表页码和每页条数影响。响应为数组，每项包含阶段编码 `stage`、记录数 `count`；阶段名称和颜色由阶段选项 API 提供。此接口只返回统计结果，不返回用户明细。查询权限为 `member:user-profile:query`。
 
 - 查询权限：`member:user-profile:query`。
 - 菜单位于会员/用户中心菜单下，组件路由由系统菜单配置加载。

@@ -47,7 +47,7 @@
 - [活动期次状态与结束操作](feature-docs/2026-09-13-activity-management/contract-changes.md)：期次生命周期状态与报名开关解耦，后台支持显式结束期次，状态扫描任务每 5 分钟推进期次状态和报名开关。
 - [活动用户端奖品展示](feature-docs/2026-09-23-activity-app-prize-display/contract-changes.md)：用户端活动详情奖品响应移除库存、已中奖数量和中奖概率字段，保留内部抽奖数据。
 - [活动 H5 Ticket 认证](feature-docs/2026-09-15-activity-h5-auth/contract-changes.md)：已登录客户端通过一次性 ticket 安全进入 H5，兑换 backend Bearer Token。
-- [外卖用户画像](feature-docs/2026-10-19-member-user-profile/contract-changes.md)：新增租户隔离的画像数据、按订单频率和注册时间计算并持久化的用户阶段、通过系统数据字典动态展示阶段名称与颜色、会员 ID 和主商圈代码展示与筛选、只读管理端分页查询和全量阶段分布统计。
+- [外卖用户画像](feature-docs/2026-10-19-member-user-profile/contract-changes.md)：新增租户隔离的画像数据、按订单频率和注册时间计算并持久化的用户阶段、由后端阶段枚举统一提供编码/中文名称/颜色及阶段选项接口、会员 ID 和主商圈代码展示与筛选、只读管理端分页查询和全量阶段分布统计。
 - [活动报名管理画像展示](feature-docs/2026-10-20-activity-registration-profile-display/contract-changes.md)：报名分页响应补充期次奖品名称和会员用户阶段，用户阶段从当前租户关联会员的最新用户画像读取。
 
 活动 H5 认证在测试环境额外支持 Mock Ticket：当 `yshop.security.mock-enable` 和

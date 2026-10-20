@@ -41,16 +41,16 @@
 6. `at_risk`：`is_new_user=false`、`orders_7d = 0` 且 `orders_30d > 0`。
 7. `churned`：`is_new_user=false` 且 `orders_30d = 0`，表示有过下单但近 30 天无订单。
 
-阶段标签由 `member_user_profile_stage` 数据字典维护，通过管理端现有的 `/admin-api/system/dict-data/simple-list` 接口下发。字典值使用阶段编码，标签使用中文阶段名，颜色类型供管理端展示使用。
+阶段编码、中文名称、颜色和顺序由后端 `MemberUserProfileStageEnum` 维护，通过画像阶段选项接口 `GET /admin-api/member/user-profile/stage-options` 下发。接口返回全部阶段的 `code`、`label` 和十六进制 `color`。
 
 | 排序 | 字典值 | 阶段名称 | 建议颜色 |
 |---:|---|---|---|
-| 1 | `high_frequency` | 高频用户 | `success` |
-| 2 | `mid_frequency` | 中频用户 | `primary` |
-| 3 | `low_frequency` | 低频用户 | `info` |
-| 4 | `at_risk` | 流失中 | `warning` |
-| 5 | `churned` | 已流失 | `danger` |
-| 6 | `new` | 新用户 | `success` |
+| 1 | `high_frequency` | 高频用户 | `#67c23a` |
+| 2 | `mid_frequency` | 中频用户 | `#409eff` |
+| 3 | `low_frequency` | 低频用户 | `#909399` |
+| 4 | `at_risk` | 流失中 | `#e6a23c` |
+| 5 | `churned` | 已流失 | `#f56c6c` |
+| 6 | `new` | 新用户 | `#36a3a8` |
 
 `new` 与原 `never_ordered` 含义合并，不再单独使用 `never_ordered` 阶段；`churned` 对应已流失。若 `is_new_user=true` 但订单窗口数或下单天数非零，仍按新用户阶段展示，同时视为导入数据质量异常；页面不修正输入值。
 
