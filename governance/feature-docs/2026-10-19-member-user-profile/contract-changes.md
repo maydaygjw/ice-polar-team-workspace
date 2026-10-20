@@ -52,6 +52,12 @@
 
 ## 权限与菜单
 
+### 用户阶段分布
+
+`GET /admin-api/member/user-profile/stage-distribution`
+
+查询参数与分页查询的筛选参数一致（`externalUserId`、`memberId`、`isNewUser`、`userStage`、`tagName`），不接收分页参数。后端在当前租户范围内对全部符合条件的画像记录按 `user_stage` 分组统计，不受列表页码和每页条数影响。响应为数组，每项包含阶段编码 `stage`、记录数 `count`；此接口只返回统计结果，不返回用户明细。查询权限为 `member:user-profile:query`。
+
 - 查询权限：`member:user-profile:query`。
 - 菜单位于会员/用户中心菜单下，组件路由由系统菜单配置加载。
 - 不定义新增、修改、删除、导入或导出权限及 API。
