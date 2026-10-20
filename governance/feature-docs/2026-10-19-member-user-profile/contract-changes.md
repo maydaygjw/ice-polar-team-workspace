@@ -51,7 +51,7 @@
 }
 ```
 
-`externalUserId` 对应数据库列 `external_user_id`，是画像导入的外部系统用户标识；`memberId` 是通过当前租户会员表关联得到的内部会员 ID，未匹配到会员时为 `null`。同时返回 `registerTime`（注册时间）、`primaryBusinessRegionCode`（主商圈代码）及会员详情路由所需标识；管理端展示注册时间和主商圈代码，并将已关联会员 ID 链接到会员信息页。会员管理分页响应也返回 `primaryBusinessRegionCode` 并展示该字段，且支持按主商圈代码精确筛选。画像列表和阶段分布接口均支持按主商圈代码筛选。列表支持按 `memberId` 精确筛选及按 `isNewUser` 筛选。`lastOrderTime` 可为 `null`；`userTags` 始终返回数组。`isNewUser=true` 表示已注册但从未下单，对应阶段 `new`，管理端阶段名称仅显示“新用户”；高频阶段需满足近 3 天至少 2 单、至少 2 个下单日且近 7 天至少 5 个下单日；其他阶段为 `occasional`、`at_risk`、`churned`。不再使用 `never_ordered` 阶段。查询按当前登录管理员的租户隔离。默认排序为业务更新时间和 ID 倒序。
+`externalUserId` 对应数据库列 `external_user_id`，是画像导入的外部系统用户标识；`memberId` 是通过当前租户会员表关联得到的内部会员 ID，未匹配到会员时为 `null`。同时返回 `registerTime`（注册时间）、`primaryBusinessRegionCode`（主商圈代码）及会员详情路由所需标识；管理端展示注册时间和主商圈代码，并将已关联会员 ID 链接到会员信息页。会员管理分页响应也返回 `primaryBusinessRegionCode` 并展示该字段，且支持按主商圈代码精确筛选。画像列表和阶段分布接口均支持按主商圈代码筛选。列表支持按 `memberId` 精确筛选及按 `isNewUser` 筛选。`lastOrderTime` 可为 `null`；`userTags` 始终返回数组。用户阶段由后端按近 7 天订单数和下单天数计算；注册未满 7 天且仅下单 1 次的用户归为新用户。阶段编码及管理端显示元数据由 `member_user_profile_stage` 系统数据字典提供，通过现有 `/admin-api/system/dict-data/simple-list` 接口读取。字典数据由系统/数据字典功能维护，不新增专用字典 API 或数据库迁移；阶段编码和名称见需求说明。查询按当前登录管理员的租户隔离。默认排序为业务更新时间和 ID 倒序。
 
 ## 权限与菜单
 

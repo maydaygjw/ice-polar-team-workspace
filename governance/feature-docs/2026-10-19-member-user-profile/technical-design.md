@@ -40,7 +40,8 @@
 - 默认按 `updated_at`、`id` 倒序，保证分页顺序稳定；不提供统计日期参数或历史查询。
 - `pageSize` 使用后台统一上限（不超过 100）。所有查询必须在当前租户上下文内执行。
 - `user_stage` 由后台 Quartz `JobHandler` 计算并持久化，分页筛选和返回均读取该列；外部导入方不写此列。
-- 阶段按优先级计算：`is_new_user=true` → `new`（前台统一显示“新用户”）；否则 `orders_3d >= 2 && order_days_3d >= 2 && order_days_7d >= 5` → `high_frequency`；否则 `orders_7d > 0` → `occasional`；否则 `orders_30d > 0` → `at_risk`；否则 → `churned`。下单天数按窗口内有有效订单的自然日去重统计，同日多单只计一天。
+- 阶段按优先级计算：`is_new_user=true` → `new`；注册未满 7 天且 `orders_7d = 1` 也归入 `new`；否则 `orders_7d >= 5 || order_days_7d >= 4` → `high_frequency`；否则 `orders_7d >= 2` → `mid_frequency`；否则 `orders_7d = 1` → `low_frequency`；否则 `orders_30d > 0` → `at_risk`；否则 → `churned`。注册时间从当前租户的会员记录读取。下单天数按窗口内有有效订单的自然日去重统计，同日多单只计一天。
+- 阶段中文名、排序和颜色通过系统数据字典 `member_user_profile_stage` 维护；管理端从 `/admin-api/system/dict-data/simple-list` 获取启用项，并按字典标签和颜色展示。阶段编码仍由后端算法生成。
 - 导入数据一致性约束：`orders_3d <= orders_7d <= orders_30d`、`order_days_3d <= order_days_7d`、`order_days_3d <= orders_3d`、`order_days_7d <= orders_7d`、`order_days_3d <= 3`、`order_days_7d <= 7`。若 `is_new_user=true`，订单数和下单天数均应为 0。
 - 本功能不计算或纠正任何导入字段，不查询订单表或写入标签；仅新增用户阶段定时任务。
 

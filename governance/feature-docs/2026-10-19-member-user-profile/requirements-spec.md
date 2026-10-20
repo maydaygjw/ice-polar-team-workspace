@@ -31,13 +31,26 @@
 
 ## 用户阶段算法（建议方案）
 
-`is_new_user=true` 表示用户已注册但从未下过单，前台统一显示为“新用户”。订单窗口按导入时最新业务日期对应的 `Asia/Shanghai` 自然日计算；近 3/7/30 天均包含当前业务日。`order_days_3d`、`order_days_7d` 分别表示对应窗口内至少有一笔有效订单的自然日数量，同一天多笔订单只计 1 天。按以下顺序命中第一条规则：
+`is_new_user=true` 表示用户已注册但从未下过单，阶段为“新用户”。此外，注册未满 7 天且近 7 天仅下过 1 单的用户也归为“新用户”，避免新注册用户过早进入低频阶段。订单窗口按导入时最新业务日期对应的 `Asia/Shanghai` 自然日计算；近 3/7/30 天均包含当前业务日。`order_days_3d`、`order_days_7d` 分别表示对应窗口内至少有一笔有效订单的自然日数量，同一天多笔订单只计 1 天。按以下顺序命中第一条规则：
 
 1. `new`：`is_new_user=true`，即已注册但没有下过单。
-2. `high_frequency`：`orders_3d >= 2`、`order_days_3d >= 2` 且 `order_days_7d >= 5`。即近 3 天至少 2 单且分布在至少 2 天，近 7 天至少 5 天下过单。
-3. `occasional`：`is_new_user=false` 且 `orders_7d > 0`，但未达到高频条件。
-4. `at_risk`：`is_new_user=false`、`orders_7d = 0` 且 `orders_30d > 0`。
-5. `churned`：`is_new_user=false` 且 `orders_30d = 0`，表示有过下单但近 30 天无订单。
+2. `new`：注册未满 7 天且近 7 天 `orders_7d = 1`。
+3. `high_frequency`：近 7 天 `orders_7d >= 5` 或 `order_days_7d >= 4`，任一成立即归入高频用户。
+4. `mid_frequency`：未达到高频条件且近 7 天 `orders_7d >= 2`。
+5. `low_frequency`：注册已满 7 天且近 7 天 `orders_7d = 1`。
+6. `at_risk`：`is_new_user=false`、`orders_7d = 0` 且 `orders_30d > 0`。
+7. `churned`：`is_new_user=false` 且 `orders_30d = 0`，表示有过下单但近 30 天无订单。
+
+阶段标签由 `member_user_profile_stage` 数据字典维护，通过管理端现有的 `/admin-api/system/dict-data/simple-list` 接口下发。字典值使用阶段编码，标签使用中文阶段名，颜色类型供管理端展示使用。
+
+| 排序 | 字典值 | 阶段名称 | 建议颜色 |
+|---:|---|---|---|
+| 1 | `high_frequency` | 高频用户 | `success` |
+| 2 | `mid_frequency` | 中频用户 | `primary` |
+| 3 | `low_frequency` | 低频用户 | `info` |
+| 4 | `at_risk` | 流失中 | `warning` |
+| 5 | `churned` | 已流失 | `danger` |
+| 6 | `new` | 新用户 | `success` |
 
 `new` 与原 `never_ordered` 含义合并，不再单独使用 `never_ordered` 阶段；`churned` 对应已流失。若 `is_new_user=true` 但订单窗口数或下单天数非零，仍按新用户阶段展示，同时视为导入数据质量异常；页面不修正输入值。
 
@@ -45,7 +58,7 @@
 
 - 用户画像入口出现在后台会员菜单下，并遵循系统菜单权限。
 - 列表展示会员 ID、注册时间、近 3/7/30 天订单数、近 3/7 天下单天数、最近下单时间、用户阶段、用户标签和更新时间。
-- 列表展示是否新用户字段；新用户显示为“是”，其他用户显示为“否”。
+- 列表展示是否从未下单字段；`isNewUser=true` 显示“是”，其他用户显示为“否”。该字段表示外部画像的“注册但从未下单”，与“新用户”阶段（包含注册未满 7 天且下单 1 次的用户）含义不同。
 - 支持按会员 ID、新用户、用户阶段和标签名称筛选，提供搜索、重置和分页。
 - 关联会员展示注册时间和最近下单时间；会员 ID 可点击跳转至后台会员信息页。无关联会员时清晰展示未关联状态且不提供跳转链接。
 - 空表显示数据由外部系统导入的说明；筛选无结果时提供清晰的空状态。
