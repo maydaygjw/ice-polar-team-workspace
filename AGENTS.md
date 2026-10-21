@@ -97,9 +97,9 @@ Follow the conventions of the subproject you change. See each submodule's `AGENT
 
 ## Git Conventions
 
-Root history uses Conventional Commit subjects such as `feat(device): ...`, `docs(governance): ...`, and `chore(submodules): ...`.
+Root history uses Conventional Commit subjects such as `feat(device): ...`, `docs(governance): ...`, and `chore(submodules): ...`. Commit messages must be written in Chinese; keep the Conventional Commit type and scope format, and write the description in Chinese.
 
-- **Commit messages**: `feat(scope): description` (Conventional Commits)
+- **Commit messages**: `feat(scope): 中文描述` (Conventional Commits; description must be Chinese)
 - **Feature branches**: `feat/<feature-name>`
 - **Keep commits scoped** to one concern and update submodule pointers deliberately.
 - **Governance documentation**: Changes limited to `governance/` documentation may be committed directly to the main branch; do not create a PR for them.
