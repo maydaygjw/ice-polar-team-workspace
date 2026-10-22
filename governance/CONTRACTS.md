@@ -30,6 +30,7 @@
 - [企业微信客户朋友圈](feature-docs/2026-09-11-wecom-customer-moments/contract-changes.md)：朋友圈素材组支持文字、图片或单个链接附件，并按企业微信接口规则校验附件类型。
 - [企业微信客户联系人客户标签](feature-docs/2026-09-20-wecom-customer-contact-tags/contract-changes.md)：客户联系人支持单个和批量添加、移除企业微信客户标签，不使用内部标签。
 - [企业微信客户联系人按客户员同步](feature-docs/2026-09-13-wecom-customer-contact-follow-user-sync/contract-changes.md)：客户联系人同步接口支持可选客户员 UserID，未传时保持全部客户员同步。
+- [企业微信群临时二维码](feature-docs/2026-10-22-wecom-customer-group-temporary-qrcode/contract-changes.md)：管理端临时生成指定客户群进群二维码，通过 Redis 延迟队列在 1 小时后调用企业微信删除进群配置，不持久化业务数据。
 - [活动抽奖次数与中奖限制](feature-docs/2026-09-13-activity-management/contract-changes.md)：报名默认 1 次抽奖机会，支持后台和用户端增加次数，并支持按活动限制每人最多中奖一次；用户端报名身份从登录态解析，不再由客户端传入当前用户 `externalUserId`。
 - [活动报名订单条件](feature-docs/2026-09-13-activity-management/contract-changes.md)：报名条件支持按配置天数判断会员在 N 天内是否有已确认订单；当前外部订单接口仅支持 1 天；同一条件类型可配置多个条件实例。
 - [活动推荐报名查询](feature-docs/2026-09-13-activity-management/contract-changes.md)：用户端支持按活动期次查询当前登录用户推荐的有效报名记录。
