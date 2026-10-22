@@ -8,3 +8,11 @@
 - Redis 延迟任务的 1 小时调度、租户上下文恢复、删除成功、配置已删除幂等处理、失败重试及最终失败告警。
 - 前端二维码展示、下载、加载态和错误提示。
 - 后端目标模块测试与管理端类型检查/构建。
+
+## 2026-10-22 dev 部署验收
+
+- Backend commit `1fbdd002`：云效流水线 `1408445` / run `110` 的 Maven 编译打包阶段成功；后续“从 OSS 下发 Docker Compose 文件”阶段失败，失败作业为“从 OSS 下载 compose 文件”。流水线返回通用错误 `deploy.fail`。查询任务日志接口返回 HTTP 403，未能取得更具体的部署日志，因此 backend 新版本未确认部署。
+- Admin commit `571c449`：云效流水线 `1409672` / run `39` 构建与部署阶段均成功。
+- dev 验收：`/actuator/health/` 返回 `UP`；admin 首页、当前引用的 JS/CSS 和图标资源返回 HTTP 200；H5 首页和 `/activity.html` 返回 HTTP 200。
+- Playwright `specs/main/login.spec.ts`：2 项通过，成功登录用例失败，页面停留在 `/login`；尚不能确认是测试账号、认证配置还是环境问题。
+- 因 backend 部署阶段失败，未执行新二维码接口和 Redis 延迟清理的 dev 联调验收；待 backend 部署问题解决后复测。
