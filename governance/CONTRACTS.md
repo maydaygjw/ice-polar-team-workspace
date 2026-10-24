@@ -6,6 +6,15 @@
 - 运行时不再注册微信 V2 支付平台，也移除了微信付款码（V2 MICROPAY）分支；已有 V2 配置记录保留在数据库，但不能用于支付。
 - 不变更请求/响应结构和数据库 schema。
 
+## 微信支付 V3 应答验签模式
+
+- 管理端可在微信支付配置表单中下载平台证书。后端使用当前表单中的商户号、商户 API 私钥、商户 API 证书序列号和 APIv3 密钥调用平台证书接口，并解密返回当前有效的证书 PEM 与序列号；管理端回填到当前表单（存为 `STR`），由用户提交配置后持久化。
+- 商户配置 API 增加 `wechatPayVerifyMode`：`PUBLIC_KEY`（默认）或 `PLATFORM_CERTIFICATE`，新增和编辑配置均保存该值。
+- `PUBLIC_KEY` 模式下，`wechatPayPublicKeyId` 是微信支付公钥 ID，`wechatPayPublicKey` 保存微信支付公钥 PEM 内容或后端可读文件路径。
+- `PLATFORM_CERTIFICATE` 模式下，`wechatPayPublicKeyId` 是微信支付平台证书序列号，`wechatPayPublicKey` 保存平台证书 PEM 内容或后端可读文件路径；`certStoreType` 仅支持 `STR`（内容）和 `PATH`（路径）。
+- 退款查询和商家转账创建/查询的应答验签按所选模式加载对应 RSA 公钥，并校验响应 `Wechatpay-Serial` 与配置 ID 匹配。请求签名仍使用商户 API 私钥和商户 API 证书序列号，不受此模式影响。
+- `keyPrivate` / `keyPublic` 属于 Adapay RSA 配置；微信 V3 配置表单不展示这两个字段。
+
 ## 会员详情微信打款
 
 - `POST /admin-api/pay/member-transfer/create`：请求 `userId`、`amount`、`outBillNo`（客户端生成并在同一次打款重试中复用）。后端按当前租户读取会员，仅使用 `routineOpenid`；缺失时拒绝打款。金额以元传入，必须大于 0，精度最多两位。
