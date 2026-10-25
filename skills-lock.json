@@ -29,7 +29,7 @@
       "source": "wechatpay-apiv3/wechatpay-skills",
       "sourceType": "github",
       "skillPath": "wechatpay-payment-integration/SKILL.md",
-      "computedHash": "86ec9797a8b2dfb1b16dc13d02cb3e8ade479c12491f1cc4cf0d6961688bbfad"
+      "computedHash": "f1e9e7278b1f88074b131a91ee2315e6b64163b7ea9a6495f093b66a450cda59"
     },
     "wechatpay-product-coupon": {
       "source": "wechatpay-apiv3/wechatpay-skills",
