@@ -25,9 +25,13 @@
 
 模板校验错误包括：推荐类型不支持、人数门槛非正整数/重复/不递增、数量非正整数、奖品不存在或跨租户、奖品规则参数不可用。
 
-### 推荐奖励记录查询
+### 推荐奖励记录查询与后台兑换
 
-`GET /admin-api/activity/referral-reward/page?periodId={id}` 查询当前租户活动期次推荐奖励记录，返回领取用户、期次、推荐类型、门槛、奖品快照、奖励时间、兑奖码、兑奖状态和兑奖时间。沿用 `activity:winner:query` 权限及活动期次数据权限。本接口只供查询，不提供后台代领或通知操作；推荐奖励由用户自助兑奖。
+`GET /admin-api/activity/referral-reward/page?periodId={id}` 查询当前租户活动期次推荐奖励记录，返回领取用户、期次、推荐类型、门槛、奖品快照、奖励时间、兑奖码、兑奖状态和兑奖时间。该接口继续沿用 `activity:winner:query` 权限，供既有期次弹窗兼容读取。
+
+`GET /admin-api/activity/referral-reward/progress-page?periodId={id}&userId={id}` 按期次分页查询推荐人进度，返回推荐人 ID、新人推荐数、普通推荐数及该推荐人的全部奖励记录。`userId` 可选；普通推荐数包含新人推荐数。
+
+`POST /admin-api/activity/referral-reward/claim?id={id}` 由后台兑换指定推荐奖励。仅允许当前租户有效的待兑奖奖励，沿用已快照的开奖规则和兑奖状态语义。权限分别为 `activity:referral:query` 与 `activity:referral:claim`。
 
 ## App API
 
@@ -89,7 +93,7 @@
 
 ## DB Schema
 
-Flyway 增量：`backend/sql/migrations/V2026101602__activity_referral_rewards.sql`。不修改基线 SQL。新增业务表均包含 `tenant_id`、标准审计字段及 `deleted` 字段；查询显式限制租户。
+Flyway 增量：`backend/sql/migrations/V2026102601__activity_referral_rewards.sql`（上游同步版本）和 `backend/sql/migrations/V2026102602__activity_referral_menu.sql`。不修改基线 SQL。新增业务表均包含 `tenant_id`、标准审计字段及 `deleted` 字段；查询显式限制租户。
 
 | 表 | 用途与关键字段 | 约束/索引 |
 |---|---|---|
@@ -121,5 +125,5 @@ Flyway 增量：`backend/sql/migrations/V2026101602__activity_referral_rewards.s
 
 - `inviteRegistrationChance` 及其历史默认值、报名后增加机会行为和 H5 原有机会提示继续兼容。
 - 已生成期次不增加或改变历史新阶梯配置；新字段为空时视为未配置。
-- `winnerId` 兑奖调用及 `ActivityWinner` 公示、中奖通知、开奖统计和海报数据不包含新推荐奖励记录。
+- `winnerId` 兑奖调用及 `ActivityWinner` 公示、中奖通知、开奖统计和海报数据不包含新推荐奖励记录；推荐奖励由独立的活动推荐管理页面展示。
 - OpenAPI 机器快照在实现阶段更新。
