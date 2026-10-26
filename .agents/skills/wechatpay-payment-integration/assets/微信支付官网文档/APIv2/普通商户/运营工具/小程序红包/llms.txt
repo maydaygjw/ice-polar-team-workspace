@@ -1,0 +1,18 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 小程序红包（普通商户）文档索引
+
+> 面向小程序场景发放红包的营销工具，用户在小程序内直接领取，用户领取红包后，资金到达用户微信支付零钱账户；若用户未领取， 资金将会在24小时后退回商户的微信支付账户中。助力小程序拉新、留存与线下营销转化
+
+## 接入指引
+- [产品说明](https://pay.weixin.qq.com/doc/v2/merchant/4011937411.md)
+- [协议规则](https://pay.weixin.qq.com/doc/v2/merchant/4011986681.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/merchant/4016183927.md)
+- [操作指导](https://pay.weixin.qq.com/doc/v2/merchant/4011937419.md)
+- [支付账户](https://pay.weixin.qq.com/doc/v2/merchant/4011988051.md)
+
+## API 列表
+- [发放红包接口](https://pay.weixin.qq.com/doc/v2/merchant/4011937425.md)
+- [领取红包接口](https://pay.weixin.qq.com/doc/v2/merchant/4011937428.md)
+- [查询红包记录](https://pay.weixin.qq.com/doc/v2/merchant/4011937431.md)
+

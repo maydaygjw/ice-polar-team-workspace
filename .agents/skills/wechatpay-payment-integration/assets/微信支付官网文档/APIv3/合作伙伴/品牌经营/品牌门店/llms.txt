@@ -1,0 +1,55 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 品牌门店（普通服务商）文档索引
+
+> 品牌线下门店信息管理工具，支持地图选点和文件批量上传两种方式录入门店。录入后可在名片展示地址、营业状态等信息，可用于商品券适用门店圈定、摇优惠按位置精准投放，有效提升用户到店转化率。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4016628074.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4016705104.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4016628135.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4023148568.md)
+
+## API 列表
+- [创建品牌门店](https://pay.weixin.qq.com/doc/v3/partner/4015783183.md)
+- [查询品牌门店](https://pay.weixin.qq.com/doc/v3/partner/4015783153.md)
+- [查询品牌门店列表](https://pay.weixin.qq.com/doc/v3/partner/4016756674.md)
+- [更新品牌门店](https://pay.weixin.qq.com/doc/v3/partner/4015783158.md)
+- [删除品牌门店](https://pay.weixin.qq.com/doc/v3/partner/4015783113.md)
+- [暂停门店营业](https://pay.weixin.qq.com/doc/v3/partner/4016756671.md)
+- [恢复门店营业](https://pay.weixin.qq.com/doc/v3/partner/4016756672.md)
+- [绑定收款商户号](https://pay.weixin.qq.com/doc/v3/partner/4015783177.md)
+- [解绑收款商户号](https://pay.weixin.qq.com/doc/v3/partner/4015783188.md)
+
+## 请求示例
+- [创建品牌门店 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783183-curl.md)
+- [创建品牌门店 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783183-java.md)
+- [创建品牌门店 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783183-go.md)
+- [删除品牌门店 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783113-curl.md)
+- [删除品牌门店 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783113-java.md)
+- [删除品牌门店 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783113-go.md)
+- [恢复门店营业 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756672-curl.md)
+- [恢复门店营业 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756672-java.md)
+- [恢复门店营业 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756672-go.md)
+- [暂停门店营业 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756671-curl.md)
+- [暂停门店营业 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756671-java.md)
+- [暂停门店营业 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756671-go.md)
+- [更新品牌门店 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783158-curl.md)
+- [更新品牌门店 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783158-java.md)
+- [更新品牌门店 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783158-go.md)
+- [查询品牌门店 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783153-curl.md)
+- [查询品牌门店 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783153-java.md)
+- [查询品牌门店 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783153-go.md)
+- [查询品牌门店列表 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756674-curl.md)
+- [查询品牌门店列表 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756674-java.md)
+- [查询品牌门店列表 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016756674-go.md)
+- [绑定收款商户号 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783177-curl.md)
+- [绑定收款商户号 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783177-java.md)
+- [绑定收款商户号 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783177-go.md)
+- [解绑收款商户号 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783188-curl.md)
+- [解绑收款商户号 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783188-java.md)
+- [解绑收款商户号 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4015783188-go.md)
+
+## 附录
+- [品牌经营平台管理品牌门店](https://pay.weixin.qq.com/doc/v3/partner/4016689827.md)
+

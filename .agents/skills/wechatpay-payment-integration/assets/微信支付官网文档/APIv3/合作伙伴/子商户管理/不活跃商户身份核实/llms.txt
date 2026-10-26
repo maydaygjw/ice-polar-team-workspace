@@ -1,0 +1,28 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 不活跃商户身份核实（普通服务商）文档索引
+
+> 针对长期无交易的不活跃商户开展的合规身份核验，用于确认商户经营状态与身份信息有效性，商户按指引完成资料更新与身份验证后可恢复正常功能，满足监管要求，降低沉睡商户带来的合规与资金风险。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012064898.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4012064915.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012064909.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012064902.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807429.md)
+
+## API 列表
+- [发起不活跃商户身份核实](https://pay.weixin.qq.com/doc/v3/partner/4012471357.md)
+- [查询不活跃商户身份核实结果](https://pay.weixin.qq.com/doc/v3/partner/4012471359.md)
+
+## 请求示例
+- [发起不活跃商户身份核实 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471357-curl.md)
+- [发起不活跃商户身份核实 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471357-java.md)
+- [发起不活跃商户身份核实 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471357-go.md)
+- [查询不活跃商户身份核实结果 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471359-curl.md)
+- [查询不活跃商户身份核实结果 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471359-java.md)
+- [查询不活跃商户身份核实结果 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471359-go.md)
+
+## 附录
+- [关键概念](https://pay.weixin.qq.com/doc/v3/partner/4012064904.md)
+

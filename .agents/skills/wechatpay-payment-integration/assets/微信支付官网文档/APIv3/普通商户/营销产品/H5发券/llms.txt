@@ -1,0 +1,14 @@
+>更新时间：2026.10.24
+
+# 微信支付 - H5发券（普通商户）文档索引
+
+> H5发券提供网页端发券能力，商户可在H5页面快速配置并投放优惠券，接入便捷、适配性强。适用于活动推广、拉新促活等场景，缩短领券链路，提升券领取率与活动覆盖面。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4012067873.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/merchant/4012067883.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/merchant/4020807299.md)
+
+## API 列表
+- [H5发券](https://pay.weixin.qq.com/doc/v3/merchant/4012285783.md)
+

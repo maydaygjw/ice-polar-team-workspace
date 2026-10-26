@@ -1,0 +1,36 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 智慧商圈（普通服务商）文档索引
+
+> 面向商业综合体、商圈的数字化经营工具，整合支付、营销、会员、积分、权益等能力，实现场内商户联动运营。用户在商圈门店消费后可享自动积分及出行服务、门店服务等积分权益。增加用户会员价值感，拉动商圈会员活跃与消费。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012075220.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4016111726.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012075386.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012075231.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807417.md)
+
+## API 列表
+- [商圈会员积分服务授权结果通知](https://pay.weixin.qq.com/doc/v3/partner/4012076406.md)
+- [商圈会员场内支付结果通知](https://pay.weixin.qq.com/doc/v3/partner/4012076414.md)
+- [商圈会员积分同步](https://pay.weixin.qq.com/doc/v3/partner/4012474133.md)
+- [商圈会员场内退款结果通知](https://pay.weixin.qq.com/doc/v3/partner/4012076419.md)
+- [商圈会员积分服务授权查询](https://pay.weixin.qq.com/doc/v3/partner/4012474135.md)
+- [商圈会员待积分状态查询](https://pay.weixin.qq.com/doc/v3/partner/4012474129.md)
+- [商圈会员停车状态同步](https://pay.weixin.qq.com/doc/v3/partner/4012474127.md)
+
+## 请求示例
+- [商圈会员停车状态同步 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474127-curl.md)
+- [商圈会员停车状态同步 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474127-java.md)
+- [商圈会员停车状态同步 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474127-go.md)
+- [商圈会员待积分状态查询 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474129-curl.md)
+- [商圈会员待积分状态查询 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474129-java.md)
+- [商圈会员待积分状态查询 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474129-go.md)
+- [商圈会员积分同步 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474133-curl.md)
+- [商圈会员积分同步 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474133-java.md)
+- [商圈会员积分同步 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474133-go.md)
+- [商圈会员积分服务授权查询 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474135-curl.md)
+- [商圈会员积分服务授权查询 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474135-java.md)
+- [商圈会员积分服务授权查询 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474135-go.md)
+

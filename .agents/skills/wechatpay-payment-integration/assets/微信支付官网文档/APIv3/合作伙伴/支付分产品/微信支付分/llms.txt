@@ -1,0 +1,86 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 微信支付分（普通服务商）文档索引
+
+> 微信支付分是基于用户身份、支付行为等综合评估的信用分值，支持免押租借、先享后付等场景。支持先免、先享两种模式，帮助商户降低门槛、提升转化，订单资金可通过分账完成分配。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012586132.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4012586139.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012586134.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012586133.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807411.md)
+
+## API 列表
+- [创建支付分订单](https://pay.weixin.qq.com/doc/v3/partner/4013138534.md)
+- [查询支付分订单](https://pay.weixin.qq.com/doc/v3/partner/4013138559.md)
+- [取消支付分订单](https://pay.weixin.qq.com/doc/v3/partner/4013138589.md)
+- [确认订单回调通知](https://pay.weixin.qq.com/doc/v3/partner/4012586137.md)
+- [完结支付分订单](https://pay.weixin.qq.com/doc/v3/partner/4013138598.md)
+- [修改支付分订单金额](https://pay.weixin.qq.com/doc/v3/partner/4013138819.md)
+- [同步支付分订单状态](https://pay.weixin.qq.com/doc/v3/partner/4013138975.md)
+- [支付成功回调通知](https://pay.weixin.qq.com/doc/v3/partner/4012586136.md)
+- [申请退款](https://pay.weixin.qq.com/doc/v3/partner/4013138987.md)
+- [查询退款](https://pay.weixin.qq.com/doc/v3/partner/4013139077.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v3/partner/4012586138.md)
+### 拉起支付分小程序确认订单页
+- [JSAPI调起支付分确认订单页](https://pay.weixin.qq.com/doc/v3/partner/4012607505.md)
+#### APP调起支付分确认订单页
+- [Android](https://pay.weixin.qq.com/doc/v3/partner/4012607507.md)
+- [iOS](https://pay.weixin.qq.com/doc/v3/partner/4012607508.md)
+- [鸿蒙](https://pay.weixin.qq.com/doc/v3/partner/4015271745.md)
+#### 小程序调起支付分确认订单页
+- [wx.openBusinessView](https://pay.weixin.qq.com/doc/v3/partner/4012607510.md)
+- [wx.navigateToMiniProgram（停止新增）](https://pay.weixin.qq.com/doc/v3/partner/4012607511.md)
+### 拉起支付分小程序订单详情页
+- [JSAPI调起支付分订单详情页](https://pay.weixin.qq.com/doc/v3/partner/4012607518.md)
+#### APP调起支付分订单详情页
+- [Android](https://pay.weixin.qq.com/doc/v3/partner/4012607513.md)
+- [iOS](https://pay.weixin.qq.com/doc/v3/partner/4012607514.md)
+- [鸿蒙](https://pay.weixin.qq.com/doc/v3/partner/4015271776.md)
+#### 小程序调起支付分订单详情页
+- [wx.openBusinessView](https://pay.weixin.qq.com/doc/v3/partner/4012607516.md)
+- [wx.navigateToMiniProgram（停止新增）](https://pay.weixin.qq.com/doc/v3/partner/4012607517.md)
+
+## 请求示例
+- [修改支付分订单金额 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138819-curl.md)
+- [修改支付分订单金额 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138819-java.md)
+- [修改支付分订单金额 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138819-go.md)
+- [创建支付分订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138534-curl.md)
+- [创建支付分订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138534-java.md)
+- [创建支付分订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138534-go.md)
+- [取消支付分订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138589-curl.md)
+- [取消支付分订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138589-java.md)
+- [取消支付分订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138589-go.md)
+- [同步支付分订单状态 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138975-curl.md)
+- [同步支付分订单状态 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138975-java.md)
+- [同步支付分订单状态 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138975-go.md)
+- [完结支付分订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138598-curl.md)
+- [完结支付分订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138598-java.md)
+- [完结支付分订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138598-go.md)
+- [查询支付分订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138559-curl.md)
+- [查询支付分订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138559-java.md)
+- [查询支付分订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138559-go.md)
+- [查询退款 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013139077-curl.md)
+- [查询退款 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013139077-java.md)
+- [查询退款 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013139077-go.md)
+- [申请退款 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138987-curl.md)
+- [申请退款 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138987-java.md)
+- [申请退款 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013138987-go.md)
+
+## 附录
+- [支付分合作品牌线上应用规范](https://pay.weixin.qq.com/doc/v3/partner/4012586152.md)
+- [支付分权限申请邮件模板](https://pay.weixin.qq.com/doc/v3/partner/4012586142.md)
+- [测试微信号配置指引](https://pay.weixin.qq.com/doc/v3/partner/4012586141.md)
+- [服务ID新增绑定邮件流程](https://pay.weixin.qq.com/doc/v3/partner/4012624851.md)
+### post_payments(后付费项目)字段传参说明
+- [总览](https://pay.weixin.qq.com/doc/v3/partner/4013163663.md)
+- [二轮电动车充电桩](https://pay.weixin.qq.com/doc/v3/partner/4012586150.md)
+- [充电宝](https://pay.weixin.qq.com/doc/v3/partner/4012586148.md)
+- [共享单车](https://pay.weixin.qq.com/doc/v3/partner/4012586145.md)
+- [快递行业](https://pay.weixin.qq.com/doc/v3/partner/4012586144.md)
+- [智慧零售(无人设备)](https://pay.weixin.qq.com/doc/v3/partner/4012586146.md)
+- [汽车充电桩](https://pay.weixin.qq.com/doc/v3/partner/4012586149.md)
+- [汽车租赁](https://pay.weixin.qq.com/doc/v3/partner/4012586151.md)
+- [酒店行业](https://pay.weixin.qq.com/doc/v3/partner/4012586147.md)
+

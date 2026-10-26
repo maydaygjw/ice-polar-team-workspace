@@ -1,0 +1,43 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 医保支付（普通商户）文档索引
+
+> 医保支付支持用户在微信激活医保电子凭证后，直接完成挂号、门诊缴费等费用的线上医保支付，无需前往线下窗口排队，有助于提高医疗医保服务效率，改善医患关系，为用户提供更便捷流畅的就医体验。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4016824672.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/merchant/4016824681.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/merchant/4016824684.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/merchant/4020801245.md)
+
+## API 列表
+### 医保自费混合订单
+- [医保自费混合收款下单](https://pay.weixin.qq.com/doc/v3/merchant/4016781466.md)
+- [使用医保自费混合订单号查看下单结果](https://pay.weixin.qq.com/doc/v3/merchant/4016781479.md)
+- [使用商户订单号查看下单结果](https://pay.weixin.qq.com/doc/v3/merchant/4016781490.md)
+- [小程序调起医保自费混合支付](https://pay.weixin.qq.com/doc/v3/merchant/4016781545.md)
+- [JSAPI调起医保自费混合支付](https://pay.weixin.qq.com/doc/v3/merchant/4016781549.md)
+- [医保混合收款成功通知](https://pay.weixin.qq.com/doc/v3/merchant/4016781554.md)
+### 医保退款
+- [医保退款通知](https://pay.weixin.qq.com/doc/v3/merchant/4016781561.md)
+
+## 请求示例
+- [使用医保自费混合订单号查看下单结果 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781479-curl.md)
+- [使用医保自费混合订单号查看下单结果 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781479-java.md)
+- [使用医保自费混合订单号查看下单结果 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781479-go.md)
+- [使用商户订单号查看下单结果 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781490-curl.md)
+- [使用商户订单号查看下单结果 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781490-java.md)
+- [使用商户订单号查看下单结果 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781490-go.md)
+- [医保自费混合收款下单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781466-curl.md)
+- [医保自费混合收款下单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781466-java.md)
+- [医保自费混合收款下单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781466-go.md)
+- [医保退款通知 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781561-curl.md)
+- [医保退款通知 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781561-java.md)
+- [医保退款通知 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4016781561-go.md)
+
+## 附录
+- [申请医保支付权限](https://pay.weixin.qq.com/doc/v3/merchant/4016824675.md)
+- [接入医保亲情付指引](https://pay.weixin.qq.com/doc/v3/merchant/4016975471.md)
+- [UI规范与页面说明](https://pay.weixin.qq.com/doc/v3/merchant/4021595091.md)
+- [测试及环境切换](https://pay.weixin.qq.com/doc/v3/merchant/4021773498.md)
+

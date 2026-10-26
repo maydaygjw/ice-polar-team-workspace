@@ -1,0 +1,35 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 订单退款（普通服务商）文档索引
+
+> 订单退款为商户提供交易逆向服务，支持全额与部分退款，可按订单发起退款申请，资金原路退回用户账户，支持状态查询与流程追溯，保障售后资金安全，提升消费体验与商户合规能力。
+
+## 接入指引
+- [业务示例代码](https://pay.weixin.qq.com/doc/v3/partner/4015217325.md)
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4013080622.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4013080629.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4013080623.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4013080630.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807195.md)
+
+## API 列表
+- [申请退款](https://pay.weixin.qq.com/doc/v3/partner/4013080625.md)
+- [查询单笔退款（通过商户退款单号）](https://pay.weixin.qq.com/doc/v3/partner/4013080626.md)
+- [发起异常退款](https://pay.weixin.qq.com/doc/v3/partner/4013080627.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v3/partner/4013080628.md)
+
+## 请求示例
+- [发起异常退款 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080627-curl.md)
+- [发起异常退款 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080627-java.md)
+- [发起异常退款 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080627-go.md)
+- [查询单笔退款（通过商户退款单号） - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080626-curl.md)
+- [查询单笔退款（通过商户退款单号） - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080626-java.md)
+- [查询单笔退款（通过商户退款单号） - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080626-go.md)
+- [申请退款 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080625-curl.md)
+- [申请退款 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080625-java.md)
+- [申请退款 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080625-go.md)
+
+## 附录
+- [退款操作指引](https://pay.weixin.qq.com/doc/v3/partner/4013080632.md)
+- [微信支付退款最佳实践](https://pay.weixin.qq.com/doc/v3/partner/4014960215.md)
+

@@ -1,0 +1,16 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 平台证书（普通商户）文档索引
+
+> 平台证书与微信支付公钥作用相同，用于验签与敏感字段加解密，保障交易与数据安全，但每次申请的有效期为5年，即每5年，商户需要更换一次证书，可与微信支付公钥切换使用。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4012068814.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/merchant/4012069411.md)
+
+## API 列表
+- [下载平台证书](https://pay.weixin.qq.com/doc/v3/merchant/4012551764.md)
+
+## 附录
+- [平台证书更换操作指引](https://pay.weixin.qq.com/doc/v3/merchant/4012068829.md)
+

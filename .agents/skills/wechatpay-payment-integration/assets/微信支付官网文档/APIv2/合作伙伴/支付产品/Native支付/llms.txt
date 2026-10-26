@@ -1,0 +1,26 @@
+>更新时间：2026.10.24
+
+# 微信支付 - Native支付（普通服务商）文档索引
+
+> Native 支付即扫码支付，商户通过接口生成支付二维码，用户使用微信扫码即可完成付款，适用于门店、线下商超、自助设备等线下场景，接入简单、稳定高效，是线下商户主流收款方式之一。（V2版本接口采用XML作为数据交互的格式）
+
+## 接入指引
+- [协议规则](https://pay.weixin.qq.com/doc/v2/partner/4011987403.md)
+- [场景介绍](https://pay.weixin.qq.com/doc/v2/partner/4011989226.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v2/partner/4011989242.md)
+- [支付账户](https://pay.weixin.qq.com/doc/v2/partner/4011987869.md)
+- [案例介绍](https://pay.weixin.qq.com/doc/v2/partner/4011989236.md)
+
+## API 列表
+- [统一下单](https://pay.weixin.qq.com/doc/v2/partner/4011989255.md)
+- [查询订单](https://pay.weixin.qq.com/doc/v2/partner/4011989256.md)
+- [关闭订单](https://pay.weixin.qq.com/doc/v2/partner/4011989257.md)
+- [申请退款](https://pay.weixin.qq.com/doc/v2/partner/4011989258.md)
+- [查询退款](https://pay.weixin.qq.com/doc/v2/partner/4011989259.md)
+- [下载交易账单](https://pay.weixin.qq.com/doc/v2/partner/4011989260.md)
+- [下载资金账单](https://pay.weixin.qq.com/doc/v2/partner/4014314700.md)
+- [支付结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011989262.md)
+- [交易保障](https://pay.weixin.qq.com/doc/v2/partner/4011989263.md)
+- [转换短链接](https://pay.weixin.qq.com/doc/v2/partner/4011989264.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011989265.md)
+

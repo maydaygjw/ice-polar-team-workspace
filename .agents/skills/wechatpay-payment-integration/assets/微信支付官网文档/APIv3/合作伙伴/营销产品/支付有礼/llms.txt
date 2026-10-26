@@ -1,0 +1,50 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 支付有礼（普通服务商）文档索引
+
+> 支付有礼是支付后营销工具，用户完成支付即可自动发放优惠券、礼品等权益，帮助商户引导复购、提升客单。支持多种优惠形式与精准投放，打通支付与营销闭环，降低运营成本，提升用户粘性与交易转化。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012072117.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012072119.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012072118.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807415.md)
+
+## API 列表
+- [图片上传（营销专用）](https://pay.weixin.qq.com/doc/v3/partner/4012760270.md)
+### 支付有礼活动
+- [创建全场满额送活动](https://pay.weixin.qq.com/doc/v3/partner/4012492900.md)
+- [获取活动详情接口](https://pay.weixin.qq.com/doc/v3/partner/4012492967.md)
+- [获取活动发券商户号](https://pay.weixin.qq.com/doc/v3/partner/4012466191.md)
+- [获取活动指定商品列表](https://pay.weixin.qq.com/doc/v3/partner/4012466492.md)
+- [终止活动](https://pay.weixin.qq.com/doc/v3/partner/4012466633.md)
+- [新增活动发券商户号](https://pay.weixin.qq.com/doc/v3/partner/4012466735.md)
+- [获取支付有礼活动列表](https://pay.weixin.qq.com/doc/v3/partner/4012493214.md)
+- [删除活动发券商户号](https://pay.weixin.qq.com/doc/v3/partner/4012466827.md)
+
+## 请求示例
+- [创建全场满额送活动 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492900-curl.md)
+- [创建全场满额送活动 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492900-java.md)
+- [创建全场满额送活动 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492900-go.md)
+- [删除活动发券商户号 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466827-curl.md)
+- [删除活动发券商户号 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466827-java.md)
+- [删除活动发券商户号 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466827-go.md)
+- [新增活动发券商户号 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466735-curl.md)
+- [新增活动发券商户号 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466735-java.md)
+- [新增活动发券商户号 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466735-go.md)
+- [终止活动 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466633-curl.md)
+- [终止活动 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466633-java.md)
+- [终止活动 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466633-go.md)
+- [获取支付有礼活动列表 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012493214-curl.md)
+- [获取支付有礼活动列表 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012493214-java.md)
+- [获取支付有礼活动列表 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012493214-go.md)
+- [获取活动发券商户号 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466191-curl.md)
+- [获取活动发券商户号 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466191-java.md)
+- [获取活动发券商户号 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466191-go.md)
+- [获取活动指定商品列表 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466492-curl.md)
+- [获取活动指定商品列表 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466492-java.md)
+- [获取活动指定商品列表 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012466492-go.md)
+- [获取活动详情接口 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492967-curl.md)
+- [获取活动详情接口 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492967-java.md)
+- [获取活动详情接口 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492967-go.md)
+

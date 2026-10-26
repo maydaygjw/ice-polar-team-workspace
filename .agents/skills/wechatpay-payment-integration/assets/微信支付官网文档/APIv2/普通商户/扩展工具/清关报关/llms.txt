@@ -1,0 +1,16 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 清关报关（普通商户）文档索引
+
+> 清关报关是微信支付面向跨境商户的自助清关工具，商户可在商户平台开通并配置海关信息，通过接口将支付单推送至海关电子口岸，完成 “三单合一” 申报，助力跨境订单合规通关，提升清关效率，免费使用。
+
+## 接入指引
+- [协议规则](https://pay.weixin.qq.com/doc/v2/merchant/4011987319.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/merchant/4011997907.md)
+- [开通指引](https://pay.weixin.qq.com/doc/v2/merchant/4011985104.md)
+
+## API 列表
+- [订单附加信息提交接口](https://pay.weixin.qq.com/doc/v2/merchant/4011985151.md)
+- [订单附加信息查询接口](https://pay.weixin.qq.com/doc/v2/merchant/4011985273.md)
+- [订单附加信息重推接口](https://pay.weixin.qq.com/doc/v2/merchant/4011985318.md)
+

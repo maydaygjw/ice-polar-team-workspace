@@ -1,0 +1,23 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 微信支付公钥（普通商户）文档索引
+
+> 微信支付公钥可用于验证微信支付应答与回调消息的真实性与完整性，防止伪造与篡改，同时可对敏感信息进行加解密，保障交易与数据安全。商户在 API 安全页面申请下载，一次申请永久有效。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4012153196.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/merchant/4013038816.md)
+
+## API 列表
+- [商户签名验签／加解密测试](https://pay.weixin.qq.com/doc/v3/merchant/4014551946.md)
+- [回调接口](https://pay.weixin.qq.com/doc/v3/merchant/4015164042.md)
+
+## 请求示例
+- [商户签名验签／加解密测试 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4014551946-curl.md)
+- [商户签名验签／加解密测试 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4014551946-java.md)
+- [商户签名验签／加解密测试 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4014551946-go.md)
+
+## 附录
+- [如何从平台证书切换成微信支付公钥](https://pay.weixin.qq.com/doc/v3/merchant/4012154180.md)
+- [如何从微信支付公钥切换成平台证书](https://pay.weixin.qq.com/doc/v3/merchant/4015419357.md)
+

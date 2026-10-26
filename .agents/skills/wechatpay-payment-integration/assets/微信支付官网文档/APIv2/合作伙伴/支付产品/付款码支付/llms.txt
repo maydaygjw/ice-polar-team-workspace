@@ -1,0 +1,27 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 付款码支付（普通服务商）文档索引
+
+> 付款码支付是微信支付面向线下商户的面对面收银产品。用户出示微信付款码，商户用扫码设备读取后，收银系统调用接口发起支付。适用于商超、餐饮、医院、景区等实体门店，到账快、操作简便、适配各类收银设备。
+
+## 接入指引
+- [协议规则](https://pay.weixin.qq.com/doc/v2/partner/4011987387.md)
+- [场景介绍](https://pay.weixin.qq.com/doc/v2/partner/4011941052.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/partner/4016429693.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v2/partner/4011941160.md)
+- [支付账户](https://pay.weixin.qq.com/doc/v2/partner/4011987842.md)
+- [案例介绍](https://pay.weixin.qq.com/doc/v2/partner/4011941075.md)
+- [验证密码规则](https://pay.weixin.qq.com/doc/v2/partner/4011941057.md)
+
+## API 列表
+- [ 付款码支付](https://pay.weixin.qq.com/doc/v2/partner/4011941293.md)
+- [查询订单](https://pay.weixin.qq.com/doc/v2/partner/4012202507.md)
+- [撤销订单](https://pay.weixin.qq.com/doc/v2/partner/4012218602.md)
+- [申请退款](https://pay.weixin.qq.com/doc/v2/partner/4011941447.md)
+- [查询退款](https://pay.weixin.qq.com/doc/v2/partner/4011941513.md)
+- [下载交易账单](https://pay.weixin.qq.com/doc/v2/partner/4011941628.md)
+- [下载资金账单](https://pay.weixin.qq.com/doc/v2/partner/4012181559.md)
+- [交易保障](https://pay.weixin.qq.com/doc/v2/partner/4011941680.md)
+- [付款码查询openid](https://pay.weixin.qq.com/doc/v2/partner/4011941724.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011941745.md)
+

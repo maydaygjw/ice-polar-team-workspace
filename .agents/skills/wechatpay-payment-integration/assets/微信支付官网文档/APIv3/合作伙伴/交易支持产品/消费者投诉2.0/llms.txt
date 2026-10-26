@@ -1,0 +1,75 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 消费者投诉2.0（普通服务商）文档索引
+
+> 消费者投诉 2.0 提供商户端线上投诉协同处理能力，支持实时获取投诉信息、在线协商、上传凭证、反馈处理结果，全流程可追溯。帮助商户高效处理交易纠纷，提升用户体验，降低合规与经营风险，适配多行业售后管理。
+
+## 接入指引
+- [业务示例代码](https://pay.weixin.qq.com/doc/v3/partner/4015933338.md)
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012072827.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4016111688.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012072858.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012072844.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807424.md)
+
+## API 列表
+### 主动查询投诉信息
+- [查询投诉单列表](https://pay.weixin.qq.com/doc/v3/partner/4012691285.md)
+- [查询投诉单详情](https://pay.weixin.qq.com/doc/v3/partner/4012691648.md)
+- [查询投诉单协商历史](https://pay.weixin.qq.com/doc/v3/partner/4012691802.md)
+### 实时获取投诉信息
+- [投诉通知回调](https://pay.weixin.qq.com/doc/v3/partner/4012076174.md)
+- [创建投诉通知回调地址](https://pay.weixin.qq.com/doc/v3/partner/4012458106.md)
+- [查询投诉通知回调地址](https://pay.weixin.qq.com/doc/v3/partner/4012459065.md)
+- [更新投诉通知回调地址](https://pay.weixin.qq.com/doc/v3/partner/4012459287.md)
+- [删除投诉通知回调地址](https://pay.weixin.qq.com/doc/v3/partner/4012460474.md)
+### 商户处理用户投诉
+- [回复用户](https://pay.weixin.qq.com/doc/v3/partner/4012467213.md)
+- [反馈处理完成](https://pay.weixin.qq.com/doc/v3/partner/4012467217.md)
+- [更新退款审批结果](https://pay.weixin.qq.com/doc/v3/partner/4012467218.md)
+- [回复需要即时服务的投诉单](https://pay.weixin.qq.com/doc/v3/partner/4017151726.md)
+### 商户反馈图片
+- [图片上传接口](https://pay.weixin.qq.com/doc/v3/partner/4012467222.md)
+- [图片请求接口](https://pay.weixin.qq.com/doc/v3/partner/4012467223.md)
+
+## 请求示例
+- [创建投诉通知回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012458106-curl.md)
+- [创建投诉通知回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012458106-java.md)
+- [创建投诉通知回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012458106-go.md)
+- [删除投诉通知回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460474-curl.md)
+- [删除投诉通知回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460474-java.md)
+- [删除投诉通知回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460474-go.md)
+- [反馈处理完成 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467217-curl.md)
+- [反馈处理完成 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467217-java.md)
+- [反馈处理完成 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467217-go.md)
+- [回复用户 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467213-curl.md)
+- [回复用户 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467213-java.md)
+- [回复用户 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467213-go.md)
+- [回复需要即时服务的投诉单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4017151726-curl.md)
+- [回复需要即时服务的投诉单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4017151726-java.md)
+- [回复需要即时服务的投诉单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4017151726-go.md)
+- [图片上传接口 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467222-curl.md)
+- [图片上传接口 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467222-java.md)
+- [图片上传接口 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467222-go.md)
+- [图片请求接口 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467223-curl.md)
+- [图片请求接口 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467223-java.md)
+- [图片请求接口 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467223-go.md)
+- [更新投诉通知回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012459287-curl.md)
+- [更新投诉通知回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012459287-java.md)
+- [更新投诉通知回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012459287-go.md)
+- [更新退款审批结果 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467218-curl.md)
+- [更新退款审批结果 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467218-java.md)
+- [更新退款审批结果 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467218-go.md)
+- [查询投诉单列表 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691285-curl.md)
+- [查询投诉单列表 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691285-java.md)
+- [查询投诉单列表 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691285-go.md)
+- [查询投诉单协商历史 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691802-curl.md)
+- [查询投诉单协商历史 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691802-java.md)
+- [查询投诉单协商历史 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691802-go.md)
+- [查询投诉单详情 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691648-curl.md)
+- [查询投诉单详情 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691648-java.md)
+- [查询投诉单详情 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012691648-go.md)
+- [查询投诉通知回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012459065-curl.md)
+- [查询投诉通知回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012459065-java.md)
+- [查询投诉通知回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012459065-go.md)
+

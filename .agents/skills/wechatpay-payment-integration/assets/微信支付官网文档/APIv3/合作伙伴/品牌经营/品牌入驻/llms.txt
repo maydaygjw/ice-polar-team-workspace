@@ -1,0 +1,37 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 品牌入驻（普通服务商）文档索引
+
+> 品牌入驻是商户开通微信支付品牌经营能力的前提，商户提交资质经审核通过后，即可获得品牌账号，开展品牌门店、营销活动及商家名片会员管理等相关工作。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4016433410.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4017027854.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4016985537.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4023126821.md)
+
+## API 列表
+- [提交入驻申请](https://pay.weixin.qq.com/doc/v3/partner/4016249989.md)
+- [根据业务申请编号查询申请状态](https://pay.weixin.qq.com/doc/v3/partner/4016257694.md)
+- [根据申请单ID查询申请状态](https://pay.weixin.qq.com/doc/v3/partner/4016257685.md)
+- [撤销申请](https://pay.weixin.qq.com/doc/v3/partner/4016257700.md)
+- [图片上传](https://pay.weixin.qq.com/doc/v3/partner/4016276333.md)
+
+## 请求示例
+- [提交入驻申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016249989-curl.md)
+- [提交入驻申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016249989-java.md)
+- [提交入驻申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016249989-go.md)
+- [撤销申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257700-curl.md)
+- [撤销申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257700-java.md)
+- [撤销申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257700-go.md)
+- [根据业务申请编号查询申请状态 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257694-curl.md)
+- [根据业务申请编号查询申请状态 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257694-java.md)
+- [根据业务申请编号查询申请状态 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257694-go.md)
+- [根据申请单ID查询申请状态 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257685-curl.md)
+- [根据申请单ID查询申请状态 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257685-java.md)
+- [根据申请单ID查询申请状态 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016257685-go.md)
+
+## 附录
+- [品牌能力介绍](https://pay.weixin.qq.com/doc/v3/partner/4016433389.md)
+- [服务商申请品牌授权流程](https://pay.weixin.qq.com/doc/v3/partner/4016026183.md)
+

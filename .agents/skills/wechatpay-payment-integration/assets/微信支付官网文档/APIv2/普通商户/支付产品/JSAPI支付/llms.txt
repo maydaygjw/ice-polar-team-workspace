@@ -1,0 +1,29 @@
+>更新时间：2026.10.24
+
+# 微信支付 - JSAPI支付（普通商户）文档索引
+
+> JSAPI 支付是微信支付面向微信内置浏览器场景的收款产品，支持用户在微信内完成选购、确认支付、验密扣款全流程，支付后可返回商户页面，主要用于公众号、微信内网页收款场景。（V2版本接口采用XML作为数据交互的格式）
+
+## 接入指引
+- [协议规则](https://pay.weixin.qq.com/doc/v2/merchant/4011986592.md)
+- [场景介绍](https://pay.weixin.qq.com/doc/v2/merchant/4011935206.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/merchant/4011935211.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v2/merchant/4011935209.md)
+- [接入前准备](https://pay.weixin.qq.com/doc/v2/merchant/4011935208.md)
+- [支付账户](https://pay.weixin.qq.com/doc/v2/merchant/4011987995.md)
+- [案例介绍](https://pay.weixin.qq.com/doc/v2/merchant/4011935207.md)
+- [获取微信版本号](https://pay.weixin.qq.com/doc/v2/merchant/4011935210.md)
+
+## API 列表
+- [统一下单](https://pay.weixin.qq.com/doc/v2/merchant/4011935214.md)
+- [JSAPI调起支付](https://pay.weixin.qq.com/doc/v2/merchant/4011935213.md)
+- [查询订单](https://pay.weixin.qq.com/doc/v2/merchant/4011935215.md)
+- [关闭订单](https://pay.weixin.qq.com/doc/v2/merchant/4011935216.md)
+- [申请退款](https://pay.weixin.qq.com/doc/v2/merchant/4011935217.md)
+- [查询退款](https://pay.weixin.qq.com/doc/v2/merchant/4011935218.md)
+- [下载交易账单](https://pay.weixin.qq.com/doc/v2/merchant/4011935219.md)
+- [下载资金账单](https://pay.weixin.qq.com/doc/v2/merchant/4011935220.md)
+- [支付结果通知](https://pay.weixin.qq.com/doc/v2/merchant/4011935221.md)
+- [交易保障](https://pay.weixin.qq.com/doc/v2/merchant/4011935222.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v2/merchant/4011935223.md)
+

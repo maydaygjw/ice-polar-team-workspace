@@ -1,0 +1,29 @@
+>更新时间：2026.10.24
+
+# 微信支付 - APP支付（普通服务商）文档索引
+
+> APP 支付为商户提供移动端 APP 内的微信支付能力，用户在商户 APP 中唤起微信完成支付后返回该应用，适用于电商、游戏、生活服务等各类独立 APP 的支付场景。（V2版本接口采用XML作为数据交互的格式）
+
+## 接入指引
+- [API详细说明](https://pay.weixin.qq.com/doc/v2/partner/4011941169.md)
+- [APP端开发步骤](https://pay.weixin.qq.com/doc/v2/partner/4011941201.md)
+- [协议规则](https://pay.weixin.qq.com/doc/v2/partner/4011987436.md)
+- [场景介绍](https://pay.weixin.qq.com/doc/v2/partner/4011941082.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/partner/4017131483.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v2/partner/4011941134.md)
+- [支付账户](https://pay.weixin.qq.com/doc/v2/partner/4011987878.md)
+- [案例及规范](https://pay.weixin.qq.com/doc/v2/partner/4011941110.md)
+
+## API 列表
+- [统一下单](https://pay.weixin.qq.com/doc/v2/partner/4011941377.md)
+- [调起支付接口](https://pay.weixin.qq.com/doc/v2/partner/4011941437.md)
+- [支付结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011941679.md)
+- [查询订单](https://pay.weixin.qq.com/doc/v2/partner/4011941754.md)
+- [关闭订单](https://pay.weixin.qq.com/doc/v2/partner/4011960250.md)
+- [申请退款](https://pay.weixin.qq.com/doc/v2/partner/4011973419.md)
+- [查询退款](https://pay.weixin.qq.com/doc/v2/partner/4011981589.md)
+- [下载交易账单](https://pay.weixin.qq.com/doc/v2/partner/4011983298.md)
+- [下载资金账单](https://pay.weixin.qq.com/doc/v2/partner/4014314705.md)
+- [交易保障](https://pay.weixin.qq.com/doc/v2/partner/4011984115.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011984153.md)
+

@@ -1,0 +1,35 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 下载账单（普通服务商）文档索引
+
+> 下载账单提供交易、资金、退款、分账等多维度对账文件，支持按时间筛选获取明细，用于财务核对、结算审计与数据归档，帮助商户清晰管理资金流水，提升账务处理效率与透明度。
+
+## 接入指引
+- [业务示例代码](https://pay.weixin.qq.com/doc/v3/partner/4015988147.md)
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4013080592.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4013080602.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4013080593.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807196.md)
+
+## API 列表
+- [申请所有/单个特约商户交易账单](https://pay.weixin.qq.com/doc/v3/partner/4013080595.md)
+- [申请服务商资金账单](https://pay.weixin.qq.com/doc/v3/partner/4013080596.md)
+- [申请单个子商户资金账单](https://pay.weixin.qq.com/doc/v3/partner/4012760249.md)
+- [下载账单](https://pay.weixin.qq.com/doc/v3/partner/4013080597.md)
+
+## 请求示例
+- [申请单个子商户资金账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012760249-curl.md)
+- [申请单个子商户资金账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012760249-java.md)
+- [申请单个子商户资金账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012760249-go.md)
+- [申请所有/单个特约商户交易账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080595-curl.md)
+- [申请所有/单个特约商户交易账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080595-java.md)
+- [申请所有/单个特约商户交易账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080595-go.md)
+- [申请服务商资金账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080596-curl.md)
+- [申请服务商资金账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080596-java.md)
+- [申请服务商资金账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013080596-go.md)
+
+## 附录
+- [交易账单详细说明](https://pay.weixin.qq.com/doc/v3/partner/4013080599.md)
+- [资金账单详细说明](https://pay.weixin.qq.com/doc/v3/partner/4013080600.md)
+- [平台下载账单操作指引](https://pay.weixin.qq.com/doc/v3/partner/4013080601.md)
+

@@ -1,0 +1,63 @@
+>更新时间：2026.10.24
+
+# 微信支付 - JSAPI支付（普通商户）文档索引
+
+> JSAPI 支付是微信支付面向微信内置浏览器场景的收款产品，支持用户在微信内完成选购、确认支付、验密扣款全流程，支付后可返回商户页面，主要用于公众号、微信内网页收款场景。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4012062524.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/merchant/4012791869.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/merchant/4012791870.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/merchant/4015423216.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/merchant/4020634199.md)
+
+## API 列表
+- [JSAPI下单](https://pay.weixin.qq.com/doc/v3/merchant/4012791856.md)
+- [JSAPI调起支付](https://pay.weixin.qq.com/doc/v3/merchant/4012791857.md)
+- [微信支付订单号查询订单](https://pay.weixin.qq.com/doc/v3/merchant/4012791858.md)
+- [商户订单号查询订单](https://pay.weixin.qq.com/doc/v3/merchant/4012791859.md)
+- [关闭订单](https://pay.weixin.qq.com/doc/v3/merchant/4012791860.md)
+- [支付成功回调通知](https://pay.weixin.qq.com/doc/v3/merchant/4012791861.md)
+- [退款申请](https://pay.weixin.qq.com/doc/v3/merchant/4012791862.md)
+- [查询单笔退款（通过商户退款单号）](https://pay.weixin.qq.com/doc/v3/merchant/4012791863.md)
+- [发起异常退款](https://pay.weixin.qq.com/doc/v3/merchant/4012791864.md)
+- [退款结果回调通知](https://pay.weixin.qq.com/doc/v3/merchant/4012791865.md)
+- [申请交易账单](https://pay.weixin.qq.com/doc/v3/merchant/4012791866.md)
+- [申请资金账单](https://pay.weixin.qq.com/doc/v3/merchant/4012791867.md)
+- [下载账单](https://pay.weixin.qq.com/doc/v3/merchant/4012791868.md)
+
+## 请求示例
+- [JSAPI下单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791856-curl.md)
+- [JSAPI下单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791856-java.md)
+- [JSAPI下单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791856-go.md)
+- [关闭订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791860-curl.md)
+- [关闭订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791860-java.md)
+- [关闭订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791860-go.md)
+- [发起异常退款 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791864-curl.md)
+- [发起异常退款 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791864-java.md)
+- [发起异常退款 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791864-go.md)
+- [商户订单号查询订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791859-curl.md)
+- [商户订单号查询订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791859-java.md)
+- [商户订单号查询订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791859-go.md)
+- [微信支付订单号查询订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791858-curl.md)
+- [微信支付订单号查询订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791858-java.md)
+- [微信支付订单号查询订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791858-go.md)
+- [查询单笔退款（通过商户退款单号） - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791863-curl.md)
+- [查询单笔退款（通过商户退款单号） - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791863-java.md)
+- [查询单笔退款（通过商户退款单号） - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791863-go.md)
+- [申请交易账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791866-curl.md)
+- [申请交易账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791866-java.md)
+- [申请交易账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791866-go.md)
+- [申请资金账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791867-curl.md)
+- [申请资金账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791867-java.md)
+- [申请资金账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791867-go.md)
+- [退款申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791862-curl.md)
+- [退款申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791862-java.md)
+- [退款申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012791862-go.md)
+
+## 附录
+- [管理商户号绑定的APPID账号](https://pay.weixin.qq.com/doc/v3/merchant/4013287010.md)
+- [配置JSAPI支付授权目录](https://pay.weixin.qq.com/doc/v3/merchant/4013287088.md)
+- [申请JSAPI支付权限指引](https://pay.weixin.qq.com/doc/v3/merchant/4012791854.md)
+- [各主体可申请的基础支付权限列表](https://pay.weixin.qq.com/doc/v3/merchant/4015420731.md)
+

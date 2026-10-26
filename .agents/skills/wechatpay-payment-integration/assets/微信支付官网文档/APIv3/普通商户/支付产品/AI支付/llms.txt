@@ -1,0 +1,13 @@
+>更新时间：2026.10.24
+
+# 微信支付 - AI支付（普通商户）文档索引
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4035576700.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/merchant/4035576771.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/merchant/4035576716.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/merchant/4035576711.md)
+
+## API 列表
+- [x402预下单](https://pay.weixin.qq.com/doc/v3/merchant/4035576740.md)
+

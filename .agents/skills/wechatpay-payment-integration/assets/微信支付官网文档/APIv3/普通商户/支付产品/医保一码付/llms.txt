@@ -1,0 +1,14 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 医保一码付（普通商户）文档索引
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4026275563.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/merchant/4026276043.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/merchant/4026276029.md)
+
+## 附录
+- [签约入口说明 ](https://pay.weixin.qq.com/doc/v3/merchant/4026379305.md)
+- [申请一码付权限](https://pay.weixin.qq.com/doc/v3/merchant/4026292912.md)
+- [测试信息准备和验收注意事项](https://pay.weixin.qq.com/doc/v3/merchant/4026303367.md)
+

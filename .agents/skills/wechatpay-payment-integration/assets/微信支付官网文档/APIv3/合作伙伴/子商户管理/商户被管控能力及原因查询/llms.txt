@@ -1,0 +1,18 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 商户被管控能力及原因查询（普通服务商）文档索引
+
+> 服务商可查询子商户支付、提现、退款、分账等功能管控状态，同步获取管控原因、解脱路径与处理指引，快速定位问题并协助商户提交材料办理解除管控，提升商户异常处理效率，保障正常经营与资金流转。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012165270.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807430.md)
+
+## API 列表
+- [查询子商户管控情况 ](https://pay.weixin.qq.com/doc/v3/partner/4012803072.md)
+
+## 请求示例
+- [查询子商户管控情况  - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012803072-curl.md)
+- [查询子商户管控情况  - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012803072-java.md)
+- [查询子商户管控情况  - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012803072-go.md)
+

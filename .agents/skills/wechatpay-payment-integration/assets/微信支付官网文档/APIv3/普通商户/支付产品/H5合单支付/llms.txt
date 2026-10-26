@@ -1,0 +1,53 @@
+>更新时间：2026.10.24
+
+# 微信支付 - H5合单支付（普通商户）文档索引
+
+> H5合单支付，提供商户在手机浏览器网页（非微信客户端内部浏览器）中实现将多个商户的订单（普通商户模式只支持2-10笔订单，单笔收款请使用H5支付）整合为一个订单进行收款的能力。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4013421104.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/merchant/4013421196.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/merchant/4012078230.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/merchant/4015764448.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/merchant/4020800552.md)
+
+## API 列表
+- [H5合单下单](https://pay.weixin.qq.com/doc/v3/merchant/4012556961.md)
+- [H5调起支付](https://pay.weixin.qq.com/doc/v3/merchant/4012266131.md)
+- [查询合单订单](https://pay.weixin.qq.com/doc/v3/merchant/4013421126.md)
+- [关闭合单订单](https://pay.weixin.qq.com/doc/v3/merchant/4013421130.md)
+- [合单订单支付成功回调通知](https://pay.weixin.qq.com/doc/v3/merchant/4013421143.md)
+- [退款申请](https://pay.weixin.qq.com/doc/v3/merchant/4013421148.md)
+- [查询单笔退款（通过商户退款单号）](https://pay.weixin.qq.com/doc/v3/merchant/4013421156.md)
+- [发起异常退款](https://pay.weixin.qq.com/doc/v3/merchant/4013421164.md)
+- [退款结果回调通知](https://pay.weixin.qq.com/doc/v3/merchant/4013421172.md)
+- [申请交易账单](https://pay.weixin.qq.com/doc/v3/merchant/4013421176.md)
+- [申请资金账单](https://pay.weixin.qq.com/doc/v3/merchant/4013421185.md)
+- [下载账单](https://pay.weixin.qq.com/doc/v3/merchant/4013421189.md)
+
+## 请求示例
+- [H5合单下单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012556961-curl.md)
+- [H5合单下单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012556961-java.md)
+- [H5合单下单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012556961-go.md)
+- [关闭合单订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421130-curl.md)
+- [关闭合单订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421130-java.md)
+- [关闭合单订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421130-go.md)
+- [发起异常退款 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421164-curl.md)
+- [发起异常退款 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421164-java.md)
+- [发起异常退款 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421164-go.md)
+- [查询单笔退款（通过商户退款单号） - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421156-curl.md)
+- [查询单笔退款（通过商户退款单号） - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421156-java.md)
+- [查询单笔退款（通过商户退款单号） - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421156-go.md)
+- [查询合单订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421126-curl.md)
+- [查询合单订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421126-java.md)
+- [查询合单订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421126-go.md)
+- [申请交易账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421176-curl.md)
+- [申请交易账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421176-java.md)
+- [申请交易账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421176-go.md)
+- [申请资金账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421185-curl.md)
+- [申请资金账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421185-java.md)
+- [申请资金账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421185-go.md)
+- [退款申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421148-curl.md)
+- [退款申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421148-java.md)
+- [退款申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4013421148-go.md)
+

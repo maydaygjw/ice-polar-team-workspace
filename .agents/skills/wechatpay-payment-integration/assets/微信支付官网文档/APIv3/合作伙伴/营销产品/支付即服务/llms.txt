@@ -1,0 +1,38 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 支付即服务（普通服务商）文档索引
+
+> 用户完成微信支付后，自动展示服务入口，快速连接售后、客服等场景。缩短服务路径，提升用户体验与服务效率，降低商户客服成本，适用于零售、餐饮、生活服务等多行业售后链路。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012076036.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4016913657.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012076038.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012076037.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807418.md)
+
+## API 列表
+- [服务人员查询](https://pay.weixin.qq.com/doc/v3/partner/4012688558.md)
+- [服务人员注册](https://pay.weixin.qq.com/doc/v3/partner/4012688564.md)
+- [服务人员更新](https://pay.weixin.qq.com/doc/v3/partner/4012688570.md)
+- [服务人员分配](https://pay.weixin.qq.com/doc/v3/partner/4012474145.md)
+
+## 请求示例
+- [服务人员分配 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474145-curl.md)
+- [服务人员分配 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474145-java.md)
+- [服务人员分配 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012474145-go.md)
+- [服务人员更新 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688570-curl.md)
+- [服务人员更新 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688570-java.md)
+- [服务人员更新 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688570-go.md)
+- [服务人员查询 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688558-curl.md)
+- [服务人员查询 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688558-java.md)
+- [服务人员查询 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688558-go.md)
+- [服务人员注册 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688564-curl.md)
+- [服务人员注册 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688564-java.md)
+- [服务人员注册 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012688564-go.md)
+
+## 附录
+- [服务人员称谓申请指引](https://pay.weixin.qq.com/doc/v3/partner/4012076039.md)
+- [免开发版本操作指引](https://pay.weixin.qq.com/doc/v3/partner/4012076040.md)
+- [个人微信服务人员注册](https://pay.weixin.qq.com/doc/v3/partner/4012076041.md)
+

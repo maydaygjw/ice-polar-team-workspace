@@ -1,0 +1,53 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 微信支付分停车服务（普通商户）文档索引
+
+> 微信支付分停车服务基于用户微信账户和车牌的绑定关系，依托微信支付分，在车辆离场时对绑定账户自动扣费。用户一次开通，全国支付分停车场均可使用。提升车场通行效率与用户体验，减少离场拥堵。
+
+## 接入指引
+- [产品介绍 ](https://pay.weixin.qq.com/doc/v3/merchant/4012077223.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/merchant/4016183517.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/merchant/4012077649.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/merchant/4012077356.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/merchant/4020807295.md)
+
+## API 列表
+### 停车入场
+- [创建停车入场](https://pay.weixin.qq.com/doc/v3/merchant/4012533937.md)
+- [停车入场状态变更通知](https://pay.weixin.qq.com/doc/v3/merchant/4012284177.md)
+### 服务
+- [查询车牌服务开通信息](https://pay.weixin.qq.com/doc/v3/merchant/4012534043.md)
+- [小程序调起支付分停车服务开通页](https://pay.weixin.qq.com/doc/v3/merchant/4012284186.md)
+- [H5调起微信支付分停车服务开通页](https://pay.weixin.qq.com/doc/v3/merchant/4012284235.md)
+- [App拉起微信支付分停车服务开通页](https://pay.weixin.qq.com/doc/v3/merchant/4012284257.md)
+### 扣费受理
+- [查询订单](https://pay.weixin.qq.com/doc/v3/merchant/4012534308.md)
+- [扣费受理](https://pay.weixin.qq.com/doc/v3/merchant/4012534352.md)
+- [订单支付结果通知](https://pay.weixin.qq.com/doc/v3/merchant/4012284311.md)
+### 还款
+- [微信垫资还款](https://pay.weixin.qq.com/doc/v3/merchant/4012284369.md)
+### 退款
+- [退款申请](https://pay.weixin.qq.com/doc/v3/merchant/4012557131.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v3/merchant/4012083103.md)
+- [查询单笔退款（通过商户退款单号）](https://pay.weixin.qq.com/doc/v3/merchant/4012557161.md)
+
+## 请求示例
+- [创建停车入场 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012533937-curl.md)
+- [创建停车入场 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012533937-java.md)
+- [创建停车入场 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012533937-go.md)
+- [扣费受理 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534352-curl.md)
+- [扣费受理 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534352-java.md)
+- [扣费受理 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534352-go.md)
+- [查询单笔退款（通过商户退款单号） - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012557161-curl.md)
+- [查询单笔退款（通过商户退款单号） - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012557161-java.md)
+- [查询单笔退款（通过商户退款单号） - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012557161-go.md)
+- [查询订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534308-curl.md)
+- [查询订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534308-java.md)
+- [查询订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534308-go.md)
+- [查询车牌服务开通信息 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534043-curl.md)
+- [查询车牌服务开通信息 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534043-java.md)
+- [查询车牌服务开通信息 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012534043-go.md)
+- [退款申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012557131-curl.md)
+- [退款申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012557131-java.md)
+- [退款申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012557131-go.md)
+

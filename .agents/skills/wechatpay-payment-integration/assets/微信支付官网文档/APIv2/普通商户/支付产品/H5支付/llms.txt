@@ -1,0 +1,28 @@
+>更新时间：2026.10.24
+
+# 微信支付 - H5支付（普通商户）文档索引
+
+> H5 支付为商户提供在手机浏览器网页（非微信客户端内部浏览器）中使用微信支付收款的能力，用户在浏览器发起支付时会跳转到微信内，支付后可返回浏览器中商户的H5页面。（V2版本接口采用XML作为数据交互的格式）
+
+## 接入指引
+- [业务流程](https://pay.weixin.qq.com/doc/v2/merchant/4011936317.md)
+- [协议规则](https://pay.weixin.qq.com/doc/v2/merchant/4011986641.md)
+- [场景介绍](https://pay.weixin.qq.com/doc/v2/merchant/4011936237.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/merchant/4011936869.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v2/merchant/4011936565.md)
+- [支付账户](https://pay.weixin.qq.com/doc/v2/merchant/4011988025.md)
+- [案例介绍](https://pay.weixin.qq.com/doc/v2/merchant/4011936298.md)
+- [获取用户ip指引](https://pay.weixin.qq.com/doc/v2/merchant/4011937139.md)
+
+## API 列表
+- [统一下单](https://pay.weixin.qq.com/doc/v2/merchant/4011937163.md)
+- [查询订单](https://pay.weixin.qq.com/doc/v2/merchant/4011937309.md)
+- [关闭订单](https://pay.weixin.qq.com/doc/v2/merchant/4011937390.md)
+- [申请退款](https://pay.weixin.qq.com/doc/v2/merchant/4011937424.md)
+- [查询退款](https://pay.weixin.qq.com/doc/v2/merchant/4011937471.md)
+- [下载交易账单](https://pay.weixin.qq.com/doc/v2/merchant/4011937545.md)
+- [下载资金账单](https://pay.weixin.qq.com/doc/v2/merchant/4011937603.md)
+- [支付结果通知](https://pay.weixin.qq.com/doc/v2/merchant/4011938508.md)
+- [交易保障](https://pay.weixin.qq.com/doc/v2/merchant/4011939423.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v2/merchant/4011939475.md)
+

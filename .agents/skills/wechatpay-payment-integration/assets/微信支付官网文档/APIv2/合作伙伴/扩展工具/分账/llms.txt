@@ -1,0 +1,29 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 分账（普通服务商）文档索引
+
+> 分账是商户用于交易资金分配的工具，支持将资金分给合作伙伴、员工、用户等分润方。资金先冻结，可实时或延时分账，单笔最多分 50 次、每次可分 50 方，支持商户或个人账户接收，需设置最大分账比例，全程免手续费。（V2版本接口采用XML作为数据交互的格式）
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v2/partner/4011984322.md)
+- [协议规则](https://pay.weixin.qq.com/doc/v2/partner/4011987559.md)
+- [对接步骤](https://pay.weixin.qq.com/doc/v2/partner/4011984375.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/partner/4011984438.md)
+- [开通流程](https://pay.weixin.qq.com/doc/v2/partner/4011984344.md)
+
+## API 列表
+- [请求单次分账](https://pay.weixin.qq.com/doc/v2/partner/4011984565.md)
+- [请求多次分账](https://pay.weixin.qq.com/doc/v2/partner/4011984646.md)
+- [查询分账结果](https://pay.weixin.qq.com/doc/v2/partner/4011984717.md)
+- [添加分账接收方](https://pay.weixin.qq.com/doc/v2/partner/4011984782.md)
+- [删除分账接收方](https://pay.weixin.qq.com/doc/v2/partner/4011984847.md)
+- [完结分账](https://pay.weixin.qq.com/doc/v2/partner/4011984879.md)
+- [查询订单待分账金额](https://pay.weixin.qq.com/doc/v2/partner/4011985079.md)
+- [查询最大分账比例API](https://pay.weixin.qq.com/doc/v2/partner/4011985120.md)
+- [分账回退](https://pay.weixin.qq.com/doc/v2/partner/4011985177.md)
+- [回退结果查询](https://pay.weixin.qq.com/doc/v2/partner/4011985243.md)
+- [分账动账通知](https://pay.weixin.qq.com/doc/v2/partner/4011985282.md)
+
+## 附录
+- [分账失败处理指引](https://pay.weixin.qq.com/doc/v2/partner/4015505153.md)
+

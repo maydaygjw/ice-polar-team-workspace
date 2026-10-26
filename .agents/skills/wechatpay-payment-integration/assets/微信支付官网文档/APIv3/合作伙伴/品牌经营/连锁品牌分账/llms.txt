@@ -1,0 +1,62 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 连锁品牌分账（普通服务商）文档索引
+
+> 连锁品牌分账提供了品牌对门店、连锁业态其它参与者进行更灵活的资金管理能力，支持实时（支付后30s内）、延时分账，单笔最多分 50 次、每次可分 50 方。
+
+## 接入指引
+- [业务示例代码](https://pay.weixin.qq.com/doc/v3/partner/4015871675.md)
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012072620.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4015981574.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012072637.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012072625.md)
+
+## API 列表
+- [请求分账](https://pay.weixin.qq.com/doc/v3/partner/4012692975.md)
+- [查询分账结果](https://pay.weixin.qq.com/doc/v3/partner/4012467002.md)
+- [请求分账回退](https://pay.weixin.qq.com/doc/v3/partner/4012467097.md)
+- [查询分账回退结果](https://pay.weixin.qq.com/doc/v3/partner/4012467011.md)
+- [解冻剩余资金](https://pay.weixin.qq.com/doc/v3/partner/4012467016.md)
+- [查询订单剩余待分金额](https://pay.weixin.qq.com/doc/v3/partner/4012467021.md)
+- [查询最大分账比例](https://pay.weixin.qq.com/doc/v3/partner/4012467022.md)
+- [添加分账接收方](https://pay.weixin.qq.com/doc/v3/partner/4012467100.md)
+- [删除分账接收方](https://pay.weixin.qq.com/doc/v3/partner/4012467103.md)
+- [分账动账通知](https://pay.weixin.qq.com/doc/v3/partner/4012075400.md)
+- [申请分账账单](https://pay.weixin.qq.com/doc/v3/partner/4012715572.md)
+- [下载账单](https://pay.weixin.qq.com/doc/v3/partner/4012076073.md)
+
+## 请求示例
+- [删除分账接收方 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467103-curl.md)
+- [删除分账接收方 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467103-java.md)
+- [删除分账接收方 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467103-go.md)
+- [查询分账回退结果 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467011-curl.md)
+- [查询分账回退结果 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467011-java.md)
+- [查询分账回退结果 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467011-go.md)
+- [查询分账结果 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467002-curl.md)
+- [查询分账结果 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467002-java.md)
+- [查询分账结果 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467002-go.md)
+- [查询最大分账比例 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467022-curl.md)
+- [查询最大分账比例 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467022-java.md)
+- [查询最大分账比例 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467022-go.md)
+- [查询订单剩余待分金额 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467021-curl.md)
+- [查询订单剩余待分金额 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467021-java.md)
+- [查询订单剩余待分金额 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467021-go.md)
+- [添加分账接收方 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467100-curl.md)
+- [添加分账接收方 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467100-java.md)
+- [添加分账接收方 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467100-go.md)
+- [申请分账账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012715572-curl.md)
+- [申请分账账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012715572-java.md)
+- [申请分账账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012715572-go.md)
+- [解冻剩余资金 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467016-curl.md)
+- [解冻剩余资金 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467016-java.md)
+- [解冻剩余资金 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467016-go.md)
+- [请求分账 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012692975-curl.md)
+- [请求分账 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012692975-java.md)
+- [请求分账 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012692975-go.md)
+- [请求分账回退 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467097-curl.md)
+- [请求分账回退 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467097-java.md)
+- [请求分账回退 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012467097-go.md)
+
+## 附录
+- [分账失败处理指引](https://pay.weixin.qq.com/doc/v3/partner/4015504918.md)
+

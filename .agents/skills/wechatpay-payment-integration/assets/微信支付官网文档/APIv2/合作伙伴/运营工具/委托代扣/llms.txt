@@ -1,0 +1,32 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 委托代扣（普通服务商）文档索引
+
+> 用户授权后商户可按约定自动扣款，覆盖周期续费、先享后付等场景，简化会员、缴费、出行等支付流程，提升续费与服务履约效率
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v2/partner/4011988358.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/partner/4011988386.md)
+
+## API 列表
+### 纯签约API
+- [公众号纯签约 ](https://pay.weixin.qq.com/doc/v2/partner/4011988365.md)
+- [APP纯签约](https://pay.weixin.qq.com/doc/v2/partner/4011988366.md)
+- [小程序纯签约](https://pay.weixin.qq.com/doc/v2/partner/4011988367.md)
+- [H5纯签约 ](https://pay.weixin.qq.com/doc/v2/partner/4011988368.md)
+- [APP调起签约](https://pay.weixin.qq.com/doc/v2/partner/4016049199.md)
+### 扣款及解约API
+- [申请扣款](https://pay.weixin.qq.com/doc/v2/partner/4011988372.md)
+- [预扣费通知API](https://pay.weixin.qq.com/doc/v2/partner/4011988373.md)
+- [申请解约](https://pay.weixin.qq.com/doc/v2/partner/4011988374.md)
+### 查询及回调通知API
+- [扣款结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011988376.md)
+- [查询订单](https://pay.weixin.qq.com/doc/v2/partner/4011988377.md)
+- [签约、解约结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011988378.md)
+- [查询签约关系](https://pay.weixin.qq.com/doc/v2/partner/4011988379.md)
+### 基础API
+- [申请退款](https://pay.weixin.qq.com/doc/v2/partner/4011988381.md)
+- [查询退款](https://pay.weixin.qq.com/doc/v2/partner/4011988382.md)
+- [关闭订单](https://pay.weixin.qq.com/doc/v2/partner/4011988383.md)
+- [下载交易账单](https://pay.weixin.qq.com/doc/v2/partner/4011988384.md)
+

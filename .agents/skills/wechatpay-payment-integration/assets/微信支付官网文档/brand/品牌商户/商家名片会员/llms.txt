@@ -1,0 +1,78 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 商家名片会员（品牌商户）文档索引
+
+> 商家名片会员是基于商家名片的会员运营工具，需开通名片后使用，可结合支付流程引导用户入会，跳转商家小程序会员相关页面，发放会员券的能力，结合微信生态能力向品牌商家提供更丰富的会员解决方案，帮助商家提升会员运营效率。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/brand/4015562403.md)
+- [常见问题](https://pay.weixin.qq.com/doc/brand/4017418570.md)
+- [开发指引](https://pay.weixin.qq.com/doc/brand/4015562404.md)
+- [错误码](https://pay.weixin.qq.com/doc/brand/4022247862.md)
+
+## API 列表
+- [图片上传](https://pay.weixin.qq.com/doc/brand/4015680641.md)
+### 会员卡模板管理
+- [创建会员卡模板](https://pay.weixin.qq.com/doc/brand/4015582711.md)
+- [查询会员卡模板列表](https://pay.weixin.qq.com/doc/brand/4015582712.md)
+- [查询会员卡模板信息](https://pay.weixin.qq.com/doc/brand/4015582715.md)
+- [修改会员卡模板信息](https://pay.weixin.qq.com/doc/brand/4015582722.md)
+- [作废会员卡模板](https://pay.weixin.qq.com/doc/brand/4015582724.md)
+### 用户会员卡管理
+- [查询用户会员卡信息](https://pay.weixin.qq.com/doc/brand/4015582716.md)
+- [查询用户在品牌下所有会员卡](https://pay.weixin.qq.com/doc/brand/4015582718.md)
+- [修改用户会员卡信息](https://pay.weixin.qq.com/doc/brand/4015582719.md)
+- [作废用户会员卡](https://pay.weixin.qq.com/doc/brand/4015582726.md)
+### 用户开通会员卡
+- [品牌会员入会组件预授权](https://pay.weixin.qq.com/doc/brand/4015582733.md)
+- [小程序拉起品牌会员入会组件](https://pay.weixin.qq.com/doc/brand/4015582737.md)
+- [H5拉起品牌会员入会组件](https://pay.weixin.qq.com/doc/brand/4015582734.md)
+### 商家同步会员身份
+- [根据OPENID导入用户会员卡](https://pay.weixin.qq.com/doc/brand/4015582744.md)
+- [同步会员开通结果](https://pay.weixin.qq.com/doc/brand/4015582750.md)
+### 事件通知
+- [会员卡事件通知](https://pay.weixin.qq.com/doc/brand/4015582700.md)
+### 用户动态
+- [下单同步用户实时动态](https://pay.weixin.qq.com/doc/brand/4015562429.md)
+
+## 请求示例
+- [作废会员卡模板 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582724-curl.md)
+- [作废会员卡模板 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582724-java.md)
+- [作废会员卡模板 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582724-go.md)
+- [作废用户会员卡 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582726-curl.md)
+- [作废用户会员卡 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582726-java.md)
+- [作废用户会员卡 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582726-go.md)
+- [修改会员卡模板信息 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582722-curl.md)
+- [修改会员卡模板信息 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582722-java.md)
+- [修改会员卡模板信息 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582722-go.md)
+- [修改用户会员卡信息 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582719-curl.md)
+- [修改用户会员卡信息 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582719-java.md)
+- [修改用户会员卡信息 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582719-go.md)
+- [创建会员卡模板 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582711-curl.md)
+- [创建会员卡模板 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582711-java.md)
+- [创建会员卡模板 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582711-go.md)
+- [同步会员开通结果 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582750-curl.md)
+- [同步会员开通结果 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582750-java.md)
+- [同步会员开通结果 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582750-go.md)
+- [品牌会员入会组件预授权 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582733-curl.md)
+- [品牌会员入会组件预授权 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582733-java.md)
+- [品牌会员入会组件预授权 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582733-go.md)
+- [图片上传 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015680641-curl.md)
+- [图片上传 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015680641-java.md)
+- [图片上传 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015680641-go.md)
+- [查询会员卡模板信息 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582715-curl.md)
+- [查询会员卡模板信息 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582715-java.md)
+- [查询会员卡模板信息 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582715-go.md)
+- [查询会员卡模板列表 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582712-curl.md)
+- [查询会员卡模板列表 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582712-java.md)
+- [查询会员卡模板列表 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582712-go.md)
+- [查询用户会员卡信息 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582716-curl.md)
+- [查询用户会员卡信息 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582716-java.md)
+- [查询用户会员卡信息 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582716-go.md)
+- [查询用户在品牌下所有会员卡 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582718-curl.md)
+- [查询用户在品牌下所有会员卡 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582718-java.md)
+- [查询用户在品牌下所有会员卡 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582718-go.md)
+- [根据OPENID导入用户会员卡 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015582744-curl.md)
+- [根据OPENID导入用户会员卡 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015582744-java.md)
+- [根据OPENID导入用户会员卡 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015582744-go.md)
+

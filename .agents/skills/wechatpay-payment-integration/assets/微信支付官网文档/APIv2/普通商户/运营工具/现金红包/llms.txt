@@ -1,0 +1,17 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 现金红包（普通商户）文档索引
+
+> 现金红包是微信支付提供的营销工具，商户可以通过公众号或者服务通知向用户发放现金红包。用户领取红包后，资金到达用户微信支付零钱账户；若用户未领取， 资金将会在24小时后退回商户的微信支付账户中。适用于拉新、促活、福利发放等场景。
+
+## 接入指引
+- [产品说明](https://pay.weixin.qq.com/doc/v2/merchant/4011957949.md)
+- [协议规则](https://pay.weixin.qq.com/doc/v2/merchant/4011986664.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/merchant/4016241735.md)
+- [操作指导](https://pay.weixin.qq.com/doc/v2/merchant/4011960255.md)
+- [支付账户](https://pay.weixin.qq.com/doc/v2/merchant/4011988039.md)
+
+## API 列表
+- [发放红包接口](https://pay.weixin.qq.com/doc/v2/merchant/4011974053.md)
+- [查询红包记录](https://pay.weixin.qq.com/doc/v2/merchant/4011981612.md)
+

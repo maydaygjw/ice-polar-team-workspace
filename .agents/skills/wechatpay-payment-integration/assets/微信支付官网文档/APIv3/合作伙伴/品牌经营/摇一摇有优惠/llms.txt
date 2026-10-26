@@ -1,0 +1,46 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 摇一摇有优惠（普通服务商）文档索引
+
+> 摇一摇有优惠是微信支付的支付后互动营销功能，依据用户消费偏好在支付完成页快速发放优惠，简化领券与核销链路，帮助商户提升复购、实现精细化运营，使用前需完成商家名片配置或品牌门店创建。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4015782374.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4017418618.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4016110225.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4016060552.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4023148504.md)
+
+## API 列表
+### 投放计划
+- [创建投放计划](https://pay.weixin.qq.com/doc/v3/partner/4016184554.md)
+- [分页查询投放计划列表](https://pay.weixin.qq.com/doc/v3/partner/4016184563.md)
+- [更新投放计划](https://pay.weixin.qq.com/doc/v3/partner/4016184594.md)
+- [终止投放计划](https://pay.weixin.qq.com/doc/v3/partner/4016184572.md)
+- [设置投放计划回调地址](https://pay.weixin.qq.com/doc/v3/partner/4016184598.md)
+- [投放计划状态变更通知](https://pay.weixin.qq.com/doc/v3/partner/4016168699.md)
+
+## 请求示例
+- [分页查询投放计划列表 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184563-curl.md)
+- [分页查询投放计划列表 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184563-java.md)
+- [分页查询投放计划列表 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184563-go.md)
+- [创建投放计划 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184554-curl.md)
+- [创建投放计划 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184554-java.md)
+- [创建投放计划 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184554-go.md)
+- [更新投放计划 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184594-curl.md)
+- [更新投放计划 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184594-java.md)
+- [更新投放计划 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184594-go.md)
+- [终止投放计划 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184572-curl.md)
+- [终止投放计划 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184572-java.md)
+- [终止投放计划 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184572-go.md)
+- [设置投放计划回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184598-curl.md)
+- [设置投放计划回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184598-java.md)
+- [设置投放计划回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016184598-go.md)
+
+## 附录
+- [投放计划功能介绍](https://pay.weixin.qq.com/doc/v3/partner/4016402231.md)
+- [投放计划配置指引](https://pay.weixin.qq.com/doc/v3/partner/4016111064.md)
+- [品牌信息用户端展示规则](https://pay.weixin.qq.com/doc/v3/partner/4016110939.md)
+- [权限申请](https://pay.weixin.qq.com/doc/v3/partner/4015788437.md)
+- [运营规则](https://pay.weixin.qq.com/doc/v3/partner/4017294537.md)
+

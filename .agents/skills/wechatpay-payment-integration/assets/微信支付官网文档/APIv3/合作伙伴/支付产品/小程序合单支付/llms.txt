@@ -1,0 +1,52 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 小程序合单支付（普通服务商）文档索引
+
+> 服务商模式小程序合单支付，提供服务商在微信小程序中实现将多个子商户的订单整合为一个订单进行收款的能力。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012079334.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4013462619.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012166836.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020804476.md)
+
+## API 列表
+- [小程序合单下单](https://pay.weixin.qq.com/doc/v3/partner/4012758246.md)
+- [小程序调起支付](https://pay.weixin.qq.com/doc/v3/partner/4012166847.md)
+- [查询合单订单](https://pay.weixin.qq.com/doc/v3/partner/4013462520.md)
+- [关闭合单订单](https://pay.weixin.qq.com/doc/v3/partner/4013462566.md)
+- [合单订单支付成功回调通知](https://pay.weixin.qq.com/doc/v3/partner/4013462574.md)
+- [申请退款](https://pay.weixin.qq.com/doc/v3/partner/4013462579.md)
+- [查询单笔退款（按商户退款单号）](https://pay.weixin.qq.com/doc/v3/partner/4013462581.md)
+- [发起异常退款](https://pay.weixin.qq.com/doc/v3/partner/4013462582.md)
+- [退款结果回调通知](https://pay.weixin.qq.com/doc/v3/partner/4013462586.md)
+- [申请所有/单个子商户交易账单](https://pay.weixin.qq.com/doc/v3/partner/4013462604.md)
+- [申请服务商资金账单](https://pay.weixin.qq.com/doc/v3/partner/4013462607.md)
+- [下载账单](https://pay.weixin.qq.com/doc/v3/partner/4013462614.md)
+
+## 请求示例
+- [关闭合单订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462566-curl.md)
+- [关闭合单订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462566-java.md)
+- [关闭合单订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462566-go.md)
+- [发起异常退款 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462582-curl.md)
+- [发起异常退款 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462582-java.md)
+- [发起异常退款 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462582-go.md)
+- [小程序合单下单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012758246-curl.md)
+- [小程序合单下单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012758246-java.md)
+- [小程序合单下单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012758246-go.md)
+- [查询单笔退款（按商户退款单号） - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462581-curl.md)
+- [查询单笔退款（按商户退款单号） - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462581-java.md)
+- [查询单笔退款（按商户退款单号） - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462581-go.md)
+- [查询合单订单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462520-curl.md)
+- [查询合单订单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462520-java.md)
+- [查询合单订单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462520-go.md)
+- [申请所有/单个子商户交易账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462604-curl.md)
+- [申请所有/单个子商户交易账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462604-java.md)
+- [申请所有/单个子商户交易账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462604-go.md)
+- [申请服务商资金账单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462607-curl.md)
+- [申请服务商资金账单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462607-java.md)
+- [申请服务商资金账单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462607-go.md)
+- [申请退款 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462579-curl.md)
+- [申请退款 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462579-java.md)
+- [申请退款 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4013462579-go.md)
+

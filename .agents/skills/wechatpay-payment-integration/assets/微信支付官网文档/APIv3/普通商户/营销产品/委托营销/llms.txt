@@ -1,0 +1,24 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 委托营销（普通商户）文档索引
+
+> 委托营销是微信支付面向小程序直播等场景推出的授权营销工具，商户在商户平台创建券批次后，可通过接口授权给指定小程序 AppID，用于直播插件内发券，实现券创建与投放权限分离管理。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/merchant/4012063104.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/merchant/4012063233.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/merchant/4012063130.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/merchant/4020801597.md)
+
+## API 列表
+- [建立合作关系](https://pay.weixin.qq.com/doc/v3/merchant/4012380498.md)
+- [查询合作关系列表](https://pay.weixin.qq.com/doc/v3/merchant/4012380536.md)
+
+## 请求示例
+- [建立合作关系 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012380498-curl.md)
+- [建立合作关系 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012380498-java.md)
+- [建立合作关系 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012380498-go.md)
+- [查询合作关系列表 - curl 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012380536-curl.md)
+- [查询合作关系列表 - Java 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012380536-java.md)
+- [查询合作关系列表 - Go 示例](https://pay.weixin.qq.com/doc/v3/merchant/4012380536-go.md)
+

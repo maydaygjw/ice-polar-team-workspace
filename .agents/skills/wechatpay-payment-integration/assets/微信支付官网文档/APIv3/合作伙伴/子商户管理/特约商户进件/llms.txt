@@ -1,0 +1,43 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 特约商户进件（普通服务商）文档索引
+
+> 面向普通服务商的高效进件接口，支持个体户、企业、机关事业单位及其他组织快速接入，可对接自有系统提升效率，入驻后自动绑定 AppID 快速交易，支持优惠费率与快捷验证，还可协助修改结算账户，大幅降低人工录入成本，规范商户准入流程。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012062365.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4016058480.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012062379.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012062375.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807426.md)
+
+## API 列表
+- [提交申请单](https://pay.weixin.qq.com/doc/v3/partner/4012719997.md)
+- [申请单号查询申请状态](https://pay.weixin.qq.com/doc/v3/partner/4012697052.md)
+- [业务申请编号查询申请状态](https://pay.weixin.qq.com/doc/v3/partner/4012697168.md)
+- [修改结算账户](https://pay.weixin.qq.com/doc/v3/partner/4012761102.md)
+- [查询结算账户](https://pay.weixin.qq.com/doc/v3/partner/4012761113.md)
+- [查询结算账户修改申请状态](https://pay.weixin.qq.com/doc/v3/partner/4012761120.md)
+- [文件上传](https://pay.weixin.qq.com/doc/v3/partner/4012760490.md)
+- [视频上传](https://pay.weixin.qq.com/doc/v3/partner/4012761084.md)
+
+## 请求示例
+- [业务申请编号查询申请状态 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012697168-curl.md)
+- [业务申请编号查询申请状态 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012697168-java.md)
+- [业务申请编号查询申请状态 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012697168-go.md)
+- [修改结算账户 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761102-curl.md)
+- [修改结算账户 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761102-java.md)
+- [修改结算账户 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761102-go.md)
+- [提交申请单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012719997-curl.md)
+- [提交申请单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012719997-java.md)
+- [提交申请单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012719997-go.md)
+- [查询结算账户 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761113-curl.md)
+- [查询结算账户 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761113-java.md)
+- [查询结算账户 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761113-go.md)
+- [查询结算账户修改申请状态 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761120-curl.md)
+- [查询结算账户修改申请状态 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761120-java.md)
+- [查询结算账户修改申请状态 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012761120-go.md)
+- [申请单号查询申请状态 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012697052-curl.md)
+- [申请单号查询申请状态 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012697052-java.md)
+- [申请单号查询申请状态 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012697052-go.md)
+

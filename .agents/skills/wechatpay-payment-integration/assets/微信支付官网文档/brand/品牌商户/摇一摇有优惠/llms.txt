@@ -1,0 +1,57 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 摇一摇有优惠（品牌商户）文档索引
+
+> 摇一摇有优惠是微信支付的支付后互动营销功能，依据用户消费偏好在支付完成页快速发放优惠，简化领券与核销链路，帮助商户提升复购、实现精细化运营，使用前需完成商家名片配置或品牌门店创建。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/brand/4015782176.md)
+- [常见问题](https://pay.weixin.qq.com/doc/brand/4017418651.md)
+- [开发指引](https://pay.weixin.qq.com/doc/brand/4016081508.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/brand/4016060309.md)
+- [错误码](https://pay.weixin.qq.com/doc/brand/4023120617.md)
+
+## API 列表
+### 投放计划
+- [创建投放计划](https://pay.weixin.qq.com/doc/brand/4018381114.md)
+- [分页查询投放计划列表](https://pay.weixin.qq.com/doc/brand/4018381151.md)
+- [提交投放计划](https://pay.weixin.qq.com/doc/brand/4018381190.md)
+- [暂停投放计划](https://pay.weixin.qq.com/doc/brand/4018381165.md)
+- [恢复投放计划](https://pay.weixin.qq.com/doc/brand/4018381172.md)
+- [更新投放计划](https://pay.weixin.qq.com/doc/brand/4018381209.md)
+- [终止投放计划](https://pay.weixin.qq.com/doc/brand/4018381201.md)
+- [设置投放计划回调地址](https://pay.weixin.qq.com/doc/brand/4018381183.md)
+- [投放计划状态变更通知](https://pay.weixin.qq.com/doc/brand/4018869623.md)
+
+## 请求示例
+- [分页查询投放计划列表 - curl 示例](https://pay.weixin.qq.com/doc/brand/4018381151-curl.md)
+- [分页查询投放计划列表 - Java 示例](https://pay.weixin.qq.com/doc/brand/4018381151-java.md)
+- [分页查询投放计划列表 - Go 示例](https://pay.weixin.qq.com/doc/brand/4018381151-go.md)
+- [创建投放计划 - curl 示例](https://pay.weixin.qq.com/doc/brand/4018381114-curl.md)
+- [创建投放计划 - Java 示例](https://pay.weixin.qq.com/doc/brand/4018381114-java.md)
+- [创建投放计划 - Go 示例](https://pay.weixin.qq.com/doc/brand/4018381114-go.md)
+- [恢复投放计划 - curl 示例](https://pay.weixin.qq.com/doc/brand/4018381172-curl.md)
+- [恢复投放计划 - Java 示例](https://pay.weixin.qq.com/doc/brand/4018381172-java.md)
+- [恢复投放计划 - Go 示例](https://pay.weixin.qq.com/doc/brand/4018381172-go.md)
+- [提交投放计划 - curl 示例](https://pay.weixin.qq.com/doc/brand/4018381190-curl.md)
+- [提交投放计划 - Java 示例](https://pay.weixin.qq.com/doc/brand/4018381190-java.md)
+- [提交投放计划 - Go 示例](https://pay.weixin.qq.com/doc/brand/4018381190-go.md)
+- [暂停投放计划 - curl 示例](https://pay.weixin.qq.com/doc/brand/4018381165-curl.md)
+- [暂停投放计划 - Java 示例](https://pay.weixin.qq.com/doc/brand/4018381165-java.md)
+- [暂停投放计划 - Go 示例](https://pay.weixin.qq.com/doc/brand/4018381165-go.md)
+- [更新投放计划 - curl 示例](https://pay.weixin.qq.com/doc/brand/4018381209-curl.md)
+- [更新投放计划 - Java 示例](https://pay.weixin.qq.com/doc/brand/4018381209-java.md)
+- [更新投放计划 - Go 示例](https://pay.weixin.qq.com/doc/brand/4018381209-go.md)
+- [终止投放计划 - curl 示例](https://pay.weixin.qq.com/doc/brand/4018381201-curl.md)
+- [终止投放计划 - Java 示例](https://pay.weixin.qq.com/doc/brand/4018381201-java.md)
+- [终止投放计划 - Go 示例](https://pay.weixin.qq.com/doc/brand/4018381201-go.md)
+- [设置投放计划回调地址 - curl 示例](https://pay.weixin.qq.com/doc/brand/4018381183-curl.md)
+- [设置投放计划回调地址 - Java 示例](https://pay.weixin.qq.com/doc/brand/4018381183-java.md)
+- [设置投放计划回调地址 - Go 示例](https://pay.weixin.qq.com/doc/brand/4018381183-go.md)
+
+## 附录
+- [品牌信息用户端展示规则](https://pay.weixin.qq.com/doc/brand/4016104049.md)
+- [投放计划配置指引](https://pay.weixin.qq.com/doc/brand/4016080826.md)
+- [权限申请](https://pay.weixin.qq.com/doc/brand/4016080147.md)
+- [运营规则](https://pay.weixin.qq.com/doc/brand/4017294555.md)
+

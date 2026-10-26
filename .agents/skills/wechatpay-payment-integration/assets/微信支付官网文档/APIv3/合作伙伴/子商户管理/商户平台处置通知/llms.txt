@@ -1,0 +1,35 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 商户平台处置通知（普通服务商）文档索引
+
+> 为服务商提供子商户风险处置相关的回调通知服务，覆盖处罚、拦截、申诉三种通知类型，便于服务商快速响应处理，避免因逾期处置导致商户功能受限，提升商户风控管理与合规运营效率。
+
+## 接入指引
+- [业务示例代码](https://pay.weixin.qq.com/doc/v3/partner/4015949382.md)
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012064844.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012064853.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012064851.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807428.md)
+
+## API 列表
+### 商户违规通知回调
+- [查询商户违规通知回调地址](https://pay.weixin.qq.com/doc/v3/partner/4012471327.md)
+- [修改商户违规通知回调地址](https://pay.weixin.qq.com/doc/v3/partner/4012471330.md)
+- [创建商户违规通知回调地址](https://pay.weixin.qq.com/doc/v3/partner/4012471333.md)
+- [删除商户违规通知回调地址](https://pay.weixin.qq.com/doc/v3/partner/4012471334.md)
+- [商户平台处置记录回调通知](https://pay.weixin.qq.com/doc/v3/partner/4012079216.md)
+
+## 请求示例
+- [修改商户违规通知回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471330-curl.md)
+- [修改商户违规通知回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471330-java.md)
+- [修改商户违规通知回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471330-go.md)
+- [创建商户违规通知回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471333-curl.md)
+- [创建商户违规通知回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471333-java.md)
+- [创建商户违规通知回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471333-go.md)
+- [删除商户违规通知回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471334-curl.md)
+- [删除商户违规通知回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471334-java.md)
+- [删除商户违规通知回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471334-go.md)
+- [查询商户违规通知回调地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471327-curl.md)
+- [查询商户违规通知回调地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471327-java.md)
+- [查询商户违规通知回调地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012471327-go.md)
+

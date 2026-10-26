@@ -1,0 +1,82 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 代金券（普通服务商）文档索引
+
+> 微信支付官方营销工具，支持商户配置满减、折扣等券型，可在支付前发放、支付中自动核销。支持线上线下多场景投放，数据实时可查，助力商户拉新、复购与客流提升，适配多行业营销需求。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012087800.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4015880931.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012087802.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012087801.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807413.md)
+
+## API 列表
+- [核销事件回调通知](https://pay.weixin.qq.com/doc/v3/partner/4012285807.md)
+- [图片上传（营销专用）](https://pay.weixin.qq.com/doc/v3/partner/4012759802.md)
+### 批次
+- [创建代金券批次](https://pay.weixin.qq.com/doc/v3/partner/4012534537.md)
+- [激活代金券批次](https://pay.weixin.qq.com/doc/v3/partner/4012460237.md)
+- [暂停代金券批次](https://pay.weixin.qq.com/doc/v3/partner/4012460340.md)
+- [重启代金券批次](https://pay.weixin.qq.com/doc/v3/partner/4012460448.md)
+- [条件查询批次列表](https://pay.weixin.qq.com/doc/v3/partner/4012460518.md)
+- [查询批次详情](https://pay.weixin.qq.com/doc/v3/partner/4012460606.md)
+- [查询代金券可用商户](https://pay.weixin.qq.com/doc/v3/partner/4012463409.md)
+- [查询代金券可用单品](https://pay.weixin.qq.com/doc/v3/partner/4012463475.md)
+- [下载批次退款明细](https://pay.weixin.qq.com/doc/v3/partner/4012463548.md)
+- [下载批次核销明细](https://pay.weixin.qq.com/doc/v3/partner/4012463698.md)
+### 券
+- [根据商户号查用户的券](https://pay.weixin.qq.com/doc/v3/partner/4012494237.md)
+- [发放指定批次的代金券](https://pay.weixin.qq.com/doc/v3/partner/4012463807.md)
+- [查询代金券详情](https://pay.weixin.qq.com/doc/v3/partner/4012492796.md)
+### 消息通知地址
+- [查询代金券消息通知地址](https://pay.weixin.qq.com/doc/v3/partner/4012464155.md)
+- [设置代金券消息通知地址](https://pay.weixin.qq.com/doc/v3/partner/4012464176.md)
+
+## 请求示例
+- [下载批次核销明细 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463698-curl.md)
+- [下载批次核销明细 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463698-java.md)
+- [下载批次核销明细 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463698-go.md)
+- [下载批次退款明细 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463548-curl.md)
+- [下载批次退款明细 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463548-java.md)
+- [下载批次退款明细 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463548-go.md)
+- [创建代金券批次 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012534537-curl.md)
+- [创建代金券批次 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012534537-java.md)
+- [创建代金券批次 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012534537-go.md)
+- [发放指定批次的代金券 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463807-curl.md)
+- [发放指定批次的代金券 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463807-java.md)
+- [发放指定批次的代金券 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463807-go.md)
+- [暂停代金券批次 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460340-curl.md)
+- [暂停代金券批次 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460340-java.md)
+- [暂停代金券批次 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460340-go.md)
+- [条件查询批次列表 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460518-curl.md)
+- [条件查询批次列表 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460518-java.md)
+- [条件查询批次列表 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460518-go.md)
+- [查询代金券可用单品 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463475-curl.md)
+- [查询代金券可用单品 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463475-java.md)
+- [查询代金券可用单品 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463475-go.md)
+- [查询代金券可用商户 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463409-curl.md)
+- [查询代金券可用商户 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463409-java.md)
+- [查询代金券可用商户 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012463409-go.md)
+- [查询代金券消息通知地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012464155-curl.md)
+- [查询代金券消息通知地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012464155-java.md)
+- [查询代金券消息通知地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012464155-go.md)
+- [查询代金券详情 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492796-curl.md)
+- [查询代金券详情 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492796-java.md)
+- [查询代金券详情 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012492796-go.md)
+- [查询批次详情 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460606-curl.md)
+- [查询批次详情 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460606-java.md)
+- [查询批次详情 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460606-go.md)
+- [根据商户号查用户的券 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012494237-curl.md)
+- [根据商户号查用户的券 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012494237-java.md)
+- [根据商户号查用户的券 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012494237-go.md)
+- [激活代金券批次 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460237-curl.md)
+- [激活代金券批次 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460237-java.md)
+- [激活代金券批次 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460237-go.md)
+- [设置代金券消息通知地址 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012464176-curl.md)
+- [设置代金券消息通知地址 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012464176-java.md)
+- [设置代金券消息通知地址 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012464176-go.md)
+- [重启代金券批次 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460448-curl.md)
+- [重启代金券批次 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460448-java.md)
+- [重启代金券批次 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012460448-go.md)
+

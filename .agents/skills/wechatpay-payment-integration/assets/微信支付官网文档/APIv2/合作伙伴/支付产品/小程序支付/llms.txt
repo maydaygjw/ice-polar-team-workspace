@@ -1,0 +1,29 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 小程序支付（普通服务商）文档索引
+
+> 小程序支付提供了让用户在微信小程序内进行支付的能力，小程序内调起支付无需跳转页面，支付体验流畅，适用于小程序电商、餐饮、本地生活等场景，提升转化与复购。（V2版本接口采用XML作为数据交互的格式）
+
+## 接入指引
+- [业务说明](https://pay.weixin.qq.com/doc/v2/partner/4011983136.md)
+- [协议规则](https://pay.weixin.qq.com/doc/v2/partner/4011987445.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v2/partner/4017131449.md)
+- [开发前必读](https://pay.weixin.qq.com/doc/v2/partner/4011983115.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v2/partner/4011983152.md)
+- [接入方式对比](https://pay.weixin.qq.com/doc/v2/partner/4011983154.md)
+- [支付账户](https://pay.weixin.qq.com/doc/v2/partner/4011987898.md)
+- [附录](https://pay.weixin.qq.com/doc/v2/partner/4011981636.md)
+
+## API 列表
+- [小程序调起支付API](https://pay.weixin.qq.com/doc/v2/partner/4011983201.md)
+- [统一下单](https://pay.weixin.qq.com/doc/v2/partner/4011983228.md)
+- [查询订单](https://pay.weixin.qq.com/doc/v2/partner/4011983277.md)
+- [关闭订单](https://pay.weixin.qq.com/doc/v2/partner/4011984036.md)
+- [申请退款](https://pay.weixin.qq.com/doc/v2/partner/4011984092.md)
+- [查询退款](https://pay.weixin.qq.com/doc/v2/partner/4011984212.md)
+- [下载交易账单](https://pay.weixin.qq.com/doc/v2/partner/4011984262.md)
+- [下载资金账单](https://pay.weixin.qq.com/doc/v2/partner/4014314714.md)
+- [支付结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011984334.md)
+- [交易保障](https://pay.weixin.qq.com/doc/v2/partner/4011984409.md)
+- [退款结果通知](https://pay.weixin.qq.com/doc/v2/partner/4011984440.md)
+

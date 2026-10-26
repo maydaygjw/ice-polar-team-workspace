@@ -1,0 +1,55 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 停车缴费服务（普通服务商）文档索引
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4019514964.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4019514982.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4020339052.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4019515014.md)
+
+## API 列表
+- [提交停车场进件申请](https://pay.weixin.qq.com/doc/v3/partner/4019557780.md)
+- [查询停车场进件申请单](https://pay.weixin.qq.com/doc/v3/partner/4019557794.md)
+- [查询停车场进件申请单列表](https://pay.weixin.qq.com/doc/v3/partner/4019557811.md)
+- [撤回停车场进件申请](https://pay.weixin.qq.com/doc/v3/partner/4019557799.md)
+- [同步车辆入场通知](https://pay.weixin.qq.com/doc/v3/partner/4019557757.md)
+- [同步车辆离场通知](https://pay.weixin.qq.com/doc/v3/partner/4019557725.md)
+- [同步支付结果通知](https://pay.weixin.qq.com/doc/v3/partner/4019557765.md)
+- [同步非临停扩展支付](https://pay.weixin.qq.com/doc/v3/partner/4020338487.md)
+- [查询停车场信息](https://pay.weixin.qq.com/doc/v3/partner/4023070758.md)
+- [查询停车费用](https://pay.weixin.qq.com/doc/v3/partner/4019557825.md)
+- [商户查费回调](https://pay.weixin.qq.com/doc/v3/partner/4024070065.md)
+
+## 请求示例
+- [同步支付结果通知 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557765-curl.md)
+- [同步支付结果通知 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557765-java.md)
+- [同步支付结果通知 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557765-go.md)
+- [同步车辆入场通知 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557757-curl.md)
+- [同步车辆入场通知 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557757-java.md)
+- [同步车辆入场通知 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557757-go.md)
+- [同步车辆离场通知 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557725-curl.md)
+- [同步车辆离场通知 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557725-java.md)
+- [同步车辆离场通知 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557725-go.md)
+- [同步非临停扩展支付 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4020338487-curl.md)
+- [同步非临停扩展支付 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4020338487-java.md)
+- [同步非临停扩展支付 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4020338487-go.md)
+- [提交停车场进件申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557780-curl.md)
+- [提交停车场进件申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557780-java.md)
+- [提交停车场进件申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557780-go.md)
+- [撤回停车场进件申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557799-curl.md)
+- [撤回停车场进件申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557799-java.md)
+- [撤回停车场进件申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557799-go.md)
+- [查询停车场信息 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4023070758-curl.md)
+- [查询停车场信息 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4023070758-java.md)
+- [查询停车场信息 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4023070758-go.md)
+- [查询停车场进件申请单 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557794-curl.md)
+- [查询停车场进件申请单 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557794-java.md)
+- [查询停车场进件申请单 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557794-go.md)
+- [查询停车场进件申请单列表 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557811-curl.md)
+- [查询停车场进件申请单列表 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557811-java.md)
+- [查询停车场进件申请单列表 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557811-go.md)
+- [查询停车费用 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557825-curl.md)
+- [查询停车费用 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557825-java.md)
+- [查询停车费用 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4019557825-go.md)
+

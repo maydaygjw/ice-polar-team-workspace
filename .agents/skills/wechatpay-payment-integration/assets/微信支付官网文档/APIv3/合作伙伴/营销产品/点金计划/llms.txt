@@ -1,0 +1,38 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 点金计划（普通服务商）文档索引
+
+> 帮助商户在支付完成页自动展示官方广告，获取广告分成收入。广告页面无需商户侧额外开发，接入即可变现，支持合规展示与数据透明，在不影响用户体验的前提下，为商户增加额外收益，提升经营附加值。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4012072130.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4016241762.md)
+- [开发指引](https://pay.weixin.qq.com/doc/v3/partner/4012072262.md)
+- [开发接入准备](https://pay.weixin.qq.com/doc/v3/partner/4012072158.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4020807419.md)
+
+## API 列表
+- [点金计划管理](https://pay.weixin.qq.com/doc/v3/partner/4012473796.md)
+- [商家小票管理](https://pay.weixin.qq.com/doc/v3/partner/4012473788.md)
+- [同业过滤标签管理](https://pay.weixin.qq.com/doc/v3/partner/4012473784.md)
+- [开通广告展示](https://pay.weixin.qq.com/doc/v3/partner/4012473794.md)
+- [关闭广告展示](https://pay.weixin.qq.com/doc/v3/partner/4012473781.md)
+- [小程序左上角返回键管理](https://pay.weixin.qq.com/doc/v3/partner/4012072514.md)
+
+## 请求示例
+- [关闭广告展示 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473781-curl.md)
+- [关闭广告展示 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473781-java.md)
+- [关闭广告展示 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473781-go.md)
+- [同业过滤标签管理 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473784-curl.md)
+- [同业过滤标签管理 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473784-java.md)
+- [同业过滤标签管理 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473784-go.md)
+- [商家小票管理 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473788-curl.md)
+- [商家小票管理 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473788-java.md)
+- [商家小票管理 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473788-go.md)
+- [开通广告展示 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473794-curl.md)
+- [开通广告展示 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473794-java.md)
+- [开通广告展示 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473794-go.md)
+- [点金计划管理 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473796-curl.md)
+- [点金计划管理 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473796-java.md)
+- [点金计划管理 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4012473796-go.md)
+

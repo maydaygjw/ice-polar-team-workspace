@@ -1,0 +1,60 @@
+>更新时间：2026.10.24
+
+# 微信支付 - 商家名片（普通服务商）文档索引
+
+> 商家名片是商户在微信支付的官方展示与服务页面，用户支付后可通过支付凭证进入，商家名片可展示交易详情、优惠活动、商家服务、会员信息及客服渠道等，方便用户标记喜爱商家，是商户与用户建立长效连接、实现持续触达的核心入口。
+
+## 接入指引
+- [产品介绍](https://pay.weixin.qq.com/doc/v3/partner/4016433952.md)
+- [常见问题](https://pay.weixin.qq.com/doc/v3/partner/4017027862.md)
+- [错误码](https://pay.weixin.qq.com/doc/v3/partner/4023134880.md)
+
+## API 列表
+### 商家名片配置
+- [提交商家名片配置申请](https://pay.weixin.qq.com/doc/v3/partner/4016468440.md)
+- [发布商家名片配置](https://pay.weixin.qq.com/doc/v3/partner/4016475176.md)
+- [撤销商家名片配置申请](https://pay.weixin.qq.com/doc/v3/partner/4016475172.md)
+- [查询商家名片配置申请状态](https://pay.weixin.qq.com/doc/v3/partner/4016475174.md)
+- [获取商家名片预览二维码](https://pay.weixin.qq.com/doc/v3/partner/4016641998.md)
+### 交易连接名片
+- [添加交易连接名片规则申请](https://pay.weixin.qq.com/doc/v3/partner/4016333302.md)
+- [解除已生效交易连接名片场景](https://pay.weixin.qq.com/doc/v3/partner/4016366804.md)
+- [撤销交易连接名片配置申请](https://pay.weixin.qq.com/doc/v3/partner/4016366797.md)
+- [查询已生效交易连接名片规则](https://pay.weixin.qq.com/doc/v3/partner/4016366785.md)
+- [根据业务申请编号查询添加申请状态](https://pay.weixin.qq.com/doc/v3/partner/4016366816.md)
+
+## 请求示例
+- [发布商家名片配置 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475176-curl.md)
+- [发布商家名片配置 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475176-java.md)
+- [发布商家名片配置 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475176-go.md)
+- [提交商家名片配置申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016468440-curl.md)
+- [提交商家名片配置申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016468440-java.md)
+- [提交商家名片配置申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016468440-go.md)
+- [撤销交易连接名片配置申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366797-curl.md)
+- [撤销交易连接名片配置申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366797-java.md)
+- [撤销交易连接名片配置申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366797-go.md)
+- [撤销商家名片配置申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475172-curl.md)
+- [撤销商家名片配置申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475172-java.md)
+- [撤销商家名片配置申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475172-go.md)
+- [查询商家名片配置申请状态 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475174-curl.md)
+- [查询商家名片配置申请状态 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475174-java.md)
+- [查询商家名片配置申请状态 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016475174-go.md)
+- [查询已生效交易连接名片规则 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366785-curl.md)
+- [查询已生效交易连接名片规则 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366785-java.md)
+- [查询已生效交易连接名片规则 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366785-go.md)
+- [根据业务申请编号查询添加申请状态 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366816-curl.md)
+- [根据业务申请编号查询添加申请状态 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366816-java.md)
+- [根据业务申请编号查询添加申请状态 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366816-go.md)
+- [添加交易连接名片规则申请 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016333302-curl.md)
+- [添加交易连接名片规则申请 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016333302-java.md)
+- [添加交易连接名片规则申请 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016333302-go.md)
+- [获取商家名片预览二维码 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016641998-curl.md)
+- [获取商家名片预览二维码 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016641998-java.md)
+- [获取商家名片预览二维码 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016641998-go.md)
+- [解除已生效交易连接名片场景 - curl 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366804-curl.md)
+- [解除已生效交易连接名片场景 - Java 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366804-java.md)
+- [解除已生效交易连接名片场景 - Go 示例](https://pay.weixin.qq.com/doc/v3/partner/4016366804-go.md)
+
+## 附录
+- [商家名片&交易连接名片配置指引](https://pay.weixin.qq.com/doc/v3/partner/4016433970.md)
+
