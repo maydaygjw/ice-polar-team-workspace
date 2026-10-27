@@ -25,6 +25,15 @@
 - 新增会员微信打款记录表，保存会员 ID、商户单号（租户内唯一）、微信转账单号、金额（分）、状态、备注、失败原因及标准审计字段；不保存 OpenID、`package_info` 或支付密钥。历史上已经提交的打款单无法从本地记录恢复，该列表自部署后记录新发起的打款。
 - 接口权限为独立的 `member:user:transfer`。复用当前租户微信小程序支付商户配置及商家转账能力。
 
+## 活动微信打款
+
+- 活动奖品规则新增微信打款现金兑奖；后台财务新增只读“用户转账”列表，会员详情和财务列表复用同一转账明细数据源。
+- 统一记录新增类型：`MEMBER_MANUAL`、`ACTIVITY_WINNER_CASH`、`ACTIVITY_REFERRAL_REWARD_CASH`。推荐奖励现金类型独立可筛选，备注包含活动、期次和推荐阶梯；既有会员人工打款记录迁移为 `MEMBER_MANUAL`。
+- Activity 通过 `yshop-module-pay-api` 发起转账；统一记录增加 `transfer_type` 和业务 `remark`，活动/期次/层级写入备注，不增加来源 ID 或期次字段。转账使用由兑奖来源派生的稳定商户单号及现有租户内唯一约束幂等。
+- `GET /admin-api/pay/user-transfer/page` 使用独立 `pay:user-transfer:query` 权限，支持分页以及类型、状态、用户、备注关键字和时间过滤；`GET /admin-api/pay/member-transfer/page?userId={id}` 保持会员详情范围并扩展返回类型/备注。
+- 商家转账复用商户配置中的异步 `notifyUrl`；同一回调入口按事件类型分发普通支付成功 `TRANSACTION.SUCCESS` 和转账终态 `MCHTRANSFER.BILL.FINISHED`。微信终态通知验签、解密并幂等更新；非终态转账由后端查单兜底。未知请求结果复用原商户单号，不生成重复打款。
+- 本期目标仓库为 backend/admin；用户确认收款页面和 H5/小程序集成延期，后台现金规则开放前须完成客户端调起确认收款阶段。详见 [活动微信打款 Feature Contract](feature-docs/2026-10-27-activity-wechat-transfer/contract-changes.md)。
+
 ## 活动报名推荐人 ID（2026-10-11）
 
 `POST /app-api/activity/registration/create` 新增可选 query 参数 `referrerUserId`（Long，backend 会员 ID）。H5 从小程序入口 `referrerUserId` 读取推荐人，报名时以 API 参数 `referrerUserId` 原样传递，不得映射为外部 ID。后端按当前租户校验该会员存在；不存在则报名失败。移除 `referrerExternalUserId` 参数支持。活动分享短链接统一使用下划线参数 `referrer_user_Id`（当前登录会员 ID）。`channelCode` 保持不变，无数据库变更。
