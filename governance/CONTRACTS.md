@@ -29,7 +29,7 @@
 
 - `GET /app-api/pay/member-transfer/page`：分页查询当前登录会员自己的微信打款记录。支持 `userId` 或 `externalUserId` 至少传一个；两者同时传入时必须指向同一会员。查询条件必须与当前登录会员一致，禁止按其他用户标识读取记录。
 - 请求分页字段为 `pageNo`、`pageSize`（最大 100）。记录按创建时间倒序，受当前租户隔离。
-- 响应包括 `id`、`userId`、`outBillNo`、`transferBillNo`、`packageInfo`、`transferAmount`（分）、`state`、`transferRemark`、`failReason`、`createTime`。`packageInfo` 仅用于用户确认收款，记录无该参数时为空；历史转账记录不会回填。
+- 响应包括 `id`、`userId`、`outBillNo`、`transferBillNo`、`appId`、`mchId`、`packageInfo`、`transferAmount`（分）、`state`、`transferRemark`、`failReason`、`createTime`。`appId` / `mchId` 是发起该笔转账时使用的标识，需与前端调起用户确认收款页时传入的值一致。新发起记录会保存这两个值；已有记录可通过查单补充，无法取得时字段为空。`packageInfo` 仅用于用户确认收款，记录无该参数时为空。
 
 ## 活动微信打款
 

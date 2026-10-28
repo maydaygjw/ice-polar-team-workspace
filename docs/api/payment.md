@@ -374,3 +374,86 @@ Content-Type: application/json
 - 拼单支付必须使用登录态、`paytype=adapay` 和 `shareCount`；客户端无需自行生成或修改 AdaPay 返回的 `order_no`。
 - 退款申请成功后，根据 `refundStatus` 展示“申请中”，不要立即提示“退款完成”。
 - 不在前端保存或提交支付密钥、商户证书、`outPayNo` 等服务端支付凭证。
+
+## 用户打款记录分页 `GET /app-api/pay/member-transfer/page`
+
+需要会员登录。分页查询当前登录会员的微信打款记录，按创建时间倒序返回。请求头使用 `Authorization: Bearer <token>`。
+
+### Query 参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| `userId` | long | 与 `externalUserId` 至少传一个 | 会员内部 ID |
+| `externalUserId` | string | 与 `userId` 至少传一个 | 外部系统会员 ID，最多 128 个字符 |
+| `pageNo` | int | 否 | 页码，从 1 开始，默认 `1` |
+| `pageSize` | int | 否 | 每页条数，默认 `10`，最大 `100` |
+
+可以只传 `userId` 或只传 `externalUserId`；两者同时传时必须对应同一会员。传入的用户标识必须属于当前登录会员，否则接口拒绝查询。接口始终按当前租户隔离，不支持查询其他会员的打款记录。
+
+**按 `userId` 查询：**
+
+```http
+GET /app-api/pay/member-transfer/page?userId=1001&pageNo=1&pageSize=10
+Authorization: Bearer <token>
+```
+
+**按 `externalUserId` 查询：**
+
+```http
+GET /app-api/pay/member-transfer/page?externalUserId=external-user-001&pageNo=1&pageSize=10
+Authorization: Bearer <token>
+```
+
+### 响应示例
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "list": [
+      {
+        "id": 90001,
+        "userId": 1001,
+        "outBillNo": "memberpayout202610280001",
+        "transferBillNo": "1330000000000000000000000000000000000000",
+        "appId": "wx1234567890abcdef",
+        "mchId": "1900000001",
+        "packageInfo": "transfer-package-value",
+        "transferAmount": 2000,
+        "state": "WAIT_USER_CONFIRM",
+        "transferRemark": "会员打款",
+        "failReason": null,
+        "createTime": "2026-10-28T10:30:00"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+### 响应字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | long | 本地打款记录 ID |
+| `userId` | long | 会员内部 ID |
+| `outBillNo` | string | 商户单号 |
+| `transferBillNo` | string | 微信转账单号 |
+| `appId` | string | 发起这笔转账时使用的商户 AppID |
+| `mchId` | string | 发起这笔转账时使用的商户号 |
+| `packageInfo` | string/null | 微信返回的用户确认收款参数；无值时为 `null` |
+| `transferAmount` | long | 转账金额，单位为分 |
+| `state` | string | 转账状态，见下表 |
+| `transferRemark` | string/null | 转账备注 |
+| `failReason` | string/null | 失败原因 |
+| `createTime` | datetime | 本地记录创建时间 |
+| `data.total` | long | 符合条件的记录总数 |
+
+转账状态：`ACCEPTED`（已受理）、`PROCESSING`（处理中）、`WAIT_USER_CONFIRM`（待用户确认）、`TRANSFERING`（转账中）、`SUCCESS`（成功）、`FAIL`（失败）、`CANCELING`（撤销中）、`CANCELLED`（已撤销）。
+
+### 前端确认收款
+
+当 `state=WAIT_USER_CONFIRM` 且 `packageInfo` 有值时，前端可在微信客户端调用 `requestMerchantTransfer`；将 `packageInfo` 作为 `package`，并使用同一条记录返回的 `mchId` 和 `appId` 作为 `mchId`、`appId`。这两个标识必须与发起该笔转账时传给微信的商户号和 AppID 一致。详见[微信支付 JSAPI 调起用户确认收款文档](https://pay.weixin.qq.com/doc/v3/merchant/4012716430)。
+
+前端调用返回成功只表示确认收款页展示成功，不代表资金已到账。最终结果以服务端回调或查单更新的 `state` 为准。历史记录缺少 `appId`、`mchId` 时，这两个字段可能为空；执行对应数据库迁移后，新发起的打款会保存它们，查单响应也会补齐缺失值。

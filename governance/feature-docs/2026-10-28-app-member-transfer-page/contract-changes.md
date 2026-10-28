@@ -18,7 +18,7 @@
 响应为现有 `CommonResult<PageResult<...>>`，每条记录包含：
 
 - `id`、`userId`、`outBillNo`、`transferBillNo`
-- `packageInfo`、`transferAmount`（分）、`state`、`transferRemark`
+- `appId`、`mchId`、`packageInfo`、`transferAmount`（分）、`state`、`transferRemark`
 - `failReason`、`createTime`
 
-历史记录没有保存 `packageInfo`，该字段为空；新记录在微信返回待用户确认参数时持久化。该接口只查询记录，不向微信支付发起请求。
+历史记录可能没有保存 `appId`、`mchId` 或 `packageInfo`，缺失字段为空；新记录持久化发起转账时使用的 `appId`、`mchId`，以及微信返回的用户确认参数。查单时可从微信响应补充 `appId` 和 `mchId`。该接口只查询记录，不向微信支付发起请求。
