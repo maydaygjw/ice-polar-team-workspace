@@ -375,6 +375,23 @@ Content-Type: application/json
 - 退款申请成功后，根据 `refundStatus` 展示“申请中”，不要立即提示“退款完成”。
 - 不在前端保存或提交支付密钥、商户证书、`outPayNo` 等服务端支付凭证。
 
+## 财务用户转账状态刷新 `POST /admin-api/pay/user-transfer/refresh`
+
+财务人员可对列表中的一笔转账主动向微信查单，并将查询到的状态同步到本地记录。需要管理端登录态和 `pay:user-transfer:query` 权限。接口只允许刷新当前租户已保存的商户单号，不会发起第二笔转账。
+
+### Query 参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| `outBillNo` | string | 是 | 商户单号，1-32 位字母、数字、下划线或连字符 |
+
+```http
+POST /admin-api/pay/user-transfer/refresh?outBillNo=TRANSFER20261028001
+Authorization: Bearer <token>
+```
+
+成功响应的 `data` 返回微信查单结果，包含 `outBillNo`、`transferBillNo`、`state`、`transferAmount`（分）、`transferRemark` 和 `failReason`。本地列表重新查询即可看到同步后的最新状态。
+
 ## 用户打款记录分页 `GET /app-api/pay/member-transfer/page`
 
 需要会员登录。分页查询当前登录会员的微信打款记录，按创建时间倒序返回。请求头使用 `Authorization: Bearer <token>`。
