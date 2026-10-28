@@ -1,4 +1,4 @@
->更新时间：2026.10.24
+>更新时间：2026.10.27
 
 # 微信支付 - 商品券（单券）（品牌商户）文档索引
 
@@ -89,9 +89,6 @@
 - [批次取消关联门店 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015736372-curl.md)
 - [批次取消关联门店 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015736372-java.md)
 - [批次取消关联门店 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015736372-go.md)
-- [指定券状态查询用户商品券列表 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015736420-curl.md)
-- [指定券状态查询用户商品券列表 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015736420-java.md)
-- [指定券状态查询用户商品券列表 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015736420-go.md)
 - [提交图片生成任务 - curl 示例](https://pay.weixin.qq.com/doc/brand/4017327724-curl.md)
 - [提交图片生成任务 - Java 示例](https://pay.weixin.qq.com/doc/brand/4017327724-java.md)
 - [提交图片生成任务 - Go 示例](https://pay.weixin.qq.com/doc/brand/4017327724-go.md)
@@ -122,9 +119,6 @@
 - [确认发放用户商品券 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015736403-curl.md)
 - [确认发放用户商品券 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015736403-java.md)
 - [确认发放用户商品券 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015736403-go.md)
-- [获取商品券事件通知地址 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015736292-curl.md)
-- [获取商品券事件通知地址 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015736292-java.md)
-- [获取商品券事件通知地址 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015736292-go.md)
 - [设置商品券事件通知地址 - curl 示例](https://pay.weixin.qq.com/doc/brand/4015736293-curl.md)
 - [设置商品券事件通知地址 - Java 示例](https://pay.weixin.qq.com/doc/brand/4015736293-java.md)
 - [设置商品券事件通知地址 - Go 示例](https://pay.weixin.qq.com/doc/brand/4015736293-go.md)
