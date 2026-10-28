@@ -22,8 +22,14 @@
 - `GET /admin-api/pay/member-transfer/query?outBillNo={outBillNo}`：查询该商户转账单，返回单号、状态、转账金额（分）、备注和失败原因。管理端显示公众号 OpenID 与小程序 OpenID；只有存在 `routineOpenid` 时允许发起打款。
 - `GET /admin-api/pay/member-transfer/page`：按 `userId` 分页查询该会员的微信打款记录，返回商户单号、微信转账单号、金额（分）、状态、转账备注、失败原因和创建时间。记录由后端在会员打款请求时持久化，按当前租户隔离；查询单笔转账结果时同步更新记录状态。
 - `POST /admin-api/pay/member-transfer/cancel?outBillNo={outBillNo}`：撤销当前租户下该会员打款记录对应的转账单；仅允许本地状态为 `ACCEPTED`、`PROCESSING`、`WAIT_USER_CONFIRM` 或 `TRANSFERING` 时发起。响应状态为 `CANCELING` 或 `CANCELLED`；撤销受理不代表撤销完成，仍需查单确认最终状态。
-- 新增会员微信打款记录表，保存会员 ID、商户单号（租户内唯一）、微信转账单号、金额（分）、状态、备注、失败原因及标准审计字段；不保存 OpenID、`package_info` 或支付密钥。历史上已经提交的打款单无法从本地记录恢复，该列表自部署后记录新发起的打款。
+- 新增会员微信打款记录表，保存会员 ID、商户单号（租户内唯一）、微信转账单号、`package_info`、金额（分）、状态、备注、失败原因及标准审计字段；不保存 OpenID 或支付密钥。历史上已经提交的打款单无法从本地记录恢复，该列表自部署后记录新发起的打款。
 - 接口权限为独立的 `member:user:transfer`。复用当前租户微信小程序支付商户配置及商家转账能力。
+
+## App 用户微信打款记录
+
+- `GET /app-api/pay/member-transfer/page`：分页查询当前登录会员自己的微信打款记录。支持 `userId` 或 `externalUserId` 至少传一个；两者同时传入时必须指向同一会员。查询条件必须与当前登录会员一致，禁止按其他用户标识读取记录。
+- 请求分页字段为 `pageNo`、`pageSize`（最大 100）。记录按创建时间倒序，受当前租户隔离。
+- 响应包括 `id`、`userId`、`outBillNo`、`transferBillNo`、`packageInfo`、`transferAmount`（分）、`state`、`transferRemark`、`failReason`、`createTime`。`packageInfo` 仅用于用户确认收款，记录无该参数时为空；历史转账记录不会回填。
 
 ## 活动微信打款
 
