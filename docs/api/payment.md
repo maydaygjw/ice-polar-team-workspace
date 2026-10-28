@@ -440,8 +440,8 @@ Authorization: Bearer <token>
 | `userId` | long | 会员内部 ID |
 | `outBillNo` | string | 商户单号 |
 | `transferBillNo` | string | 微信转账单号 |
-| `appId` | string | 发起这笔转账时使用的商户 AppID |
-| `mchId` | string | 发起这笔转账时使用的商户号 |
+| `appId` | string/null | 当前租户微信小程序支付配置中的 AppID，关联查询返回 |
+| `mchId` | string/null | 当前租户微信小程序支付配置中的商户号，关联查询返回 |
 | `packageInfo` | string/null | 微信返回的用户确认收款参数；无值时为 `null` |
 | `transferAmount` | long | 转账金额，单位为分 |
 | `state` | string | 转账状态，见下表 |
@@ -454,6 +454,6 @@ Authorization: Bearer <token>
 
 ### 前端确认收款
 
-当 `state=WAIT_USER_CONFIRM` 且 `packageInfo` 有值时，前端可在微信客户端调用 `requestMerchantTransfer`；将 `packageInfo` 作为 `package`，并使用同一条记录返回的 `mchId` 和 `appId` 作为 `mchId`、`appId`。这两个标识必须与发起该笔转账时传给微信的商户号和 AppID 一致。详见[微信支付 JSAPI 调起用户确认收款文档](https://pay.weixin.qq.com/doc/v3/merchant/4012716430)。
+当 `state=WAIT_USER_CONFIRM` 且 `packageInfo` 有值时，前端可在微信客户端调用 `requestMerchantTransfer`；将 `packageInfo` 作为 `package`，并使用响应中的 `mchId` 和 `appId` 作为调起参数。它们由当前租户的 `wx_miniapp` 支付配置关联查询取得，必须与发起该笔转账时传给微信的商户号和 AppID 一致。详见[微信支付 JSAPI 调起用户确认收款文档](https://pay.weixin.qq.com/doc/v3/merchant/4012716430)。
 
-前端调用返回成功只表示确认收款页展示成功，不代表资金已到账。最终结果以服务端回调或查单更新的 `state` 为准。历史记录缺少 `appId`、`mchId` 时，这两个字段可能为空；执行对应数据库迁移后，新发起的打款会保存它们，查单响应也会补齐缺失值。
+前端调用返回成功只表示确认收款页展示成功，不代表资金已到账。最终结果以服务端回调或查单更新的 `state` 为准。`appId`、`mchId` 通过支付配置关联查询，不在打款记录表中单独保存；未配置微信小程序支付信息时，这两个字段为空。

@@ -21,4 +21,4 @@
 - `appId`、`mchId`、`packageInfo`、`transferAmount`（分）、`state`、`transferRemark`
 - `failReason`、`createTime`
 
-历史记录可能没有保存 `appId`、`mchId` 或 `packageInfo`，缺失字段为空；新记录持久化发起转账时使用的 `appId`、`mchId`，以及微信返回的用户确认参数。查单时可从微信响应补充 `appId` 和 `mchId`。该接口只查询记录，不向微信支付发起请求。
+`appId` 和 `mchId` 通过当前租户的微信小程序支付配置关联查询，不在打款记录表中保存；未配置时字段为空。`packageInfo` 保存在打款记录中，用于用户确认收款；该接口只查询记录，不向微信支付发起请求。

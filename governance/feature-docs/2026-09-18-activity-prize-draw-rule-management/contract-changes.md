@@ -56,17 +56,19 @@
 
 模板详情返回的每项包含 `prizeId`、`quantity`、`sort`，以及只读展示字段 `prizeName`、`image`、`claimInstruction`、`drawRuleType`、`drawRuleName`、`drawRuleParams`。请求端不得提交或覆盖规则参数；后端以奖品库为准。
 
+模板创建/更新请求可选传入 `fallbackPrizeId`（奖品库 ID 或 `null`）。模板详情返回 `fallbackPrizeId` 及 `fallbackPrize` 只读展示对象（奖品名称、图片、领取说明、开奖规则和参数摘要）。兜底奖品不放入 `prizes[]`，不提交数量、排序或概率；不能与常规奖品重复关联。
+
 旧请求不转换；旧模板继续使用原有奖品字段，新管理端只对新配置发送 `prizeId`。已生成期次的详情继续返回快照字段，不依赖模板实时数据。
 
 ## Period and winner API additions
 
-期次奖品响应增加：`sourcePrizeId`、`drawRuleType`、`drawRuleName`、`drawRuleParams`、`drawRuleVersion`。开奖结果不因奖品库后续修改而变化。
+期次奖品响应增加：`sourcePrizeId`、`drawRuleType`、`drawRuleName`、`drawRuleParams`、`drawRuleVersion`、`isFallback`。期次详情可返回独立的 `fallbackPrize` 快照。开奖结果不因奖品库后续修改而变化。常规算法未命中有效奖品时，若有兜底快照则中奖记录引用该快照；兜底中奖不扣减常规奖品库存。
 
 中奖记录本期不增加奖励发放状态字段，不提供奖励发放记录查询或重试接口。开奖规则快照仅表示中奖奖品配置，不代表积分、余额或其他奖励已发放。
 
 ## Database contract
 
-- 新增 `yshop_activity_prize`、`yshop_activity_template_prize`。
+- 新增 `yshop_activity_prize`、`yshop_activity_template_prize`；活动模板保存可空 `fallback_prize_id`，期次保存兜底奖品快照标识/字段。
 - `yshop_activity_period_prize` 新增规则快照字段；新增索引 `idx_period_rule(tenant_id, period_id, deleted)`。
 - 所有新表包含租户字段、逻辑删除字段和通用审计字段；不使用数据库级外键。
 - `yshop_activity_template.prize_config` 不迁移、不转换、不删除；已有模板继续按原字段读取和编辑，新奖品库只服务于新配置。

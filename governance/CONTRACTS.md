@@ -29,7 +29,7 @@
 
 - `GET /app-api/pay/member-transfer/page`：分页查询当前登录会员自己的微信打款记录。支持 `userId` 或 `externalUserId` 至少传一个；两者同时传入时必须指向同一会员。查询条件必须与当前登录会员一致，禁止按其他用户标识读取记录。
 - 请求分页字段为 `pageNo`、`pageSize`（最大 100）。记录按创建时间倒序，受当前租户隔离。
-- 响应包括 `id`、`userId`、`outBillNo`、`transferBillNo`、`appId`、`mchId`、`packageInfo`、`transferAmount`（分）、`state`、`transferRemark`、`failReason`、`createTime`。`appId` / `mchId` 是发起该笔转账时使用的标识，需与前端调起用户确认收款页时传入的值一致。新发起记录会保存这两个值；已有记录可通过查单补充，无法取得时字段为空。`packageInfo` 仅用于用户确认收款，记录无该参数时为空。
+- 响应包括 `id`、`userId`、`outBillNo`、`transferBillNo`、`appId`、`mchId`、`packageInfo`、`transferAmount`（分）、`state`、`transferRemark`、`failReason`、`createTime`。`appId` / `mchId` 通过当前租户的 `wx_miniapp` 支付配置关联查询，需与前端调起用户确认收款页时传入的值一致；不单独保存在打款记录表中。`packageInfo` 仅用于用户确认收款，记录无该参数时为空。
 
 ## 活动微信打款
 
@@ -75,6 +75,7 @@
 - [活动邀请报名增加抽奖机会](feature-docs/2026-09-21-activity-invite-chance/contract-changes.md)：后台开启后，被推荐人成功报名且推荐人已报名时，推荐人自动增加一次抽奖/游戏机会；用户端详情返回开关状态，抽奖或游戏后分享提示好友报名奖励。
 - [活动推荐阶梯奖励](feature-docs/2026-10-16-activity-referral-rewards/contract-changes.md)：保留推荐增加抽奖/游戏机会配置，另按期次统计新人和普通推荐阶梯并使用独立奖品数量；管理后台按推荐人查询统计并可兑换，推荐人也可通过用户端自助兑奖；中奖管理不包含推荐奖励。
 - [活动即时抽奖模式](feature-docs/2026-09-22-activity-lottery-mode/contract-changes.md)：活动模板支持开奖/抽奖两种模式，抽奖模式由 app-api 按概率即时抽奖并以 requestId 幂等。
+- [活动模板兜底奖励](feature-docs/2026-09-18-activity-prize-draw-rule-management/contract-changes.md)：模板可独立选择一个不配置数量或概率的兜底奖品；开奖/即时抽奖常规规则未命中有效奖品时使用期次兜底快照生成中奖结果。
 - [活动游戏模式](feature-docs/2026-10-15-activity-game-mode/contract-changes.md)：管理员手动新增游戏展示名称，活动模板选择游戏并配置三关奖品；新配置使用现有 H5 跳跃玩法，用户端会话由后端推进和结算。
 - [活动期次更换群活码](feature-docs/2026-10-18-activity-period-group-qrcode/contract-changes.md)：管理后台可为未结束活动期次更新群活码图片快照，不影响活动模板和历史业务记录。
 - 活动游戏关卡提交不再使用数字挑战：`POST /app-api/activity/period/game/submit` 改为接收客户端报告的 `passed` 布尔值；后端保留会话、关卡顺序、幂等和奖品结算校验，响应移除 `challenge`。
