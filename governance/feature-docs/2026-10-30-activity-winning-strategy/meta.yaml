@@ -1,0 +1,8 @@
+feature: activity-winning-strategy
+status: done
+risk: medium
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: false
+blocked: false
