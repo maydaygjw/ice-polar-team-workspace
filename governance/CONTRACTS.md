@@ -1,5 +1,11 @@
 # 跨模块接口契约索引
 
+## OAuth2 客户端凭证授权
+
+- `POST /admin-api/system/oauth2/token` 支持 `grant_type=client_credentials`；客户端通过 HTTP Basic 传递 `client_id` / `client_secret`，可选 `scope` 必须是该客户端登记范围的子集，且客户端须启用该授权类型并处于启用状态。
+- 成功响应返回 Bearer `access_token`、`expires_in` 和授权范围，不返回 `refresh_token`。令牌主体类型为 OAuth2 客户端，不代表会员或管理员；客户端凭证不授予 `/app-api` 或 `/admin-api` 的会员/管理员身份。外部业务接口须使用独立 OpenAPI 路由并显式校验 scope。
+- 客户端令牌可通过 `DELETE /admin-api/system/oauth2/token?token={access_token}` 撤销；到期后重新申请。客户端密钥仅保存在服务端，调用必须使用 HTTPS。
+
 ## 活动模板画像中奖策略（2026-10-30）
 
 活动模板增加公平开奖、偏向新用户、偏向流失/低频用户和留存唤醒分层四种策略；开奖与即时抽奖按会员用户画像阶段赔率加权，缺失画像按公平处理。期次保存策略快照，游戏模式不变。详见 [活动模板中奖策略契约](feature-docs/2026-10-30-activity-winning-strategy/contract-changes.md)。
