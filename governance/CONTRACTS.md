@@ -92,6 +92,7 @@
 - 活动游戏关卡提交不再使用数字挑战：`POST /app-api/activity/period/game/submit` 改为接收客户端报告的 `passed` 布尔值；后端保留会话、关卡顺序、幂等和奖品结算校验，响应移除 `challenge`。
 - [活动用户端兑奖](feature-docs/2026-09-19-activity-winner-claim/contract-changes.md)：用户端可兑奖自己的中奖记录，报名和中奖结果返回兑奖状态；执行失败保持待兑奖并可重试。
 - [活动期次状态与结束操作](feature-docs/2026-09-13-activity-management/contract-changes.md)：期次生命周期状态与报名开关解耦，后台支持显式结束期次，状态扫描任务每 5 分钟推进期次状态和报名开关。
+- 用户端 `GET /app-api/activity/period/detail` 与 `/latest` 的期次详情响应新增 `drawStatus`：`0` 未开奖、`1` 开奖中、`2` 已开奖、`3` 开奖失败。H5 定时开奖模式仅在 `drawStatus=2` 且用户无中奖记录时展示未中奖结果。
 - [活动用户端奖品展示](feature-docs/2026-09-23-activity-app-prize-display/contract-changes.md)：用户端活动详情奖品响应移除库存、已中奖数量和中奖概率字段，保留内部抽奖数据。
 - [活动 H5 Ticket 认证](feature-docs/2026-09-15-activity-h5-auth/contract-changes.md)：已登录客户端通过一次性 ticket 安全进入 H5，兑换 backend Bearer Token。
 - [外卖用户画像](feature-docs/2026-10-19-member-user-profile/contract-changes.md)：新增租户隔离的画像数据、按订单频率和注册时间计算并持久化的用户阶段、由后端阶段枚举统一提供编码/中文名称/颜色及阶段选项接口、会员 ID 和主商圈代码展示与筛选、只读管理端分页查询和全量阶段分布统计。
