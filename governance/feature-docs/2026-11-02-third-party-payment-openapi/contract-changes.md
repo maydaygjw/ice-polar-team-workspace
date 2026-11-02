@@ -8,7 +8,7 @@
 |---|---|---|---|
 | `POST /open-api/oauth2/token` | OAuth2 HTTP Basic、`tenant-id` 请求头 | `grant_type=client_credentials`、必填 `scope`（空格分隔） | Bearer token、`expires_in`、最终授予 `scope`；只签发客户端身份 token，不返回 refresh token。 |
 
-现有 `POST /admin-api/system/oauth2/token` 保持现状和兼容性。OpenAPI token 和支付接口请求均须携带 `tenant-id`，资源请求中的租户必须与 token 租户一致。OpenAPI token 入口只接受 `client_credentials`；申请范围必须是 OAuth2 客户端已登记 scope 的子集。
+现有 `POST /admin-api/system/oauth2/token` 保持现状和兼容性。OpenAPI token 和支付接口请求均须携带 `tenant-id`，资源请求中的租户必须与 token 租户一致。OpenAPI token 入口只接受 `client_credentials`；申请范围必须被 OAuth2 客户端登记的 scope 精确或通过非空前缀尾部 `*` 匹配。客户端配置 `payment*` 可授权请求具体支付 scope；请求和令牌中不使用通配符，单独 `*` 不支持。
 
 ### 支付
 
@@ -81,7 +81,7 @@ JSON 请求只接收 `reason`（可选）；退款幂等键通过 `Idempotency-K
 
 ## 权限与数据范围
 
-- 支付 scope：`payment:create`、`payment:read`、`payment:refund`，对应创建、查询、全额退款；不得映射到后台菜单权限。scope 字符串由 OAuth2 通用客户端表单的逗号分隔文本维护。
+- 支付 scope：`payment:create`、`payment:read`、`payment:refund`，对应创建、查询、全额退款；不得映射到后台菜单权限。scope 字符串由 OAuth2 通用客户端表单的逗号分隔文本维护；允许使用如 `payment*` 的非空前缀尾部通配符配置授权，接口仍按具体 scope 精确授权。
 - token 中的主体类型为 CLIENT，租户 ID 从经多租户过滤器校验的 `tenant-id` 请求头取得并固化；后续请求校验请求头租户与 token 租户一致。
 - 支付配置中的 OpenAPI 开关按租户和渠道生效；该租户下持有有效 OAuth2 客户端凭证并获得对应 scope 的调用方均可使用，不另行维护 client 到 tenant/payment config 的绑定关系。
 - 新订单、退款、查单均要求同时匹配 token tenant、client ID 与订单关联记录；不得仅凭全局支付 ID 查询。

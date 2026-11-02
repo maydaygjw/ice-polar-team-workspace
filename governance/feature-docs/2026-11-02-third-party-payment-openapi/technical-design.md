@@ -27,12 +27,12 @@
 - token 主体仍为 `UserTypeEnum.CLIENT`，每个业务请求除检查 scope 外，必须检查主体类型、客户端启用状态及 token 租户上下文。支付创建还必须检查当前租户指定渠道已启用 OpenAPI 的支付配置。
 - 现有 OAuth2 客户端保持通用，不附加租户归属。token 申请必须携带经多租户过滤器校验的 `tenant-id`；系统把当前租户写入 CLIENT token，后续请求要求 token 租户与请求头租户一致。支付配置的 OpenAPI 开关负责控制该租户能否使用对应渠道。
 - OpenAPI 开关按租户/渠道授权：该租户下所有持有有效 OAuth2 客户端凭证、并申请到对应 scope 的客户端均可调用；不提供按 client 单独限制 tenant/payment config 的关系表。
-- 访问令牌申请时，客户端请求的 scope 必须是该 OAuth2 客户端已授权 scope 的子集；空 scope 请求默认拒绝，避免意外发放无预期权限的令牌。取消授权后，已签发令牌至多在其有效期内继续使用；客户端停用即时拒绝，降低存量令牌等待到期的风险。
+- 访问令牌申请时，客户端请求的 scope 必须由该 OAuth2 客户端的授权 scope 精确匹配或非空前缀尾部 `*` 模式匹配；空 scope 请求默认拒绝。通配符仅用于客户端授权配置，例如 `payment*`，请求和令牌必须使用具体 scope；单独 `*` 不支持。支付资源接口仍精确检查具体操作 scope。取消授权后，已签发令牌至多在其有效期内继续使用；客户端停用即时拒绝，降低存量令牌等待到期的风险。
 
 ### 3.2 Scope 管理
 
 - 使用现有 OAuth2 客户端的 `scopes` 列表保存已授予范围，不新增一份重复授权关系。
-- admin 在通用 OAuth2 客户端表单中以逗号分隔文本维护 scope，不通过枚举控件穷举。OpenAPI 资源接口仍只识别 `payment:create`、`payment:read`、`payment:refund` 三个操作 scope；任意 scope 文本不会自动获得支付接口权限。
+- admin 在通用 OAuth2 客户端表单中以逗号分隔文本维护 scope，不通过枚举控件穷举。OpenAPI 客户端授权配置支持非空前缀尾部 `*` 匹配（例如 `payment*`）；令牌只能包含调用方请求的具体 scope，资源接口仍精确识别 `payment:create`、`payment:read`、`payment:refund` 三个操作 scope，单独 `*` 不支持。
 - OAuth2 客户端编辑表单不显示 OpenAPI 专属配置；scope 改用逗号分隔文本，保存时转回现有 scope 列表。
 - 管理员只能授予已实现的操作范围；scope 标识不可在 admin 改名。首期不做动态创建新 scope 的能力，新增支付操作必须先经代码和契约评审。
 
