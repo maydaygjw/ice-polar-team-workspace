@@ -6,7 +6,7 @@
 - 最终验证在 Webhook 存量订单通知修复和事件唯一约束调整后执行。
 - 增加 `pay_type` 字段并纳入支付响应后，`mvn -pl yshop-module-pay/yshop-module-pay-biz -am test`：44 项测试通过，0 失败、0 错误、0 跳过。
 - 将 OpenAPI mapper 查询改为 `LambdaQueryWrapperX` DSL 后，同一命令再次通过：44 项测试通过，0 失败、0 错误、0 跳过；新 mapper 中无 `@Select`/原生查询注解。
-- 框架增加 `controller.openapi` 自动 `/open-api` 前缀后，system/pay 相关 Maven 测试通过；同时确认 OpenAPI token 路径的租户解析使用客户端绑定，不要求请求方传租户头。
+- 框架增加 `controller.openapi` 自动 `/open-api` 前缀后，system/pay 相关 Maven 测试通过；同时确认 OpenAPI token 路径使用 `tenant-id` 请求头解析租户。
 - 编译期间有现有 MapStruct 未映射字段警告；不影响构建结果。
 
 ## Admin

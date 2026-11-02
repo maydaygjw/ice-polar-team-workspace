@@ -7,8 +7,8 @@
 ## OAuth2 客户端列表
 
 - 增加“OpenAPI 接入”状态和业务租户列，便于管理员区分通用 OAuth2 客户端与可调用支付 OpenAPI 的客户端。
-- OpenAPI 未绑定时显示“未配置”；绑定停用时显示“已停用”；启用时显示租户名称和启用状态。
-- 列表权限沿用现有系统管理菜单权限；客户端的 OpenAPI scope 不用于显示/隐藏 admin 菜单。
+- OAuth2 客户端表单保持通用，不显示租户绑定、Webhook 或 OpenAPI 专属配置。
+- 客户端 scope 不用于显示/隐藏 admin 菜单。
 
 ## 新增/编辑客户端弹窗
 
@@ -18,14 +18,13 @@
 2. **所属租户**：启用时必选；显示租户名称，不允许业务 API 请求更改。
 3. **微信 JSAPI 支付配置**：从所选租户已有且启用的微信小程序/公众号 JSAPI 商户配置中选择；展示应用类型、应用名称和脱敏 AppID。配置必须与第三方提供的 OpenID 对应。
 4. **OpenAPI 权限**：以 checkbox group 展示 `支付创建`、`支付查询`、`全额退款`，每项附简短说明。scope code 不开放自由文本编辑；至少选择一项才允许启用 OpenAPI。
-5. **支付结果通知地址**：可选 HTTPS URL。提交时前端做基础 URL 校验，后端还需做解析地址校验和 SSRF 防护；空值表示关闭 Webhook。
-6. **通知签名密钥**：首次配置时允许安全生成/输入，使用密码样式输入；编辑已有配置只显示“已设置/未设置”，不回显旧密钥。提供轮换动作，保存后显示一次新密钥值并提示安全保存。
+支付配置表单增加“允许外部 OpenAPI 调用”复选框；勾选后显示 Webhook HTTP/HTTPS 地址。Webhook 使用明文 JSON，服务端限制公网 HTTP/HTTPS 目标并关闭重定向。
 
-OpenAPI client 仍必须启用 `client_credentials` grant type。选择其他 grant type 不自动授予 OpenAPI scope；客户端密钥使用现有生成/显示交互。变更 scope、租户绑定或 webhook 密钥后提示该变更会影响后续调用和通知验签。
+OAuth2 client-credentials 是否启用由 OAuth2 通用配置管理；客户端密钥沿用现有生成/显示交互。scope 使用逗号分隔文本输入。
 
 ## 状态与反馈
 
-- 保存前校验租户绑定、有效微信 JSAPI 配置、client-credentials grant、scope 至少一项、HTTPS 通知 URL 和签名密钥规则。
+- 支付配置勾选 OpenAPI 后，要求填写 HTTP 或 HTTPS Webhook 地址；同一租户只能启用一个微信 JSAPI OpenAPI 配置。
 - 保存成功后刷新列表，显示明确成功提示；后端拒绝时保留表单数据并展示字段级或表单级错误。
 - Webhook 为空时展示“未配置，不发送支付结果通知”；已配置时显示脱敏状态，不展示密钥内容。
 - 禁用 OpenAPI 接入时使用二次确认，说明后续 OpenAPI 调用会被拒绝；已有平台支付单继续接收支付回调和完成状态处理。

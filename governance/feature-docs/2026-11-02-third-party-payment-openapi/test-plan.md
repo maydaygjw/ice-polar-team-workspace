@@ -3,8 +3,8 @@
 ## 环境
 
 - 隔离测试租户，使用微信支付沙箱或可控的支付渠道测试配置。
-- 配置一组 `client_credentials` OAuth2 客户端、启用的 OpenAPI 租户绑定和 `payment:create`、`payment:read`、`payment:refund` scopes。
-- 准备微信 JSAPI OpenID、可接收 HTTPS Webhook 的测试服务，并记录其原始请求体及签名校验结果。
+- 配置一组 `client_credentials` OAuth2 客户端、租户支付配置中启用 OpenAPI 和 `payment:create`、`payment:read`、`payment:refund` scopes。
+- 准备微信 JSAPI OpenID、可接收 HTTP/HTTPS Webhook 的测试服务，并记录原始 JSON 请求体。
 
 ## 场景
 
@@ -13,7 +13,7 @@
 3. 完成支付后验证微信回调只更新 OpenAPI 支付记录，不触发商城履约；重复回调只产生一条 `payment.succeeded` 事件。
 4. 查询支付单及第三方订单号；验证其他客户端即使知道 `paymentId` 也无法读取。
 5. 申请全额退款并验证异步退款终态、相同幂等键重试及重复退款保护。
-6. 验证 Webhook HMAC、事件 ID 去重、2xx 确认、超时/非 2xx 退避重试和管理端失败事件重放。
+6. 验证 Webhook 明文投递、事件 ID 去重、2xx 确认、超时/非 2xx 退避重试和管理端失败事件重放。
 7. 停用客户端后验证新支付请求被拒绝；已受理支付仍完成状态处理和已配置通知投递。
 8. 对回调 URL 测试 HTTP、私网/环回地址、DNS 私网解析和 3xx 重定向，确认均不会转发内部请求。
 

@@ -8,10 +8,10 @@
 
 - OpenAPI 与 `/app-api`、现有 OAuth token 路径分离；只接受客户端凭证，支付端点按 scope 授权。
 - 支付记录按租户和客户端隔离；创建、查询和全额退款复用现有 pay 网关及租户商户配置。
-- 商户配置仍由 pay 模块现有页面维护；system-api 提供 OpenAPI 客户端绑定信息，pay-biz 保留该依赖。
+- 商户配置、OpenAPI 开关和 Webhook 地址均由 pay 模块现有页面维护；客户端与支付配置不建立绑定表。
 - 渠道回调由现有微信验签链路进入独立 OpenAPI 消费组；OpenAPI 支付不会进入商城履约处理。
-- Webhook 使用异步 outbox、HTTPS 目标校验、DNS 地址固定、关闭重定向、HMAC-SHA256 签名、有限重试和失败重放；事件表有支付单/事件类型唯一约束。
-- `notifySecret` 加密持久化，不通过管理端详情返回明文；JSAPI OpenID 不写入 OpenAPI 订单记录。
+- Webhook 使用异步 outbox、公网 HTTP/HTTPS 目标校验、DNS 地址固定、关闭重定向、明文 JSON 投递、有限重试和失败重放；事件表有支付单/事件类型唯一约束。
+- Webhook 不使用独立签名密钥；JSAPI OpenID 不写入 OpenAPI 订单记录。
 
 ## 已知验证缺口
 
