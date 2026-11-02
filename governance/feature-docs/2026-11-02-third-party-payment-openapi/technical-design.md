@@ -8,12 +8,14 @@
 
 | 模块 | 变化 |
 |---|---|
-| `system` 后端 | 新增 OpenAPI 客户端绑定配置和 scope 列表能力；增加仅支持 `client_credentials` 的 OpenAPI token 入口；为 token 绑定正确租户上下文。 |
+| `system` 后端 | 新增 OpenAPI 客户端绑定配置和 scope 列表能力；增加仅支持 `client_credentials` 的 OpenAPI token 入口；为 token 绑定正确租户上下文，并通过 `system-api` 向 pay 暴露客户端配置。 |
 | `pay` 后端 | 新增 OpenAPI 支付订单编排、查询、全额退款、渠道成功通知处理及 Webhook 投递；继续复用当前租户的微信支付配置和 SDK。 |
 | `admin` | 在 OAuth2 客户端配置中设置所属租户、OpenAPI scope、Webhook 地址及通知密钥；提供受控 scope 选项。 |
 | `governance` | 独立 OpenAPI 前缀和功能契约记录；机器 API 快照待实现后生成。 |
 
 不修改 `miniapp`、H5 或 DMS。第三方自身客户端仍负责把服务端返回的 JSAPI 参数交给微信客户端调起支付。
+
+微信商户凭据仍保存在 pay 模块现有 `merchant_details` 表，由“支付服务商配置”页面维护。OAuth2 客户端表单只选择当前租户已有的小程序/公众号配置；system 保存 OpenAPI 客户端、租户、支付配置 ID 和 Webhook 参数的绑定。pay-biz 保留对 system-api 的依赖，通过模块 API 读取绑定，不直接读 system 表或访问商户密钥字段。
 
 ## 3. 关键决策
 
@@ -74,7 +76,7 @@
 
 ### `pay_open_api_webhook_event`
 
-- `event_id` 唯一键、租户 ID、客户端 ID、支付单 ID、事件类型、序列化通知载荷、投递状态、尝试次数、下次投递时间、最后 HTTP 状态/错误摘要和审计时间。
+- `event_id` 唯一键，并以租户、支付单和事件类型建立唯一约束防止重复状态通知；另含客户端 ID、序列化通知载荷、投递状态、尝试次数、下次投递时间、最后 HTTP 状态/错误摘要和审计时间。
 - 索引待投递状态与下次投递时间；错误摘要不得包含签名密钥、访问令牌或完整支付凭据。
 
 迁移放在 `backend/sql/migrations/`，禁止改动基线 SQL。回滚仅在未产生业务记录时删除新增对象；上线后回滚应用时保留三张业务/配置表，避免丢失支付和通知审计数据。

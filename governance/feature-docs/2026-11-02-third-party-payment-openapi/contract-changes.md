@@ -67,7 +67,7 @@ JSON 请求只接收 `reason`（可选）；退款幂等键通过 `Idempotency-K
 | `403` | 客户端被停用、绑定失效或 token 缺少 endpoint 所需 scope。 |
 | `404` | 支付单不存在或不属于当前客户端。 |
 | `409` | 外部订单/幂等键与已存在请求内容冲突，或订单状态不允许执行退款。 |
-| `429` | 客户端或租户超过限流阈值。 |
+| `429` | 若部署网关配置了客户端/租户限流，由网关返回；本期后端未增加独立限流配额。 |
 | `5xx` | 平台或微信支付临时故障；调用方只应以相同幂等键重试。 |
 
 错误响应沿用平台 `CommonResult` 字段格式，需包含稳定错误码和不泄露渠道密钥/配置细节的说明。
@@ -76,7 +76,7 @@ JSON 请求只接收 `reason`（可选）；退款幂等键通过 `Idempotency-K
 
 - 新增 `system_open_api_client_config`：`client_id` 唯一、租户 ID、微信 JSAPI `payment_details_id`、启用状态、预设 Webhook 地址、加密通知密钥及标准审计字段。
 - 新增 `pay_open_api_order`：第三方订单与平台/微信支付单关联、创建幂等键及请求摘要、金额币种、状态、退款幂等键及退款快照；唯一键 `(tenant_id, client_id, client_order_no)`、`(tenant_id, client_id, create_idempotency_key)` 和 `(tenant_id, payment_id)`。
-- 新增 `pay_open_api_webhook_event`：唯一事件 ID、事件载荷、尝试次数、状态、下次重试时间和最后错误摘要。
+- 新增 `pay_open_api_webhook_event`：唯一事件 ID、事件载荷、尝试次数、状态、下次重试时间和最后错误摘要；`(tenant_id, payment_id, event_type)` 唯一约束保证同一状态事件只创建一次。
 - 复用 `system_oauth2_client.scopes` 保存客户端已授予 scope；scope 目录代码固定并由 admin 展示，不新增任意 scope CRUD。
 - 采用一份 Flyway 迁移，放入 `backend/sql/migrations/V<next>__third_party_payment_openapi.sql`。部署前按目录最高版本确定实际版本号。不得修改基线 SQL。
 - 回滚仅能在新表无业务记录时删除表；进入生产后应优先回滚应用、保留支付/回调/审计数据。
