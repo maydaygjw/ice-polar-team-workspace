@@ -1,5 +1,5 @@
 feature: third-party-payment-openapi
-status: design
+status: implementation
 risk: high
 targets: [backend, admin]
 contract: true
