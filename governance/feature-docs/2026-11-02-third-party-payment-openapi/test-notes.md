@@ -5,6 +5,7 @@
 - `mvn -pl yshop-module-system/yshop-module-system-biz,yshop-module-pay/yshop-module-pay-biz -am test`：通过；system/pay 及其依赖模块共 438 项测试，0 失败、0 错误、1 跳过。
 - 最终验证在 Webhook 存量订单通知修复和事件唯一约束调整后执行。
 - 增加 `pay_type` 字段并纳入支付响应后，`mvn -pl yshop-module-pay/yshop-module-pay-biz -am test`：44 项测试通过，0 失败、0 错误、0 跳过。
+- 将 OpenAPI mapper 查询改为 `LambdaQueryWrapperX` DSL 后，同一命令再次通过：44 项测试通过，0 失败、0 错误、0 跳过；新 mapper 中无 `@Select`/原生查询注解。
 - 编译期间有现有 MapStruct 未映射字段警告；不影响构建结果。
 
 ## Admin
