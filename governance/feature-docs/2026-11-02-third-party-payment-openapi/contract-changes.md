@@ -39,7 +39,7 @@
 - JSAPI AppID 从 admin 预先绑定到客户端的微信小程序或公众号支付配置中取得；请求体不允许选择 AppID。
 - 相同客户端、订单号、幂等键、金额、币种和标题重试，返回同一支付单；同订单号或幂等键对应的关键内容不一致返回 `409`。
 
-创建响应至少包括 `paymentId`、`clientOrderNo`、`amount`、`currency`、`status`、`expireTime`、`appId` 和 `paymentData`。`paymentData` 包含微信 JSAPI 调起字段 `timeStamp`、`nonceStr`、`package`、`signType`、`paySign`。第三方服务端将这些字段传给自身微信客户端；平台不提供收银页面。
+创建及查询响应包括 `paymentId`、`clientOrderNo`、`payType`、`amount`、`currency`、`status`、`expireTime`、`appId` 和 `paymentData`。`payType` 复用平台渠道值（首期为 `weixin`；后续可扩展 `adapay`、`alipay` 等）。`paymentData` 在微信渠道包含 JSAPI 调起字段 `timeStamp`、`nonceStr`、`package`、`signType`、`paySign`。第三方服务端将这些字段传给自身微信客户端；平台不提供收银页面。
 
 ### 查询 DTO
 
@@ -75,7 +75,7 @@ JSON 请求只接收 `reason`（可选）；退款幂等键通过 `Idempotency-K
 ## DB
 
 - 新增 `system_open_api_client_config`：`client_id` 唯一、租户 ID、微信 JSAPI `payment_details_id`、启用状态、预设 Webhook 地址、加密通知密钥及标准审计字段。
-- 新增 `pay_open_api_order`：第三方订单与平台/微信支付单关联、创建幂等键及请求摘要、金额币种、状态、退款幂等键及退款快照；唯一键 `(tenant_id, client_id, client_order_no)`、`(tenant_id, client_id, create_idempotency_key)` 和 `(tenant_id, payment_id)`。
+- 新增 `pay_open_api_order`：第三方订单与平台支付单关联，包含 `pay_type` 渠道字段；创建幂等键及请求摘要、金额币种、状态、退款幂等键及退款快照。`pay_type` 复用 `pay_out_order_no.pay_type` 值；首期仅接入微信。唯一键 `(tenant_id, client_id, client_order_no)`、`(tenant_id, client_id, create_idempotency_key)` 和 `(tenant_id, payment_id)`。
 - 新增 `pay_open_api_webhook_event`：唯一事件 ID、事件载荷、尝试次数、状态、下次重试时间和最后错误摘要；`(tenant_id, payment_id, event_type)` 唯一约束保证同一状态事件只创建一次。
 - 复用 `system_oauth2_client.scopes` 保存客户端已授予 scope；scope 目录代码固定并由 admin 展示，不新增任意 scope CRUD。
 - 采用一份 Flyway 迁移，放入 `backend/sql/migrations/V<next>__third_party_payment_openapi.sql`。部署前按目录最高版本确定实际版本号。不得修改基线 SQL。

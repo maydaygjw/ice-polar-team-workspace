@@ -68,8 +68,10 @@
 
 ### `pay_open_api_order`
 
-- 租户 ID、客户端 ID、外部业务订单号、平台支付单 ID、微信外部支付单号。
-- 金额（人民币分）、币种、标题、绑定的微信 `payment_details_id`/JSAPI AppID、支付状态、微信交易单号、支付创建/支付完成/过期时间。
+- 租户 ID、客户端 ID、外部业务订单号、平台支付单 ID、渠道外部订单号。
+- `pay_type` 保存支付渠道，复用 `pay_out_order_no.pay_type` 的稳定值（如 `weixin`、`adapay`、`alipay`）；首期只允许 `weixin`，表结构保持渠道通用。
+- 金额（人民币分）、币种、标题、绑定的渠道 `payment_details_id`/可空渠道 AppID、支付状态、渠道交易号、支付创建/支付完成/过期时间。
+- `payment_data` 为可空的渠道扩展 JSON；当前保存微信 JSAPI 调起参数，未来由 `pay_type` 决定结构，不把 JSAPI 字段提升为通用列。
 - 创建幂等键及请求摘要；退款状态、唯一退款幂等键、退款单号、退款原因及退款完成时间。
 - `payerOpenId` 不持久化；如渠道查单要求回传用户标识，应由微信侧数据满足，避免额外保存个人标识。
 - 唯一约束：`(tenant_id, client_id, client_order_no)`；唯一约束：`(tenant_id, payment_id)`；查询索引覆盖 `tenant_id + client_id + payment_id`。
