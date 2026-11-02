@@ -20,6 +20,15 @@
 - 未运行真实微信 JSAPI、支付回调、退款及 Webhook 接收端联调。当前环境没有可确认的微信商户测试凭据、MQ/数据库联调配置和第三方接收端。
 - 上线前需要按 `test-plan.md` 在隔离测试租户执行端到端验证；不得使用生产支付密钥。
 
+## Dev 部署记录（2026-11-02）
+
+- Backend 分支 `feat/third-party-payment-openapi` 已推送，包含框架提交 `51e201c5` 和支付 OpenAPI 提交 `f9e67c6f7c2b92533d455d4c99d20e0e76c9ef51`。
+- Admin 分支 `feat/third-party-payment-openapi` 已推送，提交 `b2047af0e20fe9bfe15f2dbc03a0e308460f06cd`；`pnpm build:dev` 通过。
+- Dev 数据库流水线 `yshop-db-dev` 在该 Backend 分支执行迁移前 `info`（运行 ID `104`）、`migrate`（`105`）、迁移后 `info`（`106`）和 `validate`（`107`），四次运行均成功。
+- Backend dev 流水线运行 ID `137` 使用该分支和 `YSHOP_ENV=dev2`。Maven 打包阶段成功；“从 OSS 下发 Docker Compose 文件”阶段失败，流水线返回 `deploy.fail`，运行状态为 `FAIL`。API 健康地址 `https://api-yshop-dev.holuntech.cn/actuator/health/` 检查返回 HTTP 502。
+- 云效部署详情和任务日志 API 返回 HTTP 403，当前无法取得更具体的失败原因。Backend 未验收成功，因此未触发 Admin dev 部署；Admin 分支已提交并推送，但尚未部署。
+- 云效流水线详情响应包含未脱敏的 Maven 全局变量。响应内容未写入仓库或发布记录；相关凭据应按已暴露处理并轮换。
+
 ## 静态检查
 
 - backend/admin `git diff --check`：通过。
