@@ -61,7 +61,8 @@ module-a-biz ──→ module-b-api（接口 + DTO）
 |--------|------|
 | 管理后台 | `/admin-api/...` |
 | C 端 / 小程序 | `/app-api/...` |
-| 开放 / 回调 | 复用 `/app-api/...` |
+| 第三方业务 OpenAPI | `/open-api/...`；OAuth2 token 使用 `/open-api/oauth2/...`，版本化业务接口使用 `/open-api/v1/...` |
+| 支付渠道回调 | 由对应支付渠道配置的后端回调路由处理；不作为第三方业务 OpenAPI，也不因新增 `/open-api` 前缀迁移 |
 
 ### 通用响应
 

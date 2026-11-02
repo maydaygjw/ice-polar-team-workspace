@@ -6,6 +6,12 @@
 - 成功响应返回 Bearer `access_token`、`expires_in` 和授权范围，不返回 `refresh_token`。令牌主体类型为 OAuth2 客户端，不代表会员或管理员；客户端凭证不授予 `/app-api` 或 `/admin-api` 的会员/管理员身份。外部业务接口须使用独立 OpenAPI 路由并显式校验 scope。
 - 客户端令牌可通过 `DELETE /admin-api/system/oauth2/token?token={access_token}` 撤销；到期后重新申请。客户端密钥仅保存在服务端，调用必须使用 HTTPS。
 
+## 第三方支付 OpenAPI（设计中）
+
+- 第三方业务支付接口使用独立 `/open-api` 前缀，不使用会员 `/app-api` 或后台 `/admin-api` 身份；首期支持微信 JSAPI 支付创建、支付查询、全额退款和支付结果 Webhook，商家转账不在范围内。
+- OAuth2 client-credentials 客户端绑定业务租户；固定 scope 为 `payment:create`、`payment:read`、`payment:refund`，由 admin 管理端受控授予。业务订单和支付结果按租户及 client 隔离。
+- 详细 API、状态和通知契约见 [第三方支付 OpenAPI Feature Contract](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md)。该契约当前仍在设计阶段。
+
 ## 活动模板画像中奖策略（2026-10-30）
 
 活动模板增加公平开奖、偏向新用户、偏向流失/低频用户和留存唤醒分层四种策略；开奖与即时抽奖按会员用户画像阶段赔率加权，缺失画像按公平处理。期次保存策略快照，游戏模式不变。详见 [活动模板中奖策略契约](feature-docs/2026-10-30-activity-winning-strategy/contract-changes.md)。
