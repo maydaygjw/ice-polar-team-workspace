@@ -28,6 +28,9 @@
 - Backend dev 流水线运行 ID `137` 使用该分支和 `YSHOP_ENV=dev2`。Maven 打包阶段成功；“从 OSS 下发 Docker Compose 文件”阶段失败，流水线返回 `deploy.fail`，运行状态为 `FAIL`。API 健康地址 `https://api-yshop-dev.holuntech.cn/actuator/health/` 检查返回 HTTP 502。
 - 云效部署详情和任务日志 API 返回 HTTP 403，当前无法取得更具体的失败原因。Backend 未验收成功，因此未触发 Admin dev 部署；Admin 分支已提交并推送，但尚未部署。
 - 云效流水线详情响应包含未脱敏的 Maven 全局变量。响应内容未写入仓库或发布记录；相关凭据应按已暴露处理并轮换。
+- 根据部署后端日志确认启动失败原因为 `@Resource` 按字段名 `configMapper` 注入了 Infra 模块同名 Mapper 代理。将字段名改为 `openApiClientConfigMapper`，Backend 提交 `2f905a0381aa3b9ab558d21ac798c86cbafd2eeb`；system/pay Maven 测试 438 项通过，0 失败、0 错误、1 跳过。
+- Backend 部署流水线 `138` 使用提交 `2f905a0381aa3b9ab558d21ac798c86cbafd2eeb` 并成功，部署单 `2887569` 状态 `FINISH`；API 健康检查返回 `{"status":"UP"}`。
+- Admin 部署流水线 `55` 使用提交 `b2047af0e20fe9bfe15f2dbc03a0e308460f06cd` 并成功；管理端首页返回 HTTP 200，页面引用的 JS/CSS 静态资源均返回 HTTP 200。
 
 ## 静态检查
 
