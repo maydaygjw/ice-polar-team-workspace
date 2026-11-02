@@ -6,11 +6,12 @@
 - 成功响应返回 Bearer `access_token`、`expires_in` 和授权范围，不返回 `refresh_token`。令牌主体类型为 OAuth2 客户端，不代表会员或管理员；客户端凭证不授予 `/app-api` 或 `/admin-api` 的会员/管理员身份。外部业务接口须使用独立 OpenAPI 路由并显式校验 scope。
 - 客户端令牌可通过 `DELETE /admin-api/system/oauth2/token?token={access_token}` 撤销；到期后重新申请。客户端密钥仅保存在服务端，调用必须使用 HTTPS。
 
-## 第三方支付 OpenAPI（设计中）
+## 第三方支付 OpenAPI（实现中）
 
 - 第三方业务支付接口使用独立 `/open-api` 前缀，不使用会员 `/app-api` 或后台 `/admin-api` 身份；首期支持微信 JSAPI 支付创建、支付查询、全额退款和支付结果 Webhook，商家转账不在范围内。
+- 后端 Web MVC 根据 `controller.openapi` 包自动附加 `/open-api` 前缀；`/open-api/oauth2/token` 从客户端绑定恢复租户，不要求调用方传入租户头。
 - OAuth2 client-credentials 客户端绑定业务租户；固定 scope 为 `payment:create`、`payment:read`、`payment:refund`，由 admin 管理端受控授予。业务订单和支付结果按租户及 client 隔离。
-- 详细 API、状态和通知契约见 [第三方支付 OpenAPI Feature Contract](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md)。该契约当前仍在设计阶段。
+- 详细 API、状态和通知契约见 [第三方支付 OpenAPI Feature Contract](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md)。
 
 ## 活动模板画像中奖策略（2026-10-30）
 

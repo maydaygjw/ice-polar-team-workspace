@@ -22,7 +22,7 @@
 ### 3.1 独立接口与 OAuth 身份
 
 - 资源接口使用 `/open-api/v1/**`，令牌接口使用 `POST /open-api/oauth2/token`。现有 `/admin-api/system/oauth2/token` 保持兼容，不改变现有 OAuth 客户端用途。
-- Web MVC 按 Controller 包自动添加前缀：`controller.admin` 自动获得 `/admin-api`，`controller.app` 自动获得 `/app-api`。OpenAPI Controller 位于独立 `controller.openapi`/`controller.open.oauth2` 包，不属于上述匹配规则，因此在 `@RequestMapping` 中显式声明 `/open-api`，不会与 `/admin-api` 重复叠加。
+- Web MVC 按 Controller 包自动添加前缀：`controller.admin` 自动获得 `/admin-api`，`controller.app` 自动获得 `/app-api`，`controller.openapi` 自动获得 `/open-api`。OpenAPI Controller 的 `@RequestMapping` 只声明自身路由段；框架前缀规则不与 `/admin-api` 重复叠加。OpenAPI token 路径加入租户忽略列表，租户从客户端绑定中恢复。
 - 新 token 入口只允许 `client_credentials`，使用 HTTP Basic 客户端认证；不支持 password、authorization_code、refresh token。
 - token 主体仍为 `UserTypeEnum.CLIENT`，每个业务请求除检查 scope 外，必须检查主体类型、客户端启用状态及 OpenAPI 绑定状态。
 - 现有 `OAuth2ClientDO`/`system_oauth2_client` 没有租户归属字段；不能直接把令牌签发时的后台 `TenantContextHolder` 当作业务租户。新增 `system_open_api_client_config` 以 `client_id` 唯一关联租户。OpenAPI token 的 `tenantId` 从该绑定读取并写入令牌；后续请求由令牌恢复租户上下文。
