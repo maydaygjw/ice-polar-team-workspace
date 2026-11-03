@@ -16,7 +16,7 @@
 
 1. **启用 OpenAPI 接入**：开关。关闭时后端拒绝该 client 的 OpenAPI token 和业务请求；已有普通 OAuth2 用途继续按原行为处理。
 2. **所属租户**：启用时必选；显示租户名称，不允许业务 API 请求更改。
-3. **微信 JSAPI 支付配置**：从所选租户已有且启用的微信小程序/公众号 JSAPI 商户配置中选择；展示应用类型、应用名称和脱敏 AppID。配置必须与第三方提供的 OpenID 对应。
+3. **微信 JSAPI 或 Adapay 支付配置**：从所选租户已有且启用的微信小程序/公众号 JSAPI 商户配置中选择；展示应用类型、应用名称和脱敏 AppID。配置必须与第三方提供的 OpenID 对应。
 4. **OpenAPI 权限**：以 checkbox group 展示 `支付创建`、`支付查询`、`全额退款`，每项附简短说明。scope code 不开放自由文本编辑；至少选择一项才允许启用 OpenAPI。
 支付配置表单增加“允许外部 OpenAPI 调用”复选框；勾选后显示 Webhook HTTP/HTTPS 地址。Webhook 使用明文 JSON，服务端限制公网 HTTP/HTTPS 目标并关闭重定向。
 
@@ -24,7 +24,7 @@ OAuth2 client-credentials 是否启用由 OAuth2 通用配置管理；客户端�
 
 ## 状态与反馈
 
-- 支付配置勾选 OpenAPI 后，要求填写 HTTP 或 HTTPS Webhook 地址；同一租户只能启用一个微信 JSAPI OpenAPI 配置。
+- 支付配置勾选 OpenAPI 后，要求填写 HTTP 或 HTTPS Webhook 地址；同一租户每个支付渠道最多启用一个 OpenAPI 配置。
 - 保存成功后刷新列表，显示明确成功提示；后端拒绝时保留表单数据并展示字段级或表单级错误。
 - Webhook 为空时展示“未配置，不发送支付结果通知”；已配置时显示脱敏状态，不展示密钥内容。
 - 禁用 OpenAPI 接入时使用二次确认，说明后续 OpenAPI 调用会被拒绝；已有平台支付单继续接收支付回调和完成状态处理。

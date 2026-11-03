@@ -3,8 +3,9 @@
 ## 环境
 
 - 隔离测试租户，使用微信支付沙箱或可控的支付渠道测试配置。
-- 配置一组 `client_credentials` OAuth2 客户端、租户支付配置中启用 OpenAPI 和 `payment:create`、`payment:read`、`payment:refund` scopes。
-- 准备微信 JSAPI OpenID、可接收 HTTP/HTTPS Webhook 的测试服务，并记录原始 JSON 请求体。
+- 配置一组 `client_credentials` OAuth2 客户端、租户支付配置中启用 OpenAPI 和 `payment` scope。
+- 准备微信 JSAPI OpenID、Adapay 测试配置及可接收 HTTP/HTTPS Webhook 的测试服务，并记录原始 JSON 请求体。
+- 分别使用 `payType=weixin` 和 `payType=adapay` 创建支付单，验证渠道数据、回调更新、查单和全额退款终态。
 
 ## 场景
 

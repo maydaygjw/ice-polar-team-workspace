@@ -2,8 +2,8 @@
 
 ## 业务结果
 
-- 提供独立 `/open-api` 客户端凭证 token 和支付 API，首期支持微信 JSAPI 创建支付、支付查询、全额退款。
-- OpenAPI 支付单保存并返回通用 `payType` 渠道标识；首期值为 `weixin`，字段值沿用平台现有支付渠道标识。
+- 提供独立 `/open-api` 客户端凭证 token 和支付 API，支持微信 JSAPI 与 Adapay 创建支付、支付查询、全额退款。
+- OpenAPI 支付单保存并返回通用 `payType` 渠道标识；支持 `weixin`、`adapay`，字段值沿用平台现有支付渠道标识。
 - 原方案在 OAuth2 客户端页配置租户绑定和 Webhook；按最新需求移除这些专属配置，scope 采用逗号分隔文本，支付配置页维护 OpenAPI 开关和 Webhook 地址。
 - 支付通知异步投递、记录状态、有限重试；管理员可查看最近投递记录并重放失败事件。
 

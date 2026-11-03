@@ -2,14 +2,14 @@
 
 ## 1. 设计目标
 
-为第三方服务端提供独立的 OAuth2 client-credentials OpenAPI，首期覆盖微信 JSAPI 支付创建、支付查询、全额退款和支付结果 Webhook。复用现有 OAuth2 客户端/令牌能力、微信商户配置、支付 SDK、渠道通知验签和支付记录能力；不让第三方接触微信支付商户密钥，不改变会员端 `/app-api` 的身份和支付流程。
+为第三方服务端提供独立的 OAuth2 client-credentials OpenAPI，覆盖微信 JSAPI 与 Adapay 支付创建、支付查询、全额退款和支付结果 Webhook。复用现有 OAuth2 客户端/令牌能力、商户配置、支付 SDK、渠道通知验签和支付记录能力；不让第三方接触支付渠道商户密钥，不改变会员端 `/app-api` 的身份和支付流程。
 
 ## 2. 模块影响
 
 | 模块 | 变化 |
 |---|---|
 | `system` 后端 | 增加仅支持 `client_credentials` 的 OpenAPI token 入口；从现有 `tenant-id` 请求头解析并固化租户，不新增客户端支付配置表。 |
-| `pay` 后端 | 新增 OpenAPI 支付订单编排、查询、全额退款、渠道成功通知处理及 Webhook 投递；继续复用当前租户的微信支付配置和 SDK。 |
+| `pay` 后端 | 新增 OpenAPI 支付订单编排、查询、全额退款、渠道成功通知处理及 Webhook 投递；复用当前租户的微信或 Adapay 支付配置和 SDK。 |
 | `admin` | OAuth2 客户端通用表单以逗号分隔文本维护 scope；支付配置表单提供 OpenAPI 启用项和 Webhook 地址。 |
 | `governance` | 独立 OpenAPI 前缀和功能契约记录；机器 API 快照待实现后生成。 |
 
@@ -27,14 +27,14 @@
 - token 主体仍为 `UserTypeEnum.CLIENT`，每个业务请求除检查 scope 外，必须检查主体类型、客户端启用状态及 token 租户上下文。支付创建还必须检查当前租户指定渠道已启用 OpenAPI 的支付配置。
 - 现有 OAuth2 客户端保持通用，不附加租户归属。token 申请必须携带经多租户过滤器校验的 `tenant-id`；系统把当前租户写入 CLIENT token，后续请求要求 token 租户与请求头租户一致。支付配置的 OpenAPI 开关负责控制该租户能否使用对应渠道。
 - OpenAPI 开关按租户/渠道授权：该租户下所有持有有效 OAuth2 客户端凭证、并申请到对应 scope 的客户端均可调用；不提供按 client 单独限制 tenant/payment config 的关系表。
-- 访问令牌申请时，客户端请求的 scope 必须由该 OAuth2 客户端的授权 scope 精确匹配或非空前缀尾部 `*` 模式匹配；空 scope 请求默认拒绝。通配符仅用于客户端授权配置，例如 `payment*`，请求和令牌必须使用具体 scope；单独 `*` 不支持。支付资源接口仍精确检查具体操作 scope。取消授权后，已签发令牌至多在其有效期内继续使用；客户端停用即时拒绝，降低存量令牌等待到期的风险。
+- 访问令牌申请时，scope 可省略；省略时授予客户端配置的全部 scope。显式请求的 scope 必须被客户端精确授权。不支持通配符。支付资源接口统一检查 `payment` scope。取消授权后，已签发令牌至多在其有效期内继续使用；客户端停用即时拒绝，降低存量令牌等待到期的风险。
 
 ### 3.2 Scope 管理
 
 - 使用现有 OAuth2 客户端的 `scopes` 列表保存已授予范围，不新增一份重复授权关系。
-- admin 在通用 OAuth2 客户端表单中以逗号分隔文本维护 scope，不通过枚举控件穷举。OpenAPI 客户端授权配置支持非空前缀尾部 `*` 匹配（例如 `payment*`）；令牌只能包含调用方请求的具体 scope，资源接口仍精确识别 `payment:create`、`payment:read`、`payment:refund` 三个操作 scope，单独 `*` 不支持。
+- admin 在通用 OAuth2 客户端表单中以逗号分隔文本维护 scope，不通过枚举控件穷举。OpenAPI 不支持 scope 通配符；令牌申请可省略 scope（默认授予客户端配置的全部 scope），支付资源接口统一识别 `payment` scope。
 - OAuth2 客户端编辑表单不显示 OpenAPI 专属配置；scope 改用逗号分隔文本，保存时转回现有 scope 列表。
-- 管理员只能授予已实现的操作范围；scope 标识不可在 admin 改名。首期不做动态创建新 scope 的能力，新增支付操作必须先经代码和契约评审。
+- 支付 API 统一使用 `payment` scope；新增权限范围必须先经代码和契约评审。
 
 ### 3.3 支付单归属和复用支付网关
 
@@ -42,7 +42,7 @@
 - 唯一约束为 `(tenant_id, client_id, client_order_no)`、`(tenant_id, client_id, create_idempotency_key)`；平台支付单号另有租户内唯一约束。记录保存关键请求摘要。创建时在事务/锁保护下检查订单号和幂等键，防止并发重复创建。
 - OpenAPI 支付编排留在 `pay` 模块，使用当前租户唯一启用 OpenAPI 的微信 JSAPI 商户配置（小程序或公众号）和微信支付 SDK 创建预支付单。`payerOpenId` 只用于创建预支付单，不作为订单归属凭证；禁止记录到普通日志，除非渠道排障确需且须脱敏。
 - 不复用当前 `PayOrderApi.createPayOrder` 的会员 ID 假设：该 API 的 JSAPI 路径通过 `MemberUserApi` 从会员读取 OpenID。OpenAPI 接收调用方提供的 JSAPI `payerOpenId`，并用独立编排服务将其传给现有支付网关。退款与查单按平台支付单关联的 `outPayNo` 操作，不接受请求方指定渠道商户配置。
-- 微信回调仍由现有 `WxPayMessageHandler` 完成验签/解密。支付记录以 `bizType=open_api` 区分；支付通知流新增 OpenAPI 专用消费组，更新 `pay_out_order_no` 和 `pay_open_api_order`，不调用商城订单支付/履约逻辑。
+- 微信回调由现有 `WxPayMessageHandler` 完成验签/解密；Adapay 回调由现有 Adapay handler 完成验签并更新 OpenAPI 状态。支付记录以 `bizType=open_api` 区分；支付通知流新增 OpenAPI 专用消费组，更新 `pay_out_order_no` 和 `pay_open_api_order`，不调用商城订单支付/履约逻辑。
 - 支付状态采用 OpenAPI 稳定枚举：`PENDING`、`SUCCESS`、`FAILED`、`CLOSED`；退款状态独立为 `NOT_REFUNDED`、`PROCESSING`、`SUCCESS`、`FAILED`。渠道原始状态仅作为内部映射依据。
 
 ### 3.4 Webhook 可靠投递
@@ -60,14 +60,14 @@
 
 - `open_api_enabled`：当前支付配置是否允许外部 OpenAPI 调用。
 - `open_api_webhook_url`：支付状态通知 HTTP/HTTPS 地址，明文 JSON POST。
-- 每个租户的微信 JSAPI 配置只能启用一个 OpenAPI 项，避免公众号/小程序 AppID 与 OpenID 对应关系不明确。
+- 每个租户每个支付渠道最多启用一个 OpenAPI 配置；微信渠道在小程序/公众号中二选一，Adapay 使用其 H5 配置。
 
 ### `pay_open_api_order`
 
 - 租户 ID、客户端 ID、外部业务订单号、平台支付单 ID、渠道外部订单号。
-- `pay_type` 保存支付渠道，复用 `pay_out_order_no.pay_type` 的稳定值（如 `weixin`、`adapay`、`alipay`）；首期只允许 `weixin`，表结构保持渠道通用。
+- `pay_type` 保存支付渠道，复用 `pay_out_order_no.pay_type` 的稳定值（如 `weixin`、`adapay`、`alipay`）；支持 `weixin` 与 `adapay`，表结构保持渠道通用。
 - 金额（人民币分）、币种、标题、绑定的渠道 `payment_details_id`/可空渠道 AppID、支付状态、渠道交易号、支付创建/支付完成/过期时间。
-- `payment_data` 为可空的渠道扩展 JSON；当前保存微信 JSAPI 调起参数，未来由 `pay_type` 决定结构，不把 JSAPI 字段提升为通用列。
+- `payment_data` 为可空的渠道扩展 JSON；按 `pay_type` 保存微信 JSAPI 或 Adapay 收银参数，不把 JSAPI 字段提升为通用列。
 - 创建幂等键及请求摘要；退款状态、唯一退款幂等键、退款单号、退款原因及退款完成时间。
 - `payerOpenId` 不持久化；如渠道查单要求回传用户标识，应由微信侧数据满足，避免额外保存个人标识。
 - 唯一约束：`(tenant_id, client_id, client_order_no)`；唯一约束：`(tenant_id, payment_id)`；查询索引覆盖 `tenant_id + client_id + payment_id`。
@@ -89,10 +89,10 @@
 
 ### 创建支付单
 
-1. 验证 CLIENT 主体、当前租户、`payment:create` scope、金额（正整数分）、CNY 和 JSAPI OpenID；按当前租户查找唯一启用 OpenAPI 的微信 JSAPI 配置，并使用该配置的 AppID。
+1. 验证 CLIENT 主体、当前租户、`payment` scope、金额（正整数分）及 CNY；`payType` 默认 `weixin`，只允许 `weixin`/`adapay`，微信需校验 OpenID，按渠道读取当前租户启用的 OpenAPI 商户配置。
 2. 以 `(tenant, client, clientOrderNo)` 锁定或唯一约束竞争；同订单同内容返回原支付单，同订单不同金额/币种/标题返回冲突。请求超时但渠道处理结果未知时，复用原平台支付单号查单，不另建可扣款支付单。
-3. 创建平台支付关联记录及微信 JSAPI 预支付单。服务端使用租户支付配置，不接收商户号、渠道配置 ID、notify URL 或支付密钥。
-4. 返回 `paymentId`、订单号、金额、状态、过期时间、`appId`、`timeStamp`、`nonceStr`、`package`、`signType`、`paySign`。第三方服务端把 JSAPI 参数传给其微信内 H5/小程序客户端，由客户端完成 `wx.requestPayment`。
+3. 创建平台支付关联记录及对应渠道的预支付单；Adapay outPayNo 在幂等重试中复用。服务端使用租户支付配置，不接收商户号、渠道配置 ID、notify URL 或支付密钥。
+4. 返回 `paymentId`、订单号、金额、状态、过期时间、`appId` 和渠道 `paymentData`。第三方按渠道把支付数据传给付款客户端。
 
 ### 支付终态和查询
 
@@ -102,9 +102,9 @@
 
 ### 全额退款
 
-1. 校验 `payment:refund`、支付单归属、支付成功、尚无成功/处理中退款。
-2. 服务端以支付金额作为退款金额，并使用固定全额退款幂等标识发起原路微信退款；请求不可提交部分金额。
-3. 同一退款幂等键同内容返回原结果，不同内容冲突；微信处理中与退款成功分别映射为 `PROCESSING`、`SUCCESS`。
+1. 校验 `payment`、支付单归属、支付成功、尚无成功/处理中退款。
+2. 服务端以支付金额作为退款金额，并使用固定全额退款幂等标识发起原路渠道退款；请求不可提交部分金额。
+3. 同一退款幂等键同内容返回原结果，不同内容冲突；微信状态由退款查询刷新；Adapay 退款处理中/成功/失败回调更新为 `PROCESSING`/`SUCCESS`/`FAILED`。
 4. 退款状态变更写入 Webhook outbox，第三方也可查询支付单上的 refundStatus。
 
 ## 6. 风险与权衡
@@ -114,7 +114,7 @@
 - **退款状态异步**：受理不能等同完成，必须用回调及渠道查单更新；通知送达失败不回滚微信支付/退款结果。
 - **Webhook 安全**：Webhook 不做应用层签名/加密，仍必须限制 HTTP/HTTPS 目标并防止内网访问；接收方按 eventId 去重，失败事件需可观测并可安全重放。
 - **前缀兼容**：架构文档现有规则把 open API 归入 `/app-api`，本设计修订为独立前缀；旧 app API 不迁移，现有 OAuth token URL保持兼容。
-- **支付场景**：首期已确认微信 JSAPI，客户端须提供 OpenID，并使用对应租户小程序/公众号的应用身份；不含 Native、MWEB、商家转账和托管收银页。
+- **支付场景**：微信渠道使用 JSAPI，客户端须提供 OpenID；Adapay 复用现有 H5/小程序支付数据。支付宝、商家转账和平台托管收银页不在范围内。
 
 ## 7. 后续交付门禁
 
