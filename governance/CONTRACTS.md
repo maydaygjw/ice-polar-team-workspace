@@ -9,7 +9,7 @@
 ## 第三方支付 OpenAPI（实现中）
 
 - 第三方业务支付接口使用独立 `/open-api` 前缀，不使用会员 `/app-api` 或后台 `/admin-api` 身份；支持微信 JSAPI 与汇付支付创建、支付查询、全额退款和支付结果 Webhook，商家转账不在范围内。
-- 后端 Web MVC 根据 `controller.openapi` 包自动附加 `/open-api` 前缀；申请 token 和调用支付接口均通过 `tenant-id` 请求头指定当前租户，租户 ID 固化到 token 并在后续请求中校验。
+- 后端 Web MVC 根据 `controller.openapi` 包自动附加 `/open-api` 前缀；OAuth2 客户端表启用标准多租户隔离。客户端在当前租户上下文中创建、查询和认证，申请 token 与调用支付接口均须携带匹配的 `tenant-id` 请求头，令牌固化当前租户。客户端不能跨租户访问。
 - OpenAPI 支付统一使用 `payment` scope，创建、查询、退款接口均校验此范围。客户端 scope 以逗号分隔文本维护，不支持通配符；申请 token 时可显式请求已登记的 scope 子集，省略 `scope` 时授予客户端登记的全部 scope。商户支付配置页负责启用租户的 OpenAPI 支付接入并维护 Webhook 地址，不建立 client 到支付配置的绑定表。业务订单和支付结果按租户及 client 隔离。
 - 详细 API、状态和通知契约见 [第三方支付 OpenAPI Feature Contract](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md)。
 

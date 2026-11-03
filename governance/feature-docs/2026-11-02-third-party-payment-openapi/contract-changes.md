@@ -8,7 +8,7 @@
 |---|---|---|---|
 | `POST /open-api/oauth2/token` | OAuth2 HTTP Basic、`tenant-id` 请求头 | `grant_type=client_credentials`、可选 `scope`（空格分隔） | Bearer token、`expires_in`、最终授予 `scope`；省略 `scope` 时授予客户端登记的全部 scope。只签发客户端身份 token，不返回 refresh token。 |
 
-现有 `POST /admin-api/system/oauth2/token` 保持现状和兼容性。OpenAPI token 和支付接口请求均须携带 `tenant-id`，资源请求中的租户必须与 token 租户一致。OpenAPI token 入口只接受 `client_credentials`；scope 可省略，省略时授予客户端登记的全部 scope；显式请求时必须是登记 scope 的精确子集。不支持通配符。支付 OpenAPI 统一使用 `payment` scope。
+现有 `POST /admin-api/system/oauth2/token` 保持现状和兼容性。OAuth2 客户端表按标准租户机制隔离；OpenAPI token 入口只接受 `client_credentials`，签发与支付接口请求均须携带当前租户的 `tenant-id`，客户端凭证只在其所属租户上下文内有效。scope 可省略，省略时授予客户端登记的全部 scope；显式请求时必须是登记 scope 的精确子集。不支持通配符。支付 OpenAPI 统一使用 `payment` scope。
 
 ### 支付
 
@@ -77,6 +77,7 @@ JSON 请求只接收 `reason`（可选）；退款幂等键通过 `Idempotency-K
 - 在 `merchant_details` 增加 OpenAPI 启用标识和 webhook 地址；按租户及渠道读取支付配置。移除 `system_open_api_client_config`。
 - 新增 `pay_open_api_order`：第三方订单与平台支付单关联，包含 `pay_type` 渠道字段；创建幂等键及请求摘要、金额币种、状态、退款幂等键及退款快照。`pay_type` 复用 `pay_out_order_no.pay_type` 值；支持微信 V3 与 Adapay。唯一键 `(tenant_id, client_id, client_order_no)`、`(tenant_id, client_id, create_idempotency_key)` 和 `(tenant_id, payment_id)`。
 - 新增 `pay_open_api_webhook_event`：唯一事件 ID、事件载荷、尝试次数、状态、下次重试时间和最后错误摘要；`(tenant_id, payment_id, event_type)` 唯一约束保证同一状态事件只创建一次。
+- `system_oauth2_client` 使用标准租户字段与 MyBatis 租户拦截器隔离；管理页面不需要增加租户选择。租户拦截器在创建客户端时写入当前租户，并在查询、认证时只允许访问当前租户的数据。迁移时将历史全局客户端归入租户 1。
 - 复用 `system_oauth2_client.scopes` 保存客户端已授予 scope；管理页面用逗号分隔文本维护，接口按已实现的 scope 校验。
 - 迁移放在 `backend/sql/migrations/`；新增 `merchant_details` 字段并删除旧的 `system_open_api_client_config`。保留支付单和 Webhook 事件表。
 
