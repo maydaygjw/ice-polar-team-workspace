@@ -12,6 +12,7 @@
 - 跨模块调用通过 `-api`，实现位于 `-biz`；每个依赖需能答出真实使用点，答不出即删
 - Controller 按 `admin/*` 与 `app/*` 分端；C 端使用 `@PreAuthenticated`，管理端使用 `@PreAuthorize`
 - 新业务表和查询验证 `tenant_id`；需要时验证部门/门店数据范围
+- Mapper 数据访问优先使用 MyBatis-Plus DSL（如 `BaseMapperX`、`LambdaQueryWrapperX`、`LambdaUpdateWrapper`）表达常规查询、条件更新和删除；简单 CRUD 不写手工 SQL。仅当 DSL 无法清楚表达，或复杂联表/聚合、数据库专属能力、经验证的性能需求确有必要时，才使用注解 SQL/XML，并在代码中说明原因。
 - 新增数据库变更脚本统一放在 `backend/sql/migrations/`，并遵循该目录现有的命名约定；同一特性的增量合并到同一脚本，不直接修改基线 SQL
 - 对象转换或批量赋值优先使用 `BeanUtils`（`co.yixiang.yshop.framework.common.util.object.BeanUtils`）等属性拷贝工具，避免冗长的逐字段 setter；仅当字段来自多个异源对象或需特殊映射时才手写赋值
 - `*-api` 模块的接口必须保持领域通用，不得夹带调用方/设备/特定业务概念（如 `ProductApi` 不出现打印/设备语义）；设备侧编排与语义放在调用方模块，通过参数（如目标分类名、选项名）传入

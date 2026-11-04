@@ -13,6 +13,14 @@
 - OpenAPI 支付统一使用 `payment` scope，创建、查询、退款接口均校验此范围。客户端 scope 以逗号分隔文本维护，不支持通配符；申请 token 时可显式请求已登记的 scope 子集，省略 `scope` 时授予客户端登记的全部 scope。商户支付配置页负责启用租户的 OpenAPI 支付接入并维护 Webhook 地址，不建立 client 到支付配置的绑定表。业务订单和支付结果按租户及 client 隔离。
 - 详细 API、状态和通知契约见 [第三方支付 OpenAPI Feature Contract](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md)。
 
+## OpenAPI AdaPay 结算与对账
+
+- OpenAPI 支付创建请求提交商圈代码；平台按当前租户商圈配置解析专用默认店铺，不接受客户端指定店铺、计费模板或收款人。请求金额全额作为计费基数，无优惠和平台补贴。
+- AdaPay 支付成功时，以支付创建时保存的计费上下文快照幂等生成通用应收应付事实；OpenAPI 内部使用 paymentId 关联账务，clientOrderNo 保持为客户端外部订单号，不关联商城订单表。
+- 客户端可用 `payment` scope 按自身 clientOrderNo 主动请求 AdaPay 结算；系统每日 00:05 自动任务处理相同待结算队列。主动/自动执行及全额退款互斥；分账处理中或成功时拒绝退款，退款成功后不再结算，退款失败恢复资格。
+- 现有 02:00 AdaPay 日终对账增加 OpenAPI AdaPay 支付来源；成功分账沿用 PaymentConfirm/Div 对账。微信账单对账和 AdaPay Refund/RefundDiv 退款对账不在本 feature。
+- 详细字段、路由、状态和迁移见 [OpenAPI AdaPay 结算与对账 Feature Contract](feature-docs/2026-11-04-openapi-adapay-settlement/contract-changes.md)。
+
 ## 活动模板画像中奖策略（2026-10-30）
 
 活动模板增加公平开奖、偏向新用户、偏向流失/低频用户和留存唤醒分层四种策略；开奖与即时抽奖按会员用户画像阶段赔率加权，缺失画像按公平处理。期次保存策略快照，游戏模式不变。详见 [活动模板中奖策略契约](feature-docs/2026-10-30-activity-winning-strategy/contract-changes.md)。
