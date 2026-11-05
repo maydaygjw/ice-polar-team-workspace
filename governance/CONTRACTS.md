@@ -1,5 +1,10 @@
 # 跨模块接口契约索引
 
+## 管理后台订单详情支付流水号
+
+- `GET /admin-api/order/store-order/get?id={id}` 与 `GET /admin-api/order/store-order/getInfo?orderId={orderId}` 的 `data` 响应新增可空字符串字段 `transactionId`，表示订单支付流水号；未记录时为 `null`。
+- 字段从订单记录的 `transaction_id` 返回；不改变支付状态、写入行为、权限或租户隔离规则。详见[订单详情支付流水号契约](feature-docs/2026-11-05-order-detail-transaction-id/contract-changes.md)。
+
 ## OAuth2 客户端凭证授权
 
 - `POST /admin-api/system/oauth2/token` 支持 `grant_type=client_credentials`；客户端通过 HTTP Basic 传递 `client_id` / `client_secret`，可选 `scope` 必须是该客户端登记范围的子集，且客户端须启用该授权类型并处于启用状态。
