@@ -18,9 +18,16 @@ bash governance/SCRIPTS/deploy-yunxiao.sh --target backend --branch feat/example
 # 目标可选 backend、admin、h5、all；--branch 可省略
 ```
 
-所需凭据为 `YUNXIAO_API_DOMAIN` 和 `YUNXIAO_TOKEN`。不要打印、搜索或记录 `.env.local` 内容，不要启用 shell trace 或 curl verbose。若凭据意外泄露，停止使用并轮换后再部署。流水线默认 ID 见上表，也可通过 `YUNXIAO_PIPELINE_*_ID` 覆盖。脚本不支持生产部署。
-
 确认本次涉及的流水线最终状态为 `SUCCESS` 后，记录运行 ID 并验收对应服务：后端检查 `/actuator/health/`，管理后台和 H5 首页返回 HTTP 200；按变更范围完成登录、关键 API 和业务冒烟。H5 还需检查 `activity.html` 和 ticket 换 Token。只使用测试账号和租户。失败时记录阶段、commit 和运行 ID；修复后重跑。验收失败时，通过流水线部署最近一次已验收版本，不手工替换制品。
+
+查询最近一次运行及任务日志：
+
+```bash
+bash governance/SCRIPTS/query-yunxiao.sh --pipeline backend --latest
+# pipeline 可选 backend、admin、h5、db，也可直接填写流水线 ID；查看指定运行用 --run <运行ID>
+```
+
+日志读取需要云效 Token 有流水线运行任务的只读权限。
 
 ## 测试数据库迁移
 
