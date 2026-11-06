@@ -3,6 +3,11 @@
 ## 后台订单详情费用字段
 
 - `/admin-api/order/store-order/get` 与 `/admin-api/order/store-order/getInfo` 响应新增 `boxFeeForPlatform`（平台餐盒费抽成）和 `serviceFee`（订单服务费）；两个字段暂不由业务流程赋值，数据库默认 `0.00`。原 `boxFeePrice` 仍表示餐盒费。详见[后台订单详情费用字段契约](feature-docs/2026-11-07-order-detail-fee-fields/contract-changes.md)。
+## 订单应收应付每日补算
+
+- 订单模块内部 API 增加通用按订单状态查询订单号的能力，状态和退款状态集合均使用 `OrderInfoEnum`，支持可选支付状态和主键游标分页；接口不暴露 HTTP 路由。计费任务传入 `OrderInfoEnum.STATUS_2`、`paid=1`、`refundStatuses=[REFUND_STATUS_0,REFUND_STATUS_3]`。
+- 支付计费模块每日扫描候选订单，仅对没有应收应付主记录或状态为 `FAILED` 的记录执行计算；失败记录允许后续日任务重试。订单状态流转不再同步调用计费模块。
+- 详见[订单应收应付每日补算契约](feature-docs/2026-11-06-daily-order-billing/contract-changes.md)。
 
 ## 管理后台订单详情支付流水号
 
