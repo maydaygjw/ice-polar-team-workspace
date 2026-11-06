@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const baseURL = process.env.E2E_BASE_URL ?? 'https://yshop-admin.holuntech.com/'
+const baseURL = process.env.E2E_BASE_URL ?? 'https://admin-yshop-dev.holuntech.cn/'
 
 process.env.E2E_TENANT ??= 'HolunEase'
 process.env.E2E_USERNAME ??= 'HolunEase'

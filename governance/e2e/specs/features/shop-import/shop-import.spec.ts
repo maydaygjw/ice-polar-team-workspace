@@ -76,7 +76,7 @@ test('店铺导入 E2E（美团外卖用户端模板）', async () => {
 
   try {
     // 1. 登录
-    await page.goto('https://yshop-admin.holuntech.com/login')
+    await page.goto('/login')
     await expect(page.getByPlaceholder('请输入租户名称')).toBeVisible()
     await fillForVideo(page, page.getByPlaceholder('请输入租户名称'), process.env.E2E_TENANT ?? 'HolunEase')
     await fillForVideo(page, page.getByPlaceholder('请输入用户名'), process.env.E2E_USERNAME ?? 'HolunEase')

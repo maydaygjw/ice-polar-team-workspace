@@ -51,7 +51,7 @@ test('API-001 查询成功', async ({ request }) => {
 约定：
 
 - 文件使用 `{feature}.api.spec.ts`，用例编号使用 `API-xxx`；
-- `API_BASE_URL`、`TEST_TENANT_ID`、`TEST_USER_ID` 从 `governance/ENVIRONMENTS/test.env` 或 CI 注入；不得在案例中硬编码租户；
+- `API_BASE_URL`、`TEST_TENANT_ID`、`TEST_USER_ID` 从本地环境或 CI 注入；远程请求只允许指向 dev，且不得在案例中硬编码租户；
 - 至少断言 HTTP 状态、`CommonResult.code` 和关键响应字段；
 - 写接口用唯一测试标识，测试结束必须通过业务 API 清理并复核；必要时使用 `try/finally`；
 - 不记录完整 Token、Cookie、密码或个人数据；
@@ -63,7 +63,7 @@ test('API-001 查询成功', async ({ request }) => {
 从 workspace 根目录执行：
 
 ```bash
-source governance/SCRIPTS/deploy-helper.sh && load_env test
+source governance/SCRIPTS/deploy-helper.sh && load_env dev
 (
   cd governance/e2e
   API_BASE_URL="https://${DOMAIN_API}" \
@@ -88,7 +88,7 @@ source governance/SCRIPTS/deploy-helper.sh && load_env test
 ```env
 LIANKE_PRINT_HOST=http://127.0.0.1:8085/api
 LIANKE_PRINT_API_KEY=e2e-fake-key
-LIANKE_PRINT_CALLBACK_BASE_URL=https://yshop-api.holuntech.com
+LIANKE_PRINT_CALLBACK_BASE_URL=https://api-yshop-dev.holuntech.cn
 ```
 
 当前 rprod18 的 Mock 仅监听本机回环地址。测试从本地运行时，先建立隧道：
@@ -102,7 +102,7 @@ ssh -N -L 18085:127.0.0.1:8085 root@rprod18
 ```bash
 cd governance/e2e
 LIANKE_MOCK_BASE_URL=http://127.0.0.1:18085 \\
-API_BASE_URL=https://yshop-api.holuntech.com \\
+API_BASE_URL=https://api-yshop-dev.holuntech.cn \\
 TEST_TENANT_ID=<测试租户> \\
 PRINTER_ADMIN_USER_ID=<具备打印设备/任务权限的管理员> \\
 PRINTER_SHOP_ID=<一次性测试店铺> \\
@@ -122,7 +122,7 @@ App 打印 API 使用 `printer.app.api.spec.ts`。前两个用例只读/预览�
 
 ```bash
 LIANKE_MOCK_BASE_URL=http://127.0.0.1:18085 \\
-API_BASE_URL=https://yshop-api.holuntech.com \\
+API_BASE_URL=https://api-yshop-dev.holuntech.cn \\
 APP_TEST_TENANT_ID=157 \\
 APP_PRINT_SHOP_ID=73 \\
   npx playwright test specs/api/printer/printer.app.api.spec.ts -g 'APP-PRINTER-001|APP-PRINTER-002'
@@ -131,9 +131,8 @@ APP_PRINT_SHOP_ID=73 \\
 完整链路用例 `APP-PRINTER-003` 会创建真实业务订单，并调用
 `POST /app-api/order/pay`，请求体使用 `{ from: "routine", paytype: "yue", uni: orderNo }`。
 它还会轮询 App 进度，验证 `CREATED → PROCESSING → SUCCEEDED`，因此必须使用有余额的专用测试用户，
-设置 `APP_TEST_USER_ID`、`APP_PRINT_PRODUCT_ID` 后执行。测试环境已准备用户 `59`，余额 2000 元，
-对应打印店为 `Automation-test` 租户的店铺 `73`，文件打印商品为 `3848`。
-当前没有确认可安全取消已完成打印订单的业务接口，测试订单号和余额扣减必须记录在测试结果中。
+设置 `APP_TEST_USER_ID`、`APP_PRINT_PRODUCT_ID` 后在 dev 执行。执行前确认 dev 中的专用用户余额、测试租户、打印店和文件打印商品均已准备；不要复用已下线环境的账号或数据 ID。
+当前没有确认可安全取消已完成打印订单的业务接口，dev 测试订单号和余额扣减必须记录在测试结果中。
 
 注意：完整链路要求后端已包含 `ProductApiImpl` 对商品 `shopId` 的映射修复，否则合法商品会被错误返回
 `1009002000 / 打印商品不存在`，余额支付请求不会被执行。

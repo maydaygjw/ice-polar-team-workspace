@@ -28,6 +28,7 @@
 - 常规查询、条件更新和删除优先使用 MyBatis-Plus DSL（如 `BaseMapperX`、`LambdaQueryWrapperX`、`LambdaUpdateWrapper`）；简单 CRUD 不写手工 SQL。
 - 仅当 DSL 无法清楚表达，或确有复杂联表/聚合、数据库专属能力、经验证的性能需求时，才编写 SQL；SQL 必须写在 Mapper XML 中，并说明使用原因。禁止使用 SQL 注解，也禁止在 Java 代码中编写、拼接或内嵌 SQL。
 - 数据库变更脚本统一放在 `backend/sql/migrations/`，遵循目录现有命名约定；同一特性的增量合并到同一脚本，不直接修改基线 SQL。
+- MySQL 字符字段遵循[系统架构数据库 Schema 契约](../ARCHITECTURE.md)：新表显式声明 `utf8mb4` / `utf8mb4_0900_ai_ci`；关联或唯一约束涉及的同一业务标识字段须保持一致。已有字段调整必须通过 Flyway 迁移，并完成契约要求的兼容性和索引预检。
 - 对象转换或批量赋值优先使用 `BeanUtils`（`co.yixiang.yshop.framework.common.util.object.BeanUtils`）等属性拷贝工具，避免冗长的逐字段 setter。字段来自多个异源对象或需要特殊映射时，可手写赋值。
 
 ## 外部调用与日志安全

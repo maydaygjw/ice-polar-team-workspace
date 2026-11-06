@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Stop yshop backend for the loaded deployment environment.
 # Usage:
-#   source governance/SCRIPTS/deploy-helper.sh && load_env test
+#   source governance/SCRIPTS/deploy-helper.sh && load_env dev
+#   source governance/SCRIPTS/deploy-helper.sh && load_env prod
 #   bash governance/SCRIPTS/stop-yshop.sh
 
 required_vars=(
@@ -15,7 +16,7 @@ required_vars=(
 for var_name in "${required_vars[@]}"; do
   if [[ -z "${!var_name:-}" ]]; then
     echo "Missing required environment variable: ${var_name}" >&2
-    echo "Run: source governance/SCRIPTS/deploy-helper.sh && load_env <env-name>" >&2
+    echo "Run: source governance/SCRIPTS/deploy-helper.sh && load_env dev or load_env prod" >&2
     exit 1
   fi
 done

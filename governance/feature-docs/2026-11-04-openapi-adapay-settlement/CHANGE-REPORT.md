@@ -24,7 +24,7 @@
 - store-biz Maven 测试：通过，8 项。
 - Admin `pnpm build:prod`：通过。
 - Admin `pnpm ts:check`：被全仓已有全局声明/类型错误阻断。
-- AdaPay E2E 与数据库迁移演练：未执行，需在专用测试环境完成。
+- AdaPay E2E 与数据库迁移演练：未执行，需在 dev 环境完成。
 
 ## 残余风险
 

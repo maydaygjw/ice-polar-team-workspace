@@ -1,8 +1,8 @@
 # 部署与交接
 
-服务器首次安装由 Ansible 管理。测试部署和数据库迁移使用云效流水线；故障诊断见[故障诊断手册](incident-response.md)。
+服务器首次安装由 Ansible 管理。dev 部署和数据库迁移使用云效流水线；故障诊断见[故障诊断手册](incident-response.md)。
 
-## Dev2 测试环境
+## dev 环境（backend profile：dev2）
 
 | 项目 | 流水线 ID | 参数 | 验收地址 |
 |---|---:|---|---|
@@ -18,7 +18,7 @@ bash governance/SCRIPTS/deploy-yunxiao.sh --target backend --branch feat/example
 # 目标可选 backend、admin、h5、all；--branch 可省略
 ```
 
-确认本次涉及的流水线最终状态为 `SUCCESS` 后，记录运行 ID 并验收对应服务：后端检查 `/actuator/health/`，管理后台和 H5 首页返回 HTTP 200；按变更范围完成登录、关键 API 和业务冒烟。H5 还需检查 `activity.html` 和 ticket 换 Token。只使用测试账号和租户。失败时记录阶段、commit 和运行 ID；修复后重跑。验收失败时，通过流水线部署最近一次已验收版本，不手工替换制品。
+确认本次涉及的流水线最终状态为 `SUCCESS` 后，记录运行 ID 并验收对应服务：后端检查 `/actuator/health/`，管理后台和 H5 首页返回 HTTP 200；按变更范围完成登录、关键 API 和业务冒烟。H5 还需检查 `activity.html` 和 ticket 换 Token。只使用 dev 测试账号和隔离租户。失败时记录阶段、commit 和运行 ID；修复后重跑。验收失败时，通过流水线部署最近一次已验收版本，不手工替换制品。
 
 查询最近一次运行及任务日志：
 
@@ -29,9 +29,9 @@ bash governance/SCRIPTS/query-yunxiao.sh --pipeline backend --latest
 
 日志读取需要云效 Token 有流水线运行任务的只读权限。
 
-## 测试数据库迁移
+## dev 数据库迁移
 
-迁移流水线 ID 为 `1410661`。运行前确认流水线连接的是测试库，且构建集群能访问数据库。每一步都要等流水线结束并检查结果，再进行下一步：
+迁移流水线 ID 为 `1410661`。运行前确认流水线连接的是 dev 库，且构建集群能访问数据库。每一步都要等流水线结束并检查结果，再进行下一步：
 
 ```bash
 bash governance/SCRIPTS/deploy-yunxiao.sh --target db-info --branch feat/example

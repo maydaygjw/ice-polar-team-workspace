@@ -12,7 +12,7 @@ mock_code_path="${MOCK_CODE_PATH:-/opt/holun/mock-external-server}"
 mock_repo_url="${MOCK_REPO_URL:-https://gitee.com/icepolar/mock-external-server.git}"
 mock_service_name="${MOCK_SERVICE_NAME:-mock-external-server.service}"
 mock_port="${MOCK_PORT:-8085}"
-mock_callback_allowlist="${MOCK_CALLBACK_ALLOWLIST:-yshop-api.holuntech.com}"
+mock_callback_allowlist="${MOCK_CALLBACK_ALLOWLIST:-api-yshop-dev.holuntech.cn}"
 
 ssh "${mock_deploy_user}@${mock_server_host}" "
   set -eu

@@ -4,9 +4,9 @@
 
 | 条件 | 说明 |
 |------|------|
-| 目标环境 | `E2E_BASE_URL` 指向可访问的 admin 部署，默认 `https://yshop-admin.holuntech.com/` |
+| 目标环境 | `E2E_BASE_URL` 指向 dev 管理后台，默认 `https://admin-yshop-dev.holuntech.cn/`；禁止将写入型 E2E 指向 prod |
 | 测试账号 | 环境变量 `E2E_TENANT`、`E2E_USERNAME`、`E2E_PASSWORD` 提供有效账号 |
-| 验证码 | 测试环境需关闭滑块验证码（`VITE_APP_CAPTCHA_ENABLE=false`），否则登录成功用例无法自动完成 |
+| 验证码 | dev 环境需关闭滑块验证码（`VITE_APP_CAPTCHA_ENABLE=false`），否则登录成功用例无法自动完成 |
 | 浏览器 | Chromium，中文 locale |
 
 ## 用例清单

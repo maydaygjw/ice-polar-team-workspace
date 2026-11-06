@@ -1,6 +1,6 @@
 # API Testing Playbook
 
-> test-agent 在本地或测试环境执行 yshop API 测试的最小操作手册。Mock Token 仅用于本地/测试环境，生产环境必须关闭。
+> test-agent 在本地或 dev 环境执行 yshop API 测试的最小操作手册。Mock Token 仅用于本地/dev 环境，生产环境必须关闭。
 
 ## 1. 前置与变量
 
@@ -10,17 +10,17 @@
 yshop.security.mock-enable: true
 ```
 
-修改配置后必须重启后端。测试环境统一从 [`test.env`](../ENVIRONMENTS/test.env) 读取租户：
+修改配置后必须重启后端。dev 环境配置从 [`dev.env`](../ENVIRONMENTS/dev.env) 加载；测试租户和用户必须是 dev 中已准备的隔离账号：
 
 ```bash
-source governance/SCRIPTS/deploy-helper.sh && load_env test
+source governance/SCRIPTS/deploy-helper.sh && load_env dev
 export BASE_URL="https://${DOMAIN_API}"       # 本地改为 http://localhost:8888
-export TEST_USER_ID="1"                       # 测试库中真实存在的用户
+export TEST_TENANT_ID="<dev 中的隔离租户 ID>"
+export TEST_USER_ID="<dev 中具备所需权限的用户 ID>"
 export MOCK_TOKEN="test${TEST_USER_ID}"
-echo "tenant=${TEST_TENANT_ID} base=${BASE_URL}"
 ```
 
-不要在用例中另写租户 ID；`TEST_TENANT_ID` 必须来自环境文件。用户 ID 也必须对应测试库中的真实用户，且该用户应具备被测接口所需权限。
+不要在用例中另写租户 ID；执行时提供的 `TEST_TENANT_ID` 必须对应 dev 隔离租户。用户 ID 必须对应 dev 中的真实用户，且该用户应具备被测接口所需权限。
 
 ## 2. Mock Token
 
@@ -92,7 +92,7 @@ E2E 仍须通过 UI 验证真实用户链路，API 直调只用于 API 测试，
 
 ```markdown
 ## API 测试
-- 环境/基础地址：[test/local；不要记录秘密]
+- 环境/基础地址：[dev/local；不要记录秘密]
 - 用户/租户：[用户 ID；${TEST_TENANT_ID}]
 - 用例：[编号、方法、路径]
 - 断言/结果：[HTTP、code、关键字段、副作用；通过/失败]
@@ -107,7 +107,7 @@ E2E 仍须通过 UI 验证真实用户链路，API 直调只用于 API 测试，
 | 现象 | 检查 |
 |---|---|
 | 401 | Profile、`mock-enable`、重启状态、Header、Token 是否为 `test+数字` |
-| 403 | 测试用户是否有接口菜单权限；Mock Token 不授予权限 |
+| 403 | dev 用户是否有接口菜单权限；Mock Token 不授予权限 |
 | 空数据/租户错误 | 是否使用 `${TEST_TENANT_ID}`、数据是否属于该租户 |
 | 5xx | 保存脱敏响应和时间，查后端日志，区分环境依赖与接口缺陷 |
 

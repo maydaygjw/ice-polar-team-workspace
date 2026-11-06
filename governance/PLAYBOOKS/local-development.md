@@ -116,7 +116,7 @@ pnpm dev
 ### 注意
 
 - 小程序是原生微信小程序（非 Taro/uni-app），无 build 步骤
-- API Base URL: `http://yshop-api.holuntech.com`（生产）或 `http://localhost:8888`（本地需改 `config/config.js`）
+- API Base URL: `https://api-yshop-dev.holuntech.cn`（dev）或 `http://localhost:8888`（本地需改 `config/config.js`）；测试和写入操作不得指向 prod
 
 ---
 

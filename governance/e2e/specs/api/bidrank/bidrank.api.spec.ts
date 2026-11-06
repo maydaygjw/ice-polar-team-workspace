@@ -25,8 +25,8 @@
  *     BIDRANK_STORE_ID=10 \
  *     npx playwright test specs/api/bidrank/bidrank.api.spec.ts
  *
- * 运行示例（测试环境）：
- *   source governance/SCRIPTS/deploy-helper.sh && load_env test
+ * 运行示例（dev 环境）：
+ *   source governance/SCRIPTS/deploy-helper.sh && load_env dev
  *   cd governance/e2e
  *   API_BASE_URL="https://${DOMAIN_API}" \
  *     TEST_TENANT_ID="${TEST_TENANT_ID}" \

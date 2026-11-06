@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # deploy-helper.sh
-# Usage: source governance/SCRIPTS/deploy-helper.sh && load_env <env-name>
+# Usage: source governance/SCRIPTS/deploy-helper.sh && load_env dev|prod
 #
 # Loads environment variables from governance/ENVIRONMENTS/<env-name>.env.
 # Do not execute this script directly; source it instead.
@@ -19,9 +19,17 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_FILE")" && pwd)"
 load_env() {
   local env_name="${1:-}"
   if [[ -z "$env_name" ]]; then
-    echo "Usage: source deploy-helper.sh && load_env <env-name>" >&2
+    echo "Usage: source deploy-helper.sh && load_env dev or load_env prod" >&2
     return 1
   fi
+
+  case "$env_name" in
+    dev|prod) ;;
+    *)
+      echo "Unsupported environment: $env_name. Supported environments: dev, prod." >&2
+      return 1
+      ;;
+  esac
 
   local env_file="$SCRIPT_DIR/../ENVIRONMENTS/${env_name}.env"
   if [[ ! -f "$env_file" ]]; then
@@ -48,5 +56,6 @@ load_env() {
 # Direct execution prints usage.
 if [[ -n "${BASH_VERSION:-}" && "$SCRIPT_FILE" == "${0}" ]]; then
   echo "Source this file, do not execute it directly:"
-  echo "  source governance/SCRIPTS/deploy-helper.sh && load_env test"
+  echo "  source governance/SCRIPTS/deploy-helper.sh && load_env dev"
+  echo "  source governance/SCRIPTS/deploy-helper.sh && load_env prod"
 fi

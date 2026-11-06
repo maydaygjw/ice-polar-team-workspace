@@ -12,7 +12,7 @@ import { expect, type APIResponse } from '@playwright/test'
 /**
  * Mock Token 规则：`test + 用户ID`。
  *
- * 仅本地/测试环境可用（生产必须关闭 `yshop.security.mock-enable`）。
+ * 仅本地/dev 环境可用（生产必须关闭 `yshop.security.mock-enable`）。
  * 只模拟用户 ID/用户类型/租户上下文，**不授予菜单/角色权限**；
  * `@PreAuthorize` 接口仍须为测试用户配置对应权限。
  */

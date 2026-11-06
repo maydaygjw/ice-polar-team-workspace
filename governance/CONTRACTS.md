@@ -128,9 +128,9 @@
 - [活动报名管理画像展示](feature-docs/2026-10-20-activity-registration-profile-display/contract-changes.md)：报名分页响应补充期次奖品名称和会员用户阶段，用户阶段从当前租户关联会员的最新用户画像读取。
 - [店铺商品导入异步确认](feature-docs/2026-10-28-store-product-import-async/contract-changes.md)：店铺商品导入预览和确认均改为后台异步处理，管理端通过现有查询接口跟踪 `PREVIEWING`、`DRAFT`、`PROCESSING`、`IMPORTED` 和 `FAILED` 状态。
 
-活动 H5 认证在测试环境额外支持 Mock Ticket：当 `yshop.security.mock-enable` 和
+活动 H5 认证在 dev 环境额外支持 Mock Ticket：当 `yshop.security.mock-enable` 和
 `yshop.security.mock-webview-ticket-enable` 同时开启时，`test` 前缀加数字用户 ID（例如
-`test590471`）可直接兑换该测试用户的 backend Token；测试租户由
+`test590471`）可直接兑换该 dev 用户的 backend Token；租户由
 `yshop.security.mock-webview-ticket-tenant-id` 配置。该能力不使用 Redis Ticket，生产环境必须关闭。
 
 ## 小程序无手机号登录

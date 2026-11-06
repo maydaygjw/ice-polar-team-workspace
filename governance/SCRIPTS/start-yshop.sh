@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Start yshop backend for the loaded deployment environment.
 # Usage:
-#   source governance/SCRIPTS/deploy-helper.sh && load_env test
+#   source governance/SCRIPTS/deploy-helper.sh && load_env dev
+#   source governance/SCRIPTS/deploy-helper.sh && load_env prod
 #   bash governance/SCRIPTS/start-yshop.sh
 
 required_vars=(
@@ -17,10 +18,18 @@ required_vars=(
 for var_name in "${required_vars[@]}"; do
   if [[ -z "${!var_name:-}" ]]; then
     echo "Missing required environment variable: ${var_name}" >&2
-    echo "Run: source governance/SCRIPTS/deploy-helper.sh && load_env <env-name>" >&2
+    echo "Run: source governance/SCRIPTS/deploy-helper.sh && load_env dev or load_env prod" >&2
     exit 1
   fi
 done
+
+case "${ENV_NAME}" in
+  dev|prod) ;;
+  *)
+    echo "Unsupported environment: ${ENV_NAME}. Supported environments: dev, prod." >&2
+    exit 1
+    ;;
+esac
 
 if [[ "${ENV_NAME}" = "prod" ]]; then
   for var_name in SPRING_PROFILES_ACTIVE; do
@@ -32,32 +41,12 @@ if [[ "${ENV_NAME}" = "prod" ]]; then
 fi
 
 ssh "${DEPLOY_USER}@${SERVER_HOST}" "
-  # test 环境统一从 ~/.bash_profile 加载并校验密钥一次，供下方两条启动路径共用
-  if [ \"${ENV_NAME}\" = \"test\" ]; then
-    set -a
-    source ~/.bash_profile
-    set +a
-    if [ -z \"\${DASHSCOPE_API_KEY:-}\" ]; then
-      echo 'DASHSCOPE_API_KEY is missing from ~/.bash_profile' >&2
-      exit 1
-    fi
-  fi
-
   if systemctl list-unit-files | grep -q yshop.service; then
-    if [ \"${ENV_NAME}\" = \"test\" ]; then
-      systemctl import-environment DASHSCOPE_API_KEY
-      systemctl set-environment ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true AI_FORMAT_ENABLED=true LOGGING_LEVEL_CO_YIXIANG_YSHOP_MODULE_MP_PRIVATEPROMOTE_PRIVATEPROMOTEWEBHOOKCLIENT=DEBUG
-    else
-      systemctl unset-environment ADAPAY_DEBUG AI_IMAGE_ENABLED AI_FORMAT_ENABLED DASHSCOPE_API_KEY || true
-      systemctl set-environment SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-}"
-    fi
+    systemctl unset-environment ADAPAY_DEBUG AI_IMAGE_ENABLED AI_FORMAT_ENABLED DASHSCOPE_API_KEY || true
+    systemctl set-environment SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-}"
     systemctl start yshop.service
   else
     cd ${YSHOP_START_PATH}
-    if [ \"${ENV_NAME}\" = \"test\" ]; then
-      ADAPAY_DEBUG=true AI_IMAGE_ENABLED=true AI_FORMAT_ENABLED=true nohup java -jar target/${YSHOP_JAR} --spring.profiles.active=dev --logging.level.co.yixiang.yshop.module.mp.privatepromote.PrivatePromoteWebhookClient=DEBUG > ${YSHOP_START_PATH}/app.log 2>&1 &
-    else
-      nohup java -jar target/${YSHOP_JAR} --spring.profiles.active="${SPRING_PROFILES_ACTIVE:-}" > ${YSHOP_START_PATH}/app.log 2>&1 &
-    fi
+    nohup java -jar target/${YSHOP_JAR} --spring.profiles.active="${SPRING_PROFILES_ACTIVE:-}" > ${YSHOP_START_PATH}/app.log 2>&1 &
   fi
 "
