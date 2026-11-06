@@ -27,7 +27,8 @@ yshop-module-pay-biz     ──→ 无新增依赖
 2. **取最新分账记录**：同一 `order_id` 可能存在多条分账记录（重试场景）。使用子查询 `MAX(create_time)` 取最新一条，确保结算状态准确。
 
 3. **结算状态计算**：在 SQL 层或 Java 层计算派生状态：
-   - 非 Adapay 支付 或 无分账记录 → `0`（未结算）
+   - 非 AdaPay 支付 → `5`（不适用）
+   - AdaPay 支付但无分账记录 → `0`（未结算）
    - `sharing_status=0` → `1`（待分账）
    - `sharing_status=1` → `2`（分账中）
    - `sharing_status=2` 或 `4` → `3`（已结算）
@@ -41,7 +42,7 @@ yshop-module-pay-biz     ──→ 无新增依赖
 
 7. **多租户与数据权限**：列表查询基于 `TenantBaseDO` 自动注入 `tenant_id` 过滤；不涉及部门级数据权限。
 
-8. **只读页面**：本页面不提供任何写操作按钮，仅查询展示。失败重试等操作引导用户跳转至已有的「分账结算记录」页面。
+8. **受限同步操作**：页面为 AdaPay 订单提供状态查询按钮。远端确认存在本地记录时同步本地状态；无本地记录时按订单支付流水号查询并仅在当前页面展示结果，不落库、不创建或重试分账。分账失败重试仍引导至已有的「分账结算记录」页面。
 
 9. **无新 ADR**：复用现有模块分层、多租户拦截器、分页查询模式。不新增架构范式。
 
@@ -132,7 +133,7 @@ GET /order/store-order/settlement-page
 | payTime | LocalDateTime | 支付时间 |
 | createTime | LocalDateTime | 创建时间 |
 | profitSharingOrderId | Long | 分账订单 ID (可为 null) |
-| settlementStatus | Integer | 结算状态: 0=未结算, 1=待分账, 2=分账中, 3=已结算, 4=分账失败 |
+| settlementStatus | Integer | 结算状态: 0=未结算, 1=待分账, 2=分账中, 3=已结算, 4=分账失败, 5=不适用 |
 | sharingTime | LocalDateTime | 分账时间 (可为 null) |
 
 ### 端点 2：结算明细
@@ -189,9 +190,9 @@ GET /pay/profit-sharing-order/settlement-detail
 ```
 查询 yshop_store_order
   → LEFT JOIN yshop_adapay_profit_sharing_order (latest by create_time)
+      → pay_type≠adapay
+          → settlementStatus = 5 (不适用)
       → 无分账记录 且 pay_type=adapay
-          → settlementStatus = 0 (未结算)
-      → 无分账记录 且 pay_type≠adapay
           → settlementStatus = 0 (未结算)
       → sharing_status = 0 → settlementStatus = 1 (待分账)
       → sharing_status = 1 → settlementStatus = 2 (分账中)

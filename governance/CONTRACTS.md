@@ -9,6 +9,11 @@
 - 支付计费模块每日扫描候选订单，仅对没有应收应付主记录或状态为 `FAILED` 的记录执行计算；失败记录允许后续日任务重试。订单状态流转不再同步调用计费模块。
 - 详见[订单应收应付每日补算契约](feature-docs/2026-11-06-daily-order-billing/contract-changes.md)。
 
+## 订单结算状态远端同步
+
+- 订单结算管理页为 AdaPay 订单提供“同步分账状态”操作；后端按当前租户调用 AdaPay 查询支付确认对象，将远端状态同步至已有本地分账记录；若尚无本地分账记录，则按订单支付流水号查询并将结果显示在当前列表行。
+- 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（1 待分账、2 分账中、3 已结算、4 分账失败）。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
+
 ## 管理后台订单详情支付流水号
 
 - `GET /admin-api/order/store-order/get?id={id}` 与 `GET /admin-api/order/store-order/getInfo?orderId={orderId}` 的 `data` 响应新增可空字符串字段 `transactionId`，表示订单支付流水号；未记录时为 `null`。
