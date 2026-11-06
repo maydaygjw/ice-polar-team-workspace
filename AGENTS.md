@@ -1,120 +1,62 @@
-# Repository Guidelines
+# 工作区指南
 
-## Project Structure, Sync, and Governance
+本文件是供 Agent 使用的导航页。按任务阅读相关文档；系统知识放在 `governance/`，项目级说明放在对应子模块中。
 
-This workspace uses Git submodules so each product repo remains independently versioned.
+## 仓库导航
 
-```
-ice-polar-team-workspace/
-├── governance/         # AI team knowledge center (read first)
-├── backend/            # submodule — yshop-drink (Java/Spring Boot)
-├── admin/              # submodule — yshop-drink-vue (Vue3/Vite)
-├── miniapp/            # submodule — icepolarminiapp (Native WeChat Mini Program)
-├── h5/                 # submodule — yshop-activity-h5 (Vue3 活动 H5)
-├── icepolar-dms/       # submodule — icepolar-dms (Python/FastAPI)
-├── mock-external-server/ # submodule — mock-external-server (FastAPI 外部依赖模拟服务)
-└── .gitmodules
-```
+| 路径 | 项目 | 项目说明 |
+|---|---|---|
+| `backend/` | Java / Spring Boot 后端 | [`backend/AGENTS.md`](backend/AGENTS.md)、[`backend/CLAUDE.md`](backend/CLAUDE.md) |
+| `admin/` | Vue 管理后台 | [`admin/AGENTS.md`](admin/AGENTS.md) |
+| `miniapp/` | 微信原生小程序 | 查看子模块内的项目说明 |
+| `h5/` | Vue 活动 H5 | 查看子模块内的项目说明 |
+| `icepolar-dms/` | Python 设备管理服务 | [`icepolar-dms/AGENTS.md`](icepolar-dms/AGENTS.md) |
+| `mock-external-server/` | 外部服务模拟器 | 查看子模块内的项目说明 |
+| `governance/` | 团队共享工程知识 | 见下方文档入口 |
 
-| Directory | Repository | Tech Stack | Branch |
-|-----------|-----------|------------|--------|
-| `backend/` | `https://gitee.com/icepolar/yshop-drink.git` | Java 17, Spring Boot 3.2, MyBatis Plus, Maven | `master` |
-| `admin/` | `https://gitee.com/icepolar/yshop-drink-vue.git` | Vue3, Vite4, Element Plus, TypeScript, pnpm | `master` |
-| `miniapp/` | `https://gitee.com/icepolar/icepolarminiapp.git` | Native WeChat Mini Program (WXML/WXSS/JS) | `main` |
-| `h5/` | `https://gitee.com/icepolar/yshop-activity-h5.git` | Vue3, Vite, TypeScript, Vant, Pinia, Axios, pnpm | `main` |
-| `icepolar-dms/` | `git@github.com:holun-yshop/icepolar-dms.git` | Python 3.12+, FastAPI, SQLAlchemy 2.x, pytest | `main` |
-| `mock-external-server/` | `https://gitee.com/icepolar/mock-external-server.git` | Python 3.12+, FastAPI, pytest | `master` |
+各产品目录都是独立版本管理的 Git 子模块。修改应落在所属仓库中，并谨慎更新工作区中的子模块指针。
 
-### Initialize & Sync
+## 文档入口
+
+- [工作区操作规则](CLAUDE.md)：Shell 工作目录保持在工作区根目录；在子模块执行命令时使用子 Shell。
+- [团队章程](governance/CLAUDE.md)：系统边界和工程原则。
+- [系统架构](governance/ARCHITECTURE.md)：系统结构和数据流。
+- [跨仓库契约](governance/CONTRACTS.md)：API、事件和共享 DTO。
+- [Agent 角色说明](governance/AGENTS/)：各类任务的职责定义。
+- [操作手册](governance/PLAYBOOKS/)：开发、测试、部署和事故处理流程。
+- [知识库](governance/KNOWLEDGE/)与 [架构决策记录](governance/ADR/)：领域知识和已记录的决策。
+- [功能文档](governance/feature-docs/)：已开展工作的需求、设计和交付记录。
+- [需求待办](governance/BACKLOG/)：尚未细化的业务需求，新增条目请使用[模板](governance/BACKLOG/TEMPLATE.md)。
+
+## 执行不变量
+
+- **跨仓库变更先定义契约。** 修改提供方或调用方之前，先在 [`governance/CONTRACTS.md`](governance/CONTRACTS.md) 定义或更新契约。
+- **保持租户隔离。** 新增后端业务数据和查询必须符合[团队章程](governance/CLAUDE.md)及[系统架构](governance/ARCHITECTURE.md)中的租户规则。
+- **保持历史记录稳定。** 不得改写已冻结的业务快照；变更状态语义时，须同步更新所有受影响的仓库和契约。
+- **遵守系统边界。** 小程序不得直接调用 `icepolar-dms`；设备操作经由后端处理。
+- **不得提交密钥。** 凭据和本地环境变量不得进入版本控制，使用项目规定的示例配置方式。
+- **不得自动提交。** 除非用户明确要求提交，否则保留改动供用户审阅。
+- **谨慎更新子模块指针。** 完成前检查工作区和受影响子模块的 Git 状态。
+
+## 构建与验证
+
+遵循目标子模块自己的命令和约定。修改前先阅读其中的 `AGENTS.md`（如果存在）；本工作区由多个独立仓库组成，不要假设存在统一的测试命令。
+
+常用命令入口（从工作区根目录运行）：
 
 ```bash
-# Initialize all project repos after cloning
 git submodule update --init --recursive
-
-# Pull workspace + all submodules
 git pull --recurse-submodules
-
-# Update submodules only
-git submodule update --remote
-
-# Check status across all repos
-for d in backend admin miniapp h5 icepolar-dms mock-external-server; do
-  echo "[$d] $(cd $d && git status --short | wc -l | xargs) changes"
-done
-```
-
-### Governance — Read First
-
-`governance/` is the single source of truth for the AI engineering team.
-
-| File | Purpose |
-|------|---------|
-| `governance/CLAUDE.md` | Team constitution — core principles, red lines, system boundary |
-| `governance/ARCHITECTURE.md` | System-wide architecture and data flow |
-| `governance/CONTRACTS.md` | Cross-repo API/Event/DTO contracts |
-| `governance/AGENTS/` | Agent role definitions (backend-agent, miniapp-agent, etc.) |
-| `governance/PROMPTS/` | Reusable team prompt templates |
-
-Key architecture points:
-- **Multi-tenant by default** — all business tables have `tenant_id` (backend)
-- **Event-driven async flows** — payment callbacks, order timeouts use MQ/RocketMQ or Redis delay queue (backend)
-- **API first** — any cross-repo change starts with contract definition in `CONTRACTS.md`
-- **icepolar-dms** is called by the backend `yshop-drink` device module, never directly by the mini-program
-
-### Backlog
-
-`governance/BACKLOG/` is where raw, unrefined feature requests live before they enter the delivery pipeline.
-
-- **Purpose**: Capture feature ideas and needs as they arise, in business language, without committing to implementation.
-- **Rule**: Write the problem or need only. Do not include technical design, database schemas, API contracts, or UI mockups. That work happens during the `create-team` workflow.
-- **Template**: Copy `governance/BACKLOG/TEMPLATE.md` for each new item.
-- **Naming**: `BACKLOG-{nnn}-{short-name}.md` (e.g. `BACKLOG-001-product-template.md`)
-- **Lifecycle**: `draft` → `ready` (after requirements-agent evaluation) → `scheduled` (moved to a feature branch) → removed after delivery
-
-## Build, Test, and Development Commands
-
-Run commands from the target submodule root. Each submodule owns its own build, test, lint, and dev workflow — see its local `AGENTS.md` for details.
-
-```bash
-# Example: run a command inside a submodule without changing the shell cwd
 (cd backend && mvn clean test)
-(cd admin && pnpm dev)
-(cd h5 && pnpm dev)
-(cd h5 && pnpm build)
+(cd admin && pnpm ts:check)
 (cd icepolar-dms && pytest -v)
-(cd mock-external-server && pytest -v)
 ```
 
-## Coding Style & Testing Guidelines
+其他验证方式请参照对应子模块说明和[本地开发手册](governance/PLAYBOOKS/local-development.md)。完成任务时说明运行过的命令，以及未能运行的命令。
 
-Follow the conventions of the subproject you change. See each submodule's `AGENTS.md` and `governance/ARCHITECTURE.md` for stack-specific rules.
+## 变更与交付约定
 
-- **Backend Java**: suffixes such as `*Controller`, `*Service`, `*Mapper`, `*DO`, `*ReqVO`, `*RespVO`; tests under `**/src/test`.
-- **Admin Vue/TypeScript**: PascalCase components, camelCase utilities, `@/` imports; validate via `pnpm ts:check`, lint, and build.
-- **DMS Python**: PEP 8, snake_case modules, Pydantic schemas, SQLAlchemy models, Ruff checks, `pytest` under `tests/`.
-- **Miniapp**: Native WeChat Mini Program; develop with WeChat DevTools.
-- **Activity H5**: Vue3 + TypeScript; use Vant for mobile UI, Axios for backend calls, and Pinia for shared state. Authentication uses a one-time backend ticket exchanged for an access token; do not put `openid` or access tokens in URLs.
-
-## Git Conventions
-
-Root history uses Conventional Commit subjects such as `feat(device): ...`, `docs(governance): ...`, and `chore(submodules): ...`. Commit messages must be written in Chinese; keep the Conventional Commit type and scope format, and write the description in Chinese.
-
-- **Commit messages**: `feat(scope): 中文描述` (Conventional Commits; description must be Chinese)
-- **Feature branches**: `feat/<feature-name>`
-- **Keep commits scoped** to one concern and update submodule pointers deliberately.
-- **Governance documentation**: Changes limited to `governance/` documentation may be committed directly to the main branch; do not create a PR for them.
-
-Pull requests should:
-- Summarize behavior
-- List affected repos
-- Link issues or specs
-- Include screenshots for UI changes
-- State the commands run
-
-## Iron Rules
-
-The following rules are mandatory. No exceptions.
-
-1. **API first** — any cross-repo change starts with contract definition in `governance/CONTRACTS.md`.
-2. **Never commit secrets** — DB passwords, API keys, JWT secrets, or local `.env` values must not be committed. Use `.env.example` and project environment files.
-3. **Do not auto-commit** — unless the user explicitly asks to commit, never commit code after completing a task. Stage or summarize changes for the user to review and commit themselves.
+- 实现细节遵循目标子模块的 `AGENTS.md` 和既有代码习惯。
+- 工作区提交标题使用 Conventional Commit 类型和范围，描述用中文，例如：`feat(device): 增加设备状态查询`。
+- 仅修改治理文档时可直接提交到主分支；其他变更的交付和 PR 要求遵循所属仓库的说明。
+- 新增待办条目只记录业务问题。技术设计和契约在功能工作流中完成，不写入原始待办。
