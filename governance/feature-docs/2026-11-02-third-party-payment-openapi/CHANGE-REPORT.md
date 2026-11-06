@@ -2,7 +2,7 @@
 
 ## 业务结果
 
-- 提供独立 `/open-api` 客户端凭证 token 和支付 API，支持微信 JSAPI 与 Adapay 创建支付、支付查询、全额退款。
+- 原有实现提供独立 `/open-api` 客户端凭证 token 和支付 API，支持微信 JSAPI 与 Adapay 创建支付、支付查询和全额退款；本次追加的商家转账 API 与支付操作统一使用 `payment` scope。
 - OpenAPI 支付单保存并返回通用 `payType` 渠道标识；支持 `weixin`、`adapay`，字段值沿用平台现有支付渠道标识。
 - 原方案在 OAuth2 客户端页配置租户绑定和 Webhook；按最新需求移除这些专属配置，scope 采用逗号分隔文本，支付配置页维护 OpenAPI 开关和 Webhook 地址。
 - 支付通知异步投递、记录状态、有限重试；管理员可查看最近投递记录并重放失败事件。
@@ -15,9 +15,9 @@
 
 ## 契约与迁移
 
-- 新增 `/open-api/oauth2/token`、`/open-api/v1/payments` 支付接口和管理端配置/事件接口。
+- 新增 `/open-api/oauth2/token`、`/open-api/v1/payments` 支付接口、`/open-api/v1/transfers` 商家转账接口及管理端配置/事件接口。
 - 新增 `V2026110201__third_party_payment_openapi.sql`，创建 OpenAPI 支付单和 Webhook 事件表。后续迁移删除客户端绑定表，并在 `merchant_details` 增加 OpenAPI 开关与 Webhook 字段。
-- `merchant_details` 继续作为微信商户配置唯一来源；第三方商家转账和用户确认收款不在首期范围。
+- `merchant_details` 继续作为微信商户配置唯一来源；商家转账复用当前租户已配置的 APIv3 能力，转账终态经现有 Webhook 通知，用户确认由集成方小程序完成。
 
 ## 验证
 
@@ -34,3 +34,8 @@
 ## 建议 PR 标题
 
 `feat(payment): 增加第三方支付 OpenAPI`
+
+## 追加契约（2026-11-06）
+
+- 本次为功能文档补充 `POST /open-api/v1/transfers` 契约，限定当前租户会员、`payment` scope、幂等及微信转账终态 Webhook。
+- 本次仅更新治理文档；上述转账 OpenAPI 和对应数据关联尚未在 backend/admin 实现，也未运行转账 E2E。实现前需按 `contract-changes.md` 落地契约和迁移，并执行更新后的 `test-plan.md`。

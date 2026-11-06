@@ -18,6 +18,13 @@
 - 订单结算管理页为 AdaPay 订单提供“同步分账状态”操作；后端按当前租户调用 AdaPay 查询支付确认对象，将远端状态同步至已有本地分账记录；若尚无本地分账记录，则按订单支付流水号查询并将结果显示在当前列表行。
 - 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（0 未结算、1 待分账、2 分账中、3 已结算、4 分账失败）；确认列表为空时返回 0。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 
+## AdaPay 分账收款人同步
+
+- `POST /admin-api/pay/profit-recipient/sync` 使用 `pay:profit-recipient:create` 权限，按当前租户 AdaPay 配置和输入的 `memberId` 查询个人或企业 Member，并查询其已有结算账户；只允许关联当前租户 AdaPay 商户下可查到的 Member。
+- 若当前租户已存在相同 `memberId` 的本地收款人，保留其级别、角色、店铺、启用状态和绑定历史，仅刷新 Member 信息快照及 AdaPay 结算账户 ID/脱敏摘要；若不存在，调用方须提供收款人级别及相应角色或店铺，新建记录默认禁用。没有远端结算账户时保存为未绑定。
+- 同步为幂等操作，不创建或修改 AdaPay Member/结算账户；不返回完整银行卡号或证件号码。结算账户摘要只保存脱敏卡号/姓名、银行及地区信息。
+- 详见分账收款人管理页面的 MemberId 同步操作。
+
 ## 管理后台订单详情支付流水号
 
 - `GET /admin-api/order/store-order/get?id={id}` 与 `GET /admin-api/order/store-order/getInfo?orderId={orderId}` 的 `data` 响应新增可空字符串字段 `transactionId`，表示订单支付流水号；未记录时为 `null`。
@@ -31,7 +38,7 @@
 
 ## 第三方支付 OpenAPI（实现中）
 
-- 第三方业务支付接口使用独立 `/open-api` 前缀，不使用会员 `/app-api` 或后台 `/admin-api` 身份；支持微信 JSAPI 与汇付支付创建、支付查询、全额退款和支付结果 Webhook，商家转账不在范围内。
+- 第三方业务支付接口使用独立 `/open-api` 前缀，不使用会员 `/app-api` 或后台 `/admin-api` 身份；支持微信 JSAPI 与汇付支付创建、支付查询、全额退款，以及统一使用 `payment` scope 的微信商家转账发起。商家转账复用当前租户已配置的微信小程序商户和转账场景，第三方提交当前租户会员 `userId`，平台读取其小程序 OpenID 并返回用户确认收款所需 `packageInfo`；最终状态由微信回调/查单确认并通过现有 Webhook 通知。OpenAPI 不提供独立转账查询或撤销接口。详细契约见 [第三方支付 OpenAPI Feature Contract](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md)。
 - 后端 Web MVC 根据 `controller.openapi` 包自动附加 `/open-api` 前缀；OAuth2 客户端表启用标准多租户隔离。客户端在当前租户上下文中创建、查询和认证，申请 token 与调用支付接口均须携带匹配的 `tenant-id` 请求头，令牌固化当前租户。客户端不能跨租户访问。
 - OpenAPI 支付统一使用 `payment` scope，创建、查询、退款接口均校验此范围。客户端 scope 以逗号分隔文本维护，不支持通配符；申请 token 时可显式请求已登记的 scope 子集，省略 `scope` 时授予客户端登记的全部 scope。商户支付配置页负责启用租户的 OpenAPI 支付接入并维护 Webhook 地址，不建立 client 到支付配置的绑定表。业务订单和支付结果按租户及 client 隔离。
 - 详细 API、状态和通知契约见 [第三方支付 OpenAPI Feature Contract](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md)。
