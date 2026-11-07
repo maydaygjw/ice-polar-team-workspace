@@ -1,29 +1,57 @@
 # Backend Agent
 
-负责 `backend/`，具体规范和命令以 `backend/AGENTS.md` 为准。
+负责 `backend/`。本文件是后台开发规范的唯一来源；`backend/AGENTS.md` 仅引用本文件。
 
-## 边界
+## 工作范围
 
-- 可修改后端 Java、Mapper、资源、测试及 `backend/sql/migrations/` 下的数据库变更脚本
-- 不修改 `admin/`、`miniapp/`、`icepolar-dms/`
+- 可修改后端 Java、Mapper、资源、测试及 `backend/sql/migrations/` 下的数据库变更脚本。
+- 不修改 `admin/`、`miniapp/`、`icepolar-dms/`。
+- 具体模块遵循现有实现；新增能力应落在职责所属模块。
 
-## 专有约束
+## 分层与模块依赖
 
-- 跨模块调用通过 `-api`，实现位于 `-biz`；每个依赖需能答出真实使用点，答不出即删
-- Controller 按 `admin/*` 与 `app/*` 分端；C 端使用 `@PreAuthenticated`，管理端使用 `@PreAuthorize`
-- 新业务表和查询验证 `tenant_id`；需要时验证部门/门店数据范围
-- Mapper 数据访问优先使用 MyBatis-Plus DSL（如 `BaseMapperX`、`LambdaQueryWrapperX`、`LambdaUpdateWrapper`）表达常规查询、条件更新和删除；简单 CRUD 不写手工 SQL。仅当 DSL 无法清楚表达，或复杂联表/聚合、数据库专属能力、经验证的性能需求确有必要时，才使用注解 SQL/XML，并在代码中说明原因。
-- 新增数据库变更脚本统一放在 `backend/sql/migrations/`，并遵循该目录现有的命名约定；同一特性的增量合并到同一脚本，不直接修改基线 SQL
-- 对象转换或批量赋值优先使用 `BeanUtils`（`co.yixiang.yshop.framework.common.util.object.BeanUtils`）等属性拷贝工具，避免冗长的逐字段 setter；仅当字段来自多个异源对象或需特殊映射时才手写赋值
-- `*-api` 模块的接口必须保持领域通用，不得夹带调用方/设备/特定业务概念（如 `ProductApi` 不出现打印/设备语义）；设备侧编排与语义放在调用方模块，通过参数（如目标分类名、选项名）传入
-- 通用逻辑收编到共享 biz，特定业务/设备的私有逻辑留在其模块；凡所有调用方都该有的概念放通用层，不塞进私有扩展参数
-- 多类型扩展用策略/钩子而非 if-else 类型分支；钩子出参用本模块自有模型，屏蔽他模块类型
-- 复用现有标准能力（如统一价格引擎、幂等组件），不自建等价轮子；相同职能的代码合并
-- 拒绝过度抽象与"预留"设计，可读性优先；不为将来可能用到而提前抽象，拍平过深包层级
-- 所有发送给外部系统的请求报文和响应报文必须以 `DEBUG` 级别记录；必须脱敏 access token、Secret、密码等凭据，禁止在 `INFO`/`WARN`/`ERROR` 级别打印完整外部报文。
-- 微信小程序无手机号登录接口 `/app-api/member/auth/auth-session` 支持可选字段 `externalUserId`（最大 128 个字符），用于关联外部系统用户；传入非空值时写入当前会员，未传入时不得覆盖已有值。
+- 跨模块调用通过 `-api`，实现位于 `-biz`；每个新增依赖都要有明确的实际使用点，没有使用点就移除。
+- `*-api` 接口保持领域通用，不夹带调用方、设备或特定业务概念。例如 `ProductApi` 不表达打印或设备语义；设备侧编排留在调用方模块，通过参数传入目标分类名、选项名等信息。
+- 通用逻辑收编到共享 biz，特定业务或设备的私有逻辑留在所属模块。所有调用方都需要的概念放在通用层，不塞进私有扩展参数。
+- 多类型扩展优先使用策略或钩子，避免按类型堆叠 `if-else`；钩子出参使用本模块模型，屏蔽其他模块类型。
+- 复用现有标准能力（如统一价格引擎、幂等组件），不重复建设等价能力；相同职能的代码应合并。
+- 避免过度抽象和“预留”设计；优先保证可读性，不为未来可能的需求提前抽象，并尽量拍平过深的包层级。
 
-## Checkstyle
+## 接口、权限与多租户
 
-仅 `backend/yshop-module-mp` 启用 Checkstyle，配置位于 `backend/config/checkstyle/`，其他后端模块暂不启用。
-提交前执行 MP 模块的 Checkstyle 检查；CI 使用严格门禁，规则例外须限定范围并在 PR 中说明原因。
+- Controller 按 `admin/*` 与 `app/*` 分端；C 端使用 `@PreAuthenticated`，管理端使用 `@PreAuthorize`。
+- 新业务表和查询必须验证 `tenant_id`；需要时还要验证部门或门店数据范围。
+- 微信小程序无手机号登录接口 `/app-api/member/auth/auth-session` 支持可选字段 `externalUserId`，最大长度 128。传入非空值时写入当前会员；未传入时不得覆盖已有值。
+
+## 数据访问与数据库变更
+
+- 常规查询、条件更新和删除优先使用 MyBatis-Plus DSL（如 `BaseMapperX`、`LambdaQueryWrapperX`、`LambdaUpdateWrapper`）；简单 CRUD 不写手工 SQL。
+- 仅当 DSL 无法清楚表达，或确有复杂联表/聚合、数据库专属能力、经验证的性能需求时，才编写 SQL；SQL 必须写在 Mapper XML 中，并说明使用原因。禁止使用 SQL 注解，也禁止在 Java 代码中编写、拼接或内嵌 SQL。
+- 数据库变更脚本统一放在 `backend/sql/migrations/`，遵循目录现有命名约定；同一特性的增量合并到同一脚本，不直接修改基线 SQL。
+- 对象转换或批量赋值优先使用 `BeanUtils`（`co.yixiang.yshop.framework.common.util.object.BeanUtils`）等属性拷贝工具，避免冗长的逐字段 setter。字段来自多个异源对象或需要特殊映射时，可手写赋值。
+
+## 外部调用与日志安全
+
+- 发往外部系统的请求报文和收到的响应报文必须以 `DEBUG` 级别记录。
+- 日志必须脱敏 access token、Secret、密码等凭据；禁止在 `INFO`、`WARN`、`ERROR` 级别打印完整外部报文。
+
+## 项目结构与编码约定
+
+- `backend/` 是 Maven 多模块 Spring Boot 项目：根 `pom.xml` 聚合 `yshop-dependencies`、`yshop-framework`、可运行应用 `yshop-server` 和 `yshop-module-*` 业务模块，如 `yshop-module-site`、`yshop-module-mall`、`yshop-module-system`。
+- 生产代码位于 `src/main/java`，配置位于 `src/main/resources`，测试位于 `src/test/java` 或 `src/test/resources`；领域模块通常按 `controller`、`service`、`dal`、`convert` 分层。SQL 资源位于 `sql/`，部署脚本位于 `script/docker` 和 `script/shell`。
+- 使用 Java 17、UTF-8 和 4 空格缩进；包名遵循 `co.yixiang.yshop` 现有结构。
+- 类名沿用项目后缀：`*Controller`、`*Service`、`*ServiceImpl`、`*Mapper`、`*DO`、`*ReqVO`、`*RespVO`；优先使用能体现业务模块的名称。
+- Maven 未配置全局格式化工具；按相邻代码风格编写并整理 imports。
+
+## 构建、测试与检查
+
+在 `backend/` 根目录执行 Maven 命令：
+
+- `mvn clean test`：运行全模块测试。
+- `mvn -pl yshop-server -am spring-boot:run -Dspring-boot.run.profiles=local`：使用 local profile 启动服务。
+- `mvn -pl yshop-module-site/yshop-module-site-biz -am test`：运行指定模块及其依赖的测试。
+- `mvn -pl yshop-server -am package -DskipTests`：打包可运行应用。
+
+测试使用 JUnit 5 和项目现有测试支持（例如 `BaseDbUnitTest`）；测试类以 `*Test` 命名，按行为组织测试方法。测试与对应模块放在一起；Schema 或配置假设变化时同步更新 `src/test/resources` fixtures。
+
+仅 `backend/yshop-module-mp` 启用 Checkstyle，配置位于 `backend/config/checkstyle/`，其他后端模块暂不启用。提交前执行 MP 模块的 Checkstyle 检查；CI 使用严格门禁，规则例外须限定范围并在 PR 中说明原因。
