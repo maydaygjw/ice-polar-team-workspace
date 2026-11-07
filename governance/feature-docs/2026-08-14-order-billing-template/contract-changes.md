@@ -13,6 +13,7 @@
 | `PUT /admin-api/pay/billing-item/update-status` | `pay:billing-item:update` | 启用/停用计费项。 |
 | `DELETE /admin-api/pay/billing-item/delete?id=` | `pay:billing-item:delete` | 删除未被模板引用的计费项。 |
 | `POST /admin-api/pay/billing-item/validate-order-attribute` | `pay:billing-item:query` | 校验指定字段是否存在于商户订单表且为可用金额类型。 |
+| `POST /admin-api/pay/billing-item/validate-order-expression` | `pay:billing-item:query` | 校验计费表达式语法，并校验表达式中全部订单金额字段是否可用。请求 `{ "orderExpression": "pay_postage + 1" }`，成功返回 `true`，非法时返回业务错误。 |
 
 `BillingItemSaveReqVO`：
 
@@ -27,6 +28,8 @@
 `ValidateOrderAttributeReqVO`：`orderAttribute`。
 
 `ValidateOrderAttributeRespVO`：`valid`, `columnName`, `dataType`, `message`。校验只返回元数据，不返回任何订单数据样本。
+
+计费方式还支持 `ORDER_EXPRESSION`，保存字段为 `orderExpression`（最长 500 字符）。表达式只允许有效订单金额字段、数字、小括号及 `+ - * /`。管理端可通过字段/运算符按钮插入表达式片段，并调用 `validate-order-expression` 即时校验语法和字段。
 
 ### 管理后台：计费模板
 

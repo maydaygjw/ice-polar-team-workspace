@@ -1,6 +1,6 @@
 # 第三方支付 OpenAPI
 
-本文供接入平台支付能力的第三方后端开发者和平台管理员使用，说明 OAuth2 客户端令牌、微信/汇付支付、支付查询、全额退款及支付结果 Webhook。
+本文供接入平台支付能力的第三方后端开发者和平台管理员使用，说明 OAuth2 客户端令牌、微信/汇付支付、支付查询、全额退款、微信商家转账及支付结果 Webhook。
 
 第三方后端通过本 API 创建和管理支付单；付款人通过所选渠道完成付款。平台不提供托管收银页面，第三方不需要维护支付商户密钥或证书。
 
@@ -9,9 +9,9 @@
 平台管理员需要完成以下配置：
 
 1. 在系统的 OAuth2 客户端管理中创建并启用 `client_credentials` 客户端，安全保存 `client_id` 和 `client_secret`。
-2. 在该客户端的 scope 文本框中输入获准的权限，多个 scope 用英文逗号分隔，支付 OpenAPI 只需配置 `payment`。创建请求的 `payType` 可选 `weixin`（默认）或 `adapay`。scope 与后台菜单权限相互独立。
+2. 在该客户端的 scope 文本框中输入获准的权限，多个 scope 用英文逗号分隔，支付与用户转账 OpenAPI 使用 `payment`。创建支付请求的 `payType` 可选 `weixin`（默认）或 `adapay`。scope 与后台菜单权限相互独立。
 3. 在当前租户的支付配置中，启用所需渠道支付配置的“允许外部 OpenAPI 调用”开关，并配置 Webhook 地址。微信渠道需且只能启用一个微信小程序或公众号配置；汇付渠道需启用当前租户的 Adapay H5 配置。
-4. 使用微信渠道时，确认第三方提供的 `payerOpenId` 属于已启用配置对应的微信 AppID。
+4. 使用微信支付时，确认第三方提供的 `payerOpenId` 属于已启用配置对应的微信 AppID。发起用户转账时，`openid` 必须对应当前租户已有会员的小程序 OpenID。
 
 OpenAPI 不接受请求方提交的商户号、密钥、证书、支付配置 ID 或临时通知地址。商户支付配置由平台在当前租户内统一维护。
 
@@ -33,7 +33,7 @@ OpenAPI 不接受请求方提交的商户号、密钥、证书、支付配置 ID
 
 | Scope | 能力 |
 |---|---|
-| `payment` | 创建、查询微信/汇付支付单及申请全额原路退款 |
+| `payment` | 创建、查询微信/汇付支付单、申请全额原路退款，以及向当前租户会员发起微信商家转账 |
 
 令牌请求的 `scope` 可省略；省略时授予客户端登记的全部 scope。显式请求 scope 时，所有 scope 必须已由客户端精确授权。支付接口统一检查 `payment` scope。scope 配置不支持通配符。令牌只代表第三方客户端，不是会员或管理员身份。客户端凭证、访问令牌和支付渠道参数均不得写入日志。
 
@@ -179,6 +179,51 @@ Content-Type: application/json
 
 响应仍为支付单对象，其中 `refundStatus` 表示退款进度。`PROCESSING` 仅表示平台已提交退款，不代表渠道已完成退款；继续查询支付单，直到得到 `SUCCESS` 或 `FAILED`。退款处理中或已成功时，只能使用原退款幂等键重复提交；不同键会被拒绝。
 
+## 向用户发起微信商家转账
+
+`POST /open-api/v1/payments/transfers`
+
+需要 `payment` scope。此接口使用微信 APIv3 商家转账能力，向指定微信 OpenID 转账；`openid` 必须匹配当前租户会员的小程序 OpenID。调用方无需传会员 `userId`、AppID、商户号、场景 ID、回调地址或商户密钥，这些由后端按当前租户关联会员并使用已配置的微信小程序支付商户配置。
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|:---:|---|
+| `openid` | string | 是 | 收款人的微信小程序 OpenID |
+| `amount` | integer | 是 | 转账金额，人民币分，必须大于 0；例如 `1000` 表示 ¥10.00 |
+| `outBillNo` | string | 是 | 商户转账单号，1–32 位字母、数字、下划线或连字符；同一笔转账重试必须复用 |
+| `remark` | string | 否 | 转账备注；未传时使用默认备注 |
+
+```http
+POST /open-api/v1/payments/transfers
+Authorization: Bearer <access-token>
+tenant-id: 1001
+Content-Type: application/json
+
+{
+  "openid": "oUpF8uMuAJO_M2pxb1Q9zNjWeS6o",
+  "amount": 1000,
+  "outBillNo": "transfer-20261107-001",
+  "remark": "活动奖励"
+}
+```
+
+成功响应示例：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "outBillNo": "transfer-20261107-001",
+    "transferBillNo": "wx-transfer-bill-no",
+    "createTime": "2026-11-07T10:15:30+08:00",
+    "state": "WAIT_USER_CONFIRM",
+    "packageInfo": "<微信用户确认收款参数>"
+  }
+}
+```
+
+成功响应包含微信返回的 `outBillNo`、`transferBillNo`、`state`、`createTime` 和 `packageInfo`。微信可能要求用户确认收款；接口受理或返回 `packageInfo` 不代表款项已到账。最终状态以后端查单/微信转账通知为准。网络超时或结果未知时，必须用相同 `outBillNo` 重试，不得换单号重复打款。转账记录会写入统一用户转账明细，可在平台现有查询能力中查看。
+
 ## 状态字段
 
 ### 支付状态 `status`
@@ -250,4 +295,4 @@ Webhook 的 `eventType` 枚举值为 `payment.succeeded`、`payment.failed`、`p
 
 ## 支持范围
 
-支持微信 JSAPI 与汇付（Adapay）支付创建、支付查询、全额原路退款和支付结果 Webhook。当前不提供商家转账、用户确认收款、部分退款、支付宝或平台托管收银页面。
+支持微信 JSAPI 与汇付（Adapay）支付创建、支付查询、全额原路退款、支付结果 Webhook，以及面向当前租户会员的微信商家转账。用户确认收款页面由调用方根据 `packageInfo` 和微信对应能力完成；OpenAPI 不提供商家转账确认页面、部分退款、支付宝或平台托管收银页面。
