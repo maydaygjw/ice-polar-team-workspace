@@ -6,10 +6,10 @@
 
 先记录请求时间及其时区（团队记录使用 Asia/Shanghai）、域名、方法、路径、租户、业务标识、客户端看到的 HTTP 状态和脱敏响应。没有请求时间或业务标识时，先确认可用于检索的时间范围。
 
-从 workspace 根目录加载目标环境。`dev`、`test`、`prod` 是候选配置，不能代替路由核对：
+从 workspace 根目录加载目标环境。`dev`、`prod` 是候选配置，不能代替路由核对：
 
 ```bash
-env_name=dev # 按目标改为 dev、test 或 prod
+env_name=dev # 按目标改为 prod
 set +x
 source governance/SCRIPTS/deploy-helper.sh
 load_env "$env_name"
@@ -126,7 +126,33 @@ PY
 - **待验证**：尚未取得远端运行版本、数据库字段或外部响应支持的推测。
 - **无证据**：未查到记录或日志；不能写成“未发生”。
 
-外部系统问题核对“业务筛选结果 → 外发目标数组 → 外部响应”三段证据。仅在现有证据不足且已知目标类/方法时，才使用 Arthas 限次观测；禁止热更新、重启或临时修改日志配置，结束后执行 `stop`。
+外部系统问题核对“业务筛选结果 → 外发目标数组 → 外部响应”三段证据。
+
+### Arthas 字节码观测
+
+当调用链复杂、无法从日志还原执行分支，或日志缺少关键入参、返回值、异常和耗时信息时，使用 Arthas 对目标方法做短时字节码增强观测。只用于观察运行状态，不修改业务数据或运行中的类实现；禁止使用 `redefine`、热更新、重启服务或临时修改日志配置。
+
+先确认目标容器、运行版本和 Java 用户。镜像已预装 Arthas 时，在目标容器内以与 Java 进程相同的用户启动 Arthas：
+
+```bash
+container_name=your-container # 替换为目标容器名或ID
+docker exec -it --user 10001:10001 "$container_name" \
+  java -jar /opt/arthas/arthas-boot.jar
+```
+
+若目标 Java 进程不是 UID 10001，需将 `--user` 改为该进程的 UID/GID。进入 Arthas 后，先定位实际类和方法，再对具体方法限次采集：
+
+```text
+sc -d com.example.TargetService
+sm com.example.TargetService targetMethod
+watch com.example.TargetService targetMethod '{params,returnObj,throwExp}' -x 2 -n 5
+trace com.example.TargetService targetMethod '#cost > 100' -n 5
+stack com.example.TargetService targetMethod -n 5
+```
+
+将示例类名和方法名替换为运行版本中的实际实现。`watch` 用于查看入参、返回值和异常，`trace` 用于查看方法内部调用及耗时，`stack` 用于确认调用路径。`sc -d` 可查看类加载器；同名类由多个 ClassLoader 加载时，用查到的 hash 通过 `-c <hash>` 限定增强目标。不要用通配符扩大到大量类或高频方法；使用条件表达式和 `-n` 控制采集范围。检查输出时按日志安全规则处理个人信息、Token 和其他敏感参数。
+
+排查结束后执行 `reset` 恢复被增强的类，再执行 `stop` 关闭 Arthas 服务端。之后在移交记录中写明目标实例、类/方法、采集条件、时间范围和结论。Arthas 不可用或无法 attach 时，记录具体限制并移交，不要通过修改线上运行参数绕过。
 
 ## 6. 移交与复验
 
