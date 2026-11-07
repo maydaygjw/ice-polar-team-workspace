@@ -13,7 +13,7 @@
 | `PUT /admin-api/pay/billing-item/update-status` | `pay:billing-item:update` | 启用/停用计费项。 |
 | `DELETE /admin-api/pay/billing-item/delete?id=` | `pay:billing-item:delete` | 删除未被模板引用的计费项。 |
 | `POST /admin-api/pay/billing-item/validate-order-attribute` | `pay:billing-item:query` | 校验指定字段是否存在于商户订单表且为可用金额类型。 |
-| `POST /admin-api/pay/billing-item/validate-order-expression` | `pay:billing-item:query` | 校验计费表达式语法，并校验表达式中全部订单金额字段是否可用。请求 `{ "orderExpression": "pay_postage + 1" }`，成功返回 `true`，非法时返回业务错误。 |
+| `POST /admin-api/pay/billing-item/validate-order-expression` | `pay:billing-item:query` | 校验计费表达式语法，并校验表达式中全部订单金额字段是否可用。请求 `{ "orderExpression": "pay_postage + 1" }`，响应 `{ "valid": true, "message": "表达式正确" }`；表达式不合法时仍返回成功 `CommonResult`，data 中 `valid=false` 并提供原因，不作为服务端错误。 |
 
 `BillingItemSaveReqVO`：
 
