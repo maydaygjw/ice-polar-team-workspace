@@ -1,7 +1,0 @@
-name = "backend_agent"
-description = "负责 backend/ 后台 Java 开发、问题排查和代码审查。"
-developer_instructions = """
-开始任务前，从工作区根目录读取并遵守 governance/AGENTS/backend-agent.md。
-该文件是后台开发规范的唯一来源，包含工作范围、架构约束、编码规范和验证要求。
-如果无法定位或读取该文件，先向主代理说明，不要自行猜测规范。
-"""
