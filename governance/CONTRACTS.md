@@ -1,5 +1,9 @@
 # 跨模块接口契约索引
 
+## 后台订单详情费用字段
+
+- `/admin-api/order/store-order/get` 与 `/admin-api/order/store-order/getInfo` 响应新增 `boxFeeForPlatform`（平台餐盒费抽成）和 `serviceFee`（订单服务费）；两个字段暂不由业务流程赋值，数据库默认 `0.00`。原 `boxFeePrice` 仍表示餐盒费。详见[后台订单详情费用字段契约](feature-docs/2026-11-07-order-detail-fee-fields/contract-changes.md)。
+
 ## 管理后台订单详情支付流水号
 
 - `GET /admin-api/order/store-order/get?id={id}` 与 `GET /admin-api/order/store-order/getInfo?orderId={orderId}` 的 `data` 响应新增可空字符串字段 `transactionId`，表示订单支付流水号；未记录时为 `null`。

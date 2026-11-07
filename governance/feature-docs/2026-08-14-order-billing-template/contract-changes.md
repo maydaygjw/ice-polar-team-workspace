@@ -17,6 +17,8 @@
 
 `BillingItemSaveReqVO`：
 
+管理端 `GET /admin-api/pay/billing-item/order-attributes` 动态返回可用订单金额属性，包含 `pay_price`（实付金额）、`box_fee_price`（餐盒费）、`box_fee_for_platform`（平台餐盒费抽成）和 `service_fee`（服务费）。新增的两个字段暂不由下单流程赋值。
+
 | 字段 | 类型 | 必填 | 约束 |
 |---|---|---|---|
 | `id` | Long | 更新是 | 本租户计费项。 |
