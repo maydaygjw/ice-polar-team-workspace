@@ -15,7 +15,8 @@ Use these notes to orient in the repository. They describe current project conve
 Check the corresponding sections in the [official trade API docs](https://docs.adapay.tech/api/trade.html#member) before relying on these facts:
 
 - `Member.query` and `CorpMember.query` both require `app_id` and `member_id`.
-- The documented corporate-member query response may omit `object`; identify a corporate member from its corporate fields (such as `name`, `social_credit_code`, or `legal_person`) as well as status and matching `member_id`. Do not classify an unrecognized or failed response as a personal member.
+- Profit-recipient sync requires an explicit `memberType` (`1` personal, `2` corporate) because the APIs are distinct; it calls `Member.query` for personal and `CorpMember.query` for corporate. Do not infer type from `member_id`, settlement-account type, or `object`, and do not silently fall back to the other endpoint.
+- The documented corporate-member query response may omit `object`. Validate successful status and matching `member_id`, then map corporate fields such as `name`, `social_credit_code`, and `legal_person` according to the selected type.
 - `SettleAccount.query` requires `app_id`, `member_id`, and `settle_account_id`. Its bank details are nested under `account_info`; read `bank_acct_type` from there. The API values are `1` for corporate and `2` for personal account type. Do not infer bank-account type from whether the member is a company or an individual.
 - Corporate-member creation can return `pending` while manual review is outstanding. When bank details are supplied, AdaPay may create the settlement account after approval; without them, create a settlement account separately if the business flow requires one. Treat review and settlement-account state according to the documented status/callback flow, not as immediate approval.
 

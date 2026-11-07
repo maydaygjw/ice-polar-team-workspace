@@ -22,6 +22,7 @@
 
 ## OpenAPI AdaPay 结算与对账
 
+- [AdaPay 分账收款人同步类型选择](feature-docs/2026-11-07-adapay-member-type-sync/contract-changes.md)：同步收款人请求必须显式提交 Member 类型；后端按个人/企业分别调用 AdaPay 查询接口，不再从 `member_id` 推断类型。
 - OpenAPI 支付创建请求提交商圈代码；平台按当前租户商圈配置解析专用默认店铺，不接受客户端指定店铺、计费模板或收款人。请求金额全额作为计费基数，无优惠和平台补贴。
 - AdaPay 支付成功时，以支付创建时保存的计费上下文快照幂等生成通用应收应付事实；OpenAPI 内部使用 paymentId 关联账务，clientOrderNo 保持为客户端外部订单号，不关联商城订单表。
 - 客户端可用 `payment` scope 按自身 clientOrderNo 主动请求 AdaPay 结算；系统每日 00:05 自动任务处理相同待结算队列。主动/自动执行及全额退款互斥；分账处理中或成功时拒绝退款，退款成功后不再结算，退款失败恢复资格。
