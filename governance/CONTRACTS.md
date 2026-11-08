@@ -25,6 +25,11 @@
 - 同步为幂等操作，不创建或修改 AdaPay Member/结算账户；不返回完整银行卡号或证件号码。结算账户摘要只保存脱敏卡号/姓名、银行及地区信息。
 - 详见分账收款人管理页面的 MemberId 同步操作。
 
+## AdaPay 分账收款人信息与结算账户维护
+
+- `PUT /admin-api/pay/profit-recipient/update` 更新本地分账收款人资料。请求只含 `memberInfo` 时更新本地 Member 信息快照，不改绑定的结算账户；请求只含 `settleAccount` 时创建并绑定/更换 AdaPay 结算账户，不改 Member 信息。收款人级别、角色、店铺和 Member 类型保持不变。
+- 管理页面将 Member 信息编辑与结算账户绑定/更换作为两个独立操作；完整银行卡信息只在绑定/更换请求中提交，列表与详情仅返回脱敏摘要。
+
 ## 管理后台订单详情支付流水号
 
 - `GET /admin-api/order/store-order/get?id={id}` 与 `GET /admin-api/order/store-order/getInfo?orderId={orderId}` 的 `data` 响应新增可空字符串字段 `transactionId`，表示订单支付流水号；未记录时为 `null`。
