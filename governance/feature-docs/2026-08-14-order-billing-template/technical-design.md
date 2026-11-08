@@ -56,7 +56,7 @@ priority DESC, template_id ASC
 ### 5. 计算与分配分两步
 
 ```text
-allocatable = beforeCoupon - discount + platformSubsidy
+allocatable = beforeCoupon - discount
 
 percentage theoretical = round(base * percentage / 100, 2, HALF_UP)
 attribute theoretical  = round(orderAttribute, 2, HALF_UP)
@@ -70,7 +70,7 @@ attribute theoretical  = round(orderAttribute, 2, HALF_UP)
 4. 按非商家基准金额占比，将实际补贴额从非商家明细中扣减；所有金额以分为单位用最大余数法分配，余数相同时按模板顺序，确保扣减总额精确相等。
 5. 当前商家明细保存实际补贴额；非商家明细保存扣减后的实际额。非商家项的理论金额不足差异仍记录；比例扣减属于预期分配，不单独标记为余额不足差异。补贴申请额超过可扣减总额时按可扣减总额封顶并记录差异。
 6. 商家主体最终金额等于显式商家补贴明细合计加非商家扣减后剩余金额；未被显式商家项归类的剩余部分保存为“商家剩余”明细。
-7. 按最终收款主体汇总，并校验主体汇总合计与可计算金额完全相等。平台补贴继续计入可计算金额，模板内商家补贴只在该总额内重新分配，不扩大总额。
+7. 按最终收款主体汇总，并校验主体汇总合计与可计算金额完全相等。平台补贴可以作为订单属性计费项参与分配，但不扩大可计算金额；模板内商家补贴只在该总额内重新分配。
 
 理论与实际存在差异不是失败，主记录状态为 `SUCCESS_WITH_DIFFERENCE`。只有缺少模板、字段错误、固定收款人失效、可计算金额为负数或总额校验不平时才是 `FAILED`。
 
