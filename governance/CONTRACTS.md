@@ -44,8 +44,9 @@
 
 ## AdaPay 分账收款人同步
 
-- `POST /admin-api/pay/profit-recipient/sync` 使用 `pay:profit-recipient:create` 权限，按当前租户 AdaPay 配置和输入的 `memberId` 查询个人或企业 Member，并查询其已有结算账户；只允许关联当前租户 AdaPay 商户下可查到的 Member。
-- 若当前租户已存在相同 `memberId` 的本地收款人，保留其级别、角色、店铺、启用状态和绑定历史，仅刷新 Member 信息快照及 AdaPay 结算账户 ID/脱敏摘要；若不存在，调用方须提供收款人级别及相应角色或店铺，新建记录默认禁用。没有远端结算账户时保存为未绑定。
+- `POST /admin-api/pay/profit-recipient/sync` 使用 `pay:profit-recipient:create` 权限，普通 Member 按当前租户 AdaPay 配置及输入的 `memberId` 查询个人或企业 Member，并查询其已有结算账户；只允许关联当前租户 AdaPay 商户下可查到的 Member。
+- 当 `memberId="0"` 时表示当前租户的 AdaPay 平台商户，按平台级“平台”角色同步，跳过 Member/CorpMember 查询。平台商户使用 AdaPay 基本账户，不创建结算账户对象；本地以 Member 类型 `0` 标记平台商户、账户绑定状态标记为已绑定且结算账户 ID 为空。平台商户银行卡详情不从本同步接口读取或保存。
+- 若当前租户已存在相同非零 `memberId` 的本地收款人，保留其级别、角色、店铺、启用状态和绑定历史，仅刷新 Member 信息快照及 AdaPay 结算账户 ID/脱敏摘要；若不存在，调用方须提供收款人级别及相应角色或店铺，新建记录默认禁用。普通 Member 没有远端结算账户时保存为未绑定。平台商户同步规则见上项。
 - 同步为幂等操作，不创建或修改 AdaPay Member/结算账户；不返回完整银行卡号或证件号码。结算账户摘要只保存脱敏卡号/姓名、银行及地区信息。
 - 详见分账收款人管理页面的 MemberId 同步操作。
 
@@ -77,7 +78,7 @@
 
 ## OpenAPI AdaPay 结算与对账
 
-- [AdaPay 分账收款人同步类型选择](feature-docs/2026-11-07-adapay-member-type-sync/contract-changes.md)：同步收款人请求必须显式提交 Member 类型；后端按个人/企业分别调用 AdaPay 查询接口，不再从 `member_id` 推断类型。
+- [AdaPay 分账收款人同步类型选择](feature-docs/2026-11-07-adapay-member-type-sync/contract-changes.md)：普通 Member 请求必须显式提交个人/企业类型，后端不再从 `member_id` 推断；`member_id=0` 固定表示平台商户并使用 AdaPay 平台商户基本账户。
 - [AdaPay 分账收款人本地删除](feature-docs/2026-11-07-adapay-recipient-local-delete/contract-changes.md)：新增仅删除本地收款人记录及本地结算账户快照的操作，不调用 AdaPay 删除接口；保留现有远端删除操作。
 - OpenAPI 支付创建请求提交商圈代码；平台按当前租户商圈配置解析专用默认店铺，不接受客户端指定店铺、计费模板或收款人。请求金额全额作为计费基数，无优惠和平台补贴。
 - AdaPay 支付成功时，以支付创建时保存的计费上下文快照幂等生成通用应收应付事实；OpenAPI 内部使用 paymentId 关联账务，clientOrderNo 保持为客户端外部订单号，不关联商城订单表。
