@@ -42,6 +42,7 @@
 - `backend/` 是 Maven 多模块 Spring Boot 项目：根 `pom.xml` 聚合 `yshop-dependencies`、`yshop-framework`、可运行应用 `yshop-server` 和 `yshop-module-*` 业务模块，如 `yshop-module-site`、`yshop-module-mall`、`yshop-module-system`。
 - 生产代码位于 `src/main/java`，配置位于 `src/main/resources`，测试位于 `src/test/java` 或 `src/test/resources`；领域模块通常按 `controller`、`service`、`dal`、`convert` 分层。SQL 资源位于 `sql/`，部署脚本位于 `script/docker` 和 `script/shell`。
 - 使用 Java 17、UTF-8 和 4 空格缩进；包名遵循 `co.yixiang.yshop` 现有结构。
+- 代码注释和 JavaDoc 使用中文；引用的协议字段、标准术语或代码标识符可保留原文。
 - 类名沿用项目后缀：`*Controller`、`*Service`、`*ServiceImpl`、`*Mapper`、`*DO`、`*ReqVO`、`*RespVO`；优先使用能体现业务模块的名称。
 - Maven 未配置全局格式化工具；按相邻代码风格编写并整理 imports。
 
