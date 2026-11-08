@@ -18,6 +18,11 @@
 - 订单结算管理页为 AdaPay 订单提供“同步分账状态”操作；后端按当前租户调用 AdaPay 查询支付确认对象，将远端状态同步至已有本地分账记录；若尚无本地分账记录，则按订单支付流水号查询并将结果显示在当前列表行。
 - 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（0 未结算、1 待分账、2 分账中、3 已结算、4 分账失败）；确认列表为空时返回 0。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 
+## 应收应付订单级结算对账
+
+- 应收应付列表记录增加 `reconciliation_status`：`MATCHED`（一致）、`DIFFERENT`（有差异）、`PENDING`（结算未完成或缺少可比较明细）、`NOT_APPLICABLE`（已回退等不适用场景）。仅使用本地应收应付主体快照与本地分账结算记录比较，不在读取列表或明细时请求 AdaPay。
+- 应收应付明细接口增加 `settlement_items`，仅在结算成功时从本地分账订单明细读取结算主体、角色、收款人和金额；列表对账状态按收款人汇总应收应付主体金额与本地已结算金额比较。拼单订单优先使用支付对象级明细并按收款人汇总。
+
 ## AdaPay 分账收款人同步
 
 - `POST /admin-api/pay/profit-recipient/sync` 使用 `pay:profit-recipient:create` 权限，按当前租户 AdaPay 配置和输入的 `memberId` 查询个人或企业 Member，并查询其已有结算账户；只允许关联当前租户 AdaPay 商户下可查到的 Member。
