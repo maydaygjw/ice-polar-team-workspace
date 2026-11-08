@@ -20,6 +20,8 @@
 
 ## 管理端
 
+个人 Member 的真实姓名优先读取 Member 查询响应中的 `userName`（兼容 `user_name`、`real_name` 和 `realName`），证件号和证件类型也优先取该响应；字段缺失时分别回退到已查询结算账户的 `account_info.card_name`、`cert_id` 和 `cert_type`。收款人名称在 Member 未提供可用姓名时回退到上述真实姓名，不能以 `memberId` 覆盖已有账户姓名。结算账户的 `bank_name` 为空时，后端按 `bank_code` 查询本地启用银行字典并补全展示名称；银行编码保持 AdaPay 返回值。银行卡号、证件号按响应中的脱敏值保存和展示，不返回完整号码。
+
 “同步 AdaPay 分账收款人”表单根据 Member ID 决定同步主体：输入 `0` 时将 Member 类型锁定为“平台商户”，并固定级别为平台级、角色为平台；其他 Member ID 要求明确选择个人/企业类型。Member 类型不同于本地收款人级别（平台级/店铺级）。
 
 ## 数据库
