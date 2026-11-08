@@ -1,5 +1,15 @@
 # 契约变更 — Adapay 分账结算
 
+## 预计打款日期
+
+- 分账结算记录分页和详情响应新增可空 `estimatedPaymentDate`（`yyyy-MM-dd`），由服务端根据 `sharingTime` 推算；不新增或回写数据库字段。
+- 输入日期取 `sharingTime` 按 `Asia/Shanghai` 转换后的日期；`sharingTime` 为空时返回 `null`。
+- 当前 `T_PLUS_ONE` 策略先加一个自然日；若结果落在非工作日，则顺延至下一工作日。工作日历采用中国国务院办公厅调休安排，节假日和调休补班日均须覆盖。
+- `D_PLUS_ONE` 策略取下一个自然日，不顺延节假日。由 `yshop.pay.profit-sharing.settlement-mode` 选择策略，支持 `T_PLUS_ONE` / `D_PLUS_ONE`；也可用环境变量 `YSHOP_PROFIT_SHARING_SETTLEMENT_MODE` 覆盖。新增结算模式时新增策略实现，不在响应映射或页面中散布日期分支。
+- 该日期是预计打款日，不代表实际到账；页面现有“结算时间”仍表示分账成功时间。
+- 工作日日历存储于全局参考表 `yshop_pay_settlement_calendar_day`，按 `calendar_code=CN` 读取，不按租户区分。表中维护放假日期、调休补班日期及国务院办公厅通知来源；其他日期按周一至周五为工作日处理。
+- 初始化数据覆盖 2025、2026、2027 年国务院办公厅已发布的放假调休安排；后续年份通知发布后须新增日历数据迁移并重启服务刷新内存日历。
+
 ## 端点变更
 
 ### 银行列表

@@ -6,6 +6,14 @@
 - 每日采集和手工单日重拉除当前/历史分账收款人外，均增加一个商户自身采集目标。其本地快照使用 `recipient_type=3`、`recipient_id=0`、名称「平台商户」，不关联角色、店铺或绑定关系；与收款人及租户数据隔离。
 - 已完成的历史采集任务不会自动回填该主体；需对目标日期手动重拉。详细字段和筛选规则见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md)。
 
+## 分账结算记录预计打款日期
+
+- 分账结算记录列表及详情响应增加只读 `estimatedPaymentDate`，由成功分账记录的 `sharingTime` 按当前结算策略推算，不新增数据库字段。
+- 当前策略为 T+1：从 `sharingTime` 的上海本地日期推一天，若预计日为休息日则顺延至工作日。工作日判断按中国调休日历，包含节假日休息日和调休补班日。
+- 日期推算由策略接口实现，结算模式通过配置选择；D+1 策略按下一个自然日计算，后续可切换配置。无 `sharingTime` 时响应 `null`。
+- 中国工作日日历存储在全局参考表 `yshop_pay_settlement_calendar_day`，已初始化 2025—2027 年放假和补班日期；新年度安排发布后通过数据库迁移补充。
+- 详见[分账结算记录预计打款日期契约](feature-docs/2026-07-13-adapay-profit-sharing/contract-changes.md#预计打款日期)。
+
 ## 后台订单详情费用字段
 
 - `/admin-api/order/store-order/get` 与 `/admin-api/order/store-order/getInfo` 响应新增 `boxFeeForPlatform`（平台餐盒费抽成）和 `serviceFee`（订单服务费）；两个字段暂不由业务流程赋值，数据库默认 `0.00`。原 `boxFeePrice` 仍表示餐盒费。详见[后台订单详情费用字段契约](feature-docs/2026-11-07-order-detail-fee-fields/contract-changes.md)。
@@ -27,7 +35,7 @@
 ## 应收应付订单级结算对账
 
 - 应收应付列表记录增加 `reconciliation_status`：`MATCHED`（一致）、`DIFFERENT`（有差异）、`PENDING`（结算未完成或缺少可比较明细）、`NOT_APPLICABLE`（已回退等不适用场景）。仅使用本地应收应付主体快照与本地分账结算记录比较，不在读取列表或明细时请求 AdaPay。
-- 应收应付明细接口增加 `settlement_items`，仅在结算成功时从本地分账订单明细读取结算主体、角色、收款人和金额；列表对账状态按收款人汇总应收应付主体金额与本地已结算金额比较。拼单订单优先使用支付对象级明细并按收款人汇总。
+- 应收应付明细接口增加 `settlement_items`，仅在结算成功时从本地分账订单明细读取结算主体、角色、收款人、Member ID（脱敏）和金额；`parties` 也返回收款人 Member ID（脱敏）。两张表分别展示本地应收主体汇总与实际分账明细，并按本地收款人 ID 匹配、比较金额；Member ID 只用于识别展示，不以脱敏值作为匹配键。拼单订单优先使用支付对象级明细并按收款人汇总。
 
 ## AdaPay 分账收款人同步
 
