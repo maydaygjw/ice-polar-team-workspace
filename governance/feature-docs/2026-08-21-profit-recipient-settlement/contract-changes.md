@@ -8,7 +8,7 @@
 
 权限：`pay:profit-recipient-settlement:query`
 
-请求参数：分页参数、Tab 类型（`SHOP`/`PLATFORM`）、结算日期范围、汇总方式（`DAY`/`WEEK`/`MONTH`）、商圈/店铺/收款人 ID 或名称/平台角色/绑定关系筛选项。
+请求参数：分页参数、Tab 类型（`SHOP`/`PLATFORM`/`MERCHANT`）、结算日期范围、汇总方式（`DAY`/`WEEK`/`MONTH`）、商圈/店铺/收款人 ID 或名称/平台角色/绑定关系筛选项。`MERCHANT` 只使用结算日期范围，忽略收款人、店铺、商圈、角色和绑定关系筛选。
 
 响应至少包含：汇总周期、收款人、角色、历史商圈/店铺、当前关系状态、结算金额、结算手续费、净到账金额、记录数和采集状态。
 
@@ -18,7 +18,7 @@
 
 权限：`pay:profit-recipient-settlement:query`
 
-请求参数：分页参数、Tab 类型、收款人 ID 或名称、结算日期或汇总周期、商圈/店铺/角色/绑定关系筛选项。
+请求参数：分页参数、Tab 类型（`SHOP`/`PLATFORM`/`MERCHANT`）、收款人 ID 或名称、结算日期或汇总周期、商圈/店铺/角色/绑定关系筛选项。`MERCHANT` 仅按日期查询商户自身主体的本地流水，忽略收款人、店铺、商圈、角色和绑定关系筛选。
 
 响应至少包含：结算日期、结算类型、结算状态、结算金额、手续费、净到账金额、脱敏卡号和失败描述。
 
@@ -36,7 +36,15 @@
 
 权限：`pay:profit-recipient-settlement:query`
 
-返回执行状态、目标日期、总收款人数、成功数、失败数、明细数、开始/结束时间和失败摘要。
+返回执行状态、目标日期、总主体数、成功数、失败数、明细数、开始/结束时间和失败摘要；主体数包含商户自身目标。
+
+### 平台商户结算流水
+
+- 每次自动采集和手工单日重拉均增加一个当前租户 AdaPay 商户自身采集目标，与当前/历史分账收款人目标分别记录执行结果。
+- 商户自身查询调用 `AdapayPayService.querySettleDetail(memberId="0", settleAccountId=null, beginDate=date, endDate=date)`，即 AdaPay `SettleAccount.detail` 的 `member_id=0` 查询方式。
+- 本地快照使用 `recipient_type=3`（平台商户）、`recipient_id=0`、`recipient_name="平台商户"`、`member_id="0"`、空 `settle_account_id`；角色、店铺、商圈和绑定历史为空。数据库现有非空字段可承载该快照，无需新增列。
+- 汇总和明细接口通过 `tabType=MERCHANT` 严格限定 `recipient_type=3`；不套用分账收款人角色、关系筛选或店铺数据范围。仍按当前租户隔离。
+- 已存在的任务不会自动补采商户流水；需要对相应日期执行手工重拉。重拉仍按主体独立替换成功数据，失败时保留该日期上一次成功结果。
 
 ## DB
 
@@ -100,11 +108,11 @@
 | `tenant_id` | BIGINT | NOT NULL | 租户 ID |
 | `task_id` | BIGINT | NOT NULL | 关联采集任务 ID |
 | `binding_history_id` | BIGINT | NULL | 本次使用的历史绑定 ID；平台级为空 |
-| `recipient_id` | BIGINT | NOT NULL | 分账收款人 ID，保留已逻辑删除记录的 ID |
-| `recipient_type` | TINYINT | NOT NULL | `1` 平台级，`2` 店铺级 |
+| `recipient_id` | BIGINT | NOT NULL | 分账收款人 ID；平台商户自身主体固定为 `0` |
+| `recipient_type` | TINYINT | NOT NULL | `1` 平台级，`2` 店铺级，`3` 平台商户自身（`member_id=0`） |
 | `role` | TINYINT | NULL | `1` 平台，`2` 配送方，`3` 销售方 |
 | `recipient_name` | VARCHAR(64) | NOT NULL | 收款人名称快照 |
-| `member_type` | TINYINT | NOT NULL | `1` 个人，`2` 企业 |
+| `member_type` | TINYINT | NOT NULL | `0` 平台商户自身，`1` 个人，`2` 企业 |
 | `member_id` | VARCHAR(64) | NOT NULL | AdaPay Member ID 快照 |
 | `settle_account_id` | VARCHAR(64) | NOT NULL DEFAULT `''` | AdaPay 结算账户 ID 快照；平台商户自身无账户时保存空字符串 |
 | `shop_id` | BIGINT | NULL | 原关联店铺 ID，平台级为空 |
@@ -170,7 +178,7 @@
 | `task_recipient_id` | BIGINT | NOT NULL | 任务收款人结果 ID |
 | `binding_history_id` | BIGINT | NULL | 结算日对应的历史绑定 ID |
 | `recipient_id` | BIGINT | NOT NULL | 收款人 ID |
-| `recipient_type` | TINYINT | NOT NULL | `1` 平台级，`2` 店铺级 |
+| `recipient_type` | TINYINT | NOT NULL | `1` 平台级，`2` 店铺级，`3` 平台商户自身（`member_id=0`） |
 | `role` | TINYINT | NULL | `1` 平台，`2` 配送方，`3` 销售方 |
 | `recipient_name` | VARCHAR(64) | NOT NULL | 收款人名称快照 |
 | `member_id` | VARCHAR(64) | NOT NULL | AdaPay Member ID 快照 |

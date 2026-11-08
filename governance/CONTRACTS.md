@@ -1,5 +1,11 @@
 # 跨模块接口契约索引
 
+## 分账收款人结算中的平台商户
+
+- 分账收款人结算汇总/明细查询新增 `MERCHANT` Tab，展示当前租户 AdaPay 商户自身的结算流水；只接受日期范围和汇总方式筛选，查询通过 `SettleAccount.detail` 固定传 `member_id=0`，不传 `settle_account_id`。
+- 每日采集和手工单日重拉除当前/历史分账收款人外，均增加一个商户自身采集目标。其本地快照使用 `recipient_type=3`、`recipient_id=0`、名称「平台商户」，不关联角色、店铺或绑定关系；与收款人及租户数据隔离。
+- 已完成的历史采集任务不会自动回填该主体；需对目标日期手动重拉。详细字段和筛选规则见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md)。
+
 ## 后台订单详情费用字段
 
 - `/admin-api/order/store-order/get` 与 `/admin-api/order/store-order/getInfo` 响应新增 `boxFeeForPlatform`（平台餐盒费抽成）和 `serviceFee`（订单服务费）；两个字段暂不由业务流程赋值，数据库默认 `0.00`。原 `boxFeePrice` 仍表示餐盒费。详见[后台订单详情费用字段契约](feature-docs/2026-11-07-order-detail-fee-fields/contract-changes.md)。
