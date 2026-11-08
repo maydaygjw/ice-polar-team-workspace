@@ -16,7 +16,7 @@
 
 ## 后台订单详情费用字段
 
-- `/admin-api/order/store-order/get` 与 `/admin-api/order/store-order/getInfo` 响应新增 `boxFeeForPlatform`（平台餐盒费抽成）和 `serviceFee`（订单服务费）；两个字段暂不由业务流程赋值，数据库默认 `0.00`。原 `boxFeePrice` 仍表示餐盒费。详见[后台订单详情费用字段契约](feature-docs/2026-11-07-order-detail-fee-fields/contract-changes.md)。
+- `/admin-api/order/store-order/get` 与 `/admin-api/order/store-order/getInfo` 响应包含 `platformSubsidyAmount`（平台补贴金额），并新增 `boxFeeForPlatform`（平台餐盒费抽成）和 `serviceFee`（订单服务费）；后两个字段暂不由业务流程赋值，数据库默认 `0.00`。原 `boxFeePrice` 仍表示餐盒费。详见[后台订单详情费用字段契约](feature-docs/2026-11-07-order-detail-fee-fields/contract-changes.md)。
 ## 订单计费项表达式
 
 - 计费项 `billingType` 支持 `ORDER_PERCENTAGE`（订单比例）、`ORDER_ATTRIBUTE`（单一订单金额属性）和 `ORDER_EXPRESSION`（订单属性表达式）。表达式保存在计费项 `orderExpression` 字段，仅允许受控订单金额属性、十进制数字、括号及 `+ - * /` 运算符；属性名为标识符（如 `pay_postage`），不支持函数或任意代码。运算遵循常规优先级和括号，除零或属性值为空时计费失败。表达式结果作为该明细的理论金额，并按两位小数四舍五入；既有订单结算快照不回算。

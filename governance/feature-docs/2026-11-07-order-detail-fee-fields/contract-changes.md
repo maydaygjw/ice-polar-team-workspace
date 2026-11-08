@@ -6,10 +6,11 @@
 
 | 字段 | 类型 | 含义 |
 |---|---|---|
+| `platformSubsidyAmount` | Decimal | 平台补贴金额；从订单记录原样返回，历史订单也可读取已固化金额。 |
 | `boxFeeForPlatform` | Decimal | 平台餐盒费抽成 |
 | `serviceFee` | Decimal | 订单服务费 |
 
-两个字段暂不由下单或支付流程赋值。数据库字段默认 `0.00`，后台订单详情展示字段值。原 `boxFeePrice` / `box_fee_price` 继续表示餐盒费。
+`platformSubsidyAmount` 对应订单已有字段；为空时响应为 `null`。`boxFeeForPlatform` 与 `serviceFee` 暂不由下单或支付流程赋值，数据库字段默认 `0.00`，后台订单详情展示字段值。原 `boxFeePrice` / `box_fee_price` 继续表示餐盒费。
 
 ## 数据库
 
