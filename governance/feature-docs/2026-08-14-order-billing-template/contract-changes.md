@@ -73,8 +73,8 @@
 | `billingItemId` | Long | 是 | 启用中的本租户计费项，模板内唯一。 |
 | `baseType` | String | 条件 | 比例项必填：`BEFORE_COUPON` / `AFTER_COUPON`；属性项必须为空且请求不得传值。 |
 | `percentage` | Decimal | 条件 | 比例项必填，0–100，最多 4 位小数；属性项必须为空且请求不得传值。 |
-| `recipientMode` | String | 是 | `FIXED_RECIPIENT` / `CURRENT_MERCHANT`。 |
-| `recipientId` | Long | 条件 | `FIXED_RECIPIENT` 时必填且为启用中的本租户收款人。 |
+| `recipientType` | String | 是 | `FIXED` / `CURRENT_MERCHANT` / `PLATFORM`。`PLATFORM` 是 AdaPay 平台分账目标标记，与分账收款人的平台级分类无关。 |
+| `recipientId` | Long | 条件 | `FIXED` 时必填且为启用中的本租户平台级分账收款人；`PLATFORM` 和 `CURRENT_MERCHANT` 不需要。执行 AdaPay 分账时，`PLATFORM` 直接使用 `memberId=0`。 |
 | `feeBearer` | Integer | 否 | `0=否, 1=是`；同一模板最多一条明细可为 `1`，多条明细合并为同一收款主体时由主体汇总承担手续费。 |
 | `sort` | Integer | 是 | 0–9999；同值按明细 ID 升序。 |
 

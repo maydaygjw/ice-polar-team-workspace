@@ -21,6 +21,7 @@
 ## 订单应收应付可计算金额
 
 - 商城订单可计算金额 = 券前金额 - 优惠金额；平台补贴作为订单计费属性参与明细分配，但不增加整单可分配上限。详见[订单计费模板与应收应付契约](feature-docs/2026-08-14-order-billing-template/contract-changes.md)。
+- 计费模板明细收款类型支持 `CURRENT_MERCHANT`（当前商家）、`FIXED`（指定分账收款人）和 `PLATFORM`（AdaPay 平台）。`PLATFORM` 仅作收款目标标记，不关联分账收款人记录；模板及应收应付明细的 `recipientId` 为空，执行 AdaPay 分账时直接使用 `memberId=0`。
 
 ## 订单计费项表达式
 
