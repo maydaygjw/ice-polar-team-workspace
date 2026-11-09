@@ -88,6 +88,11 @@
 - `GET /admin-api/order/store-order/get?id={id}` 与 `GET /admin-api/order/store-order/getInfo?orderId={orderId}` 的 `data` 响应新增可空字符串字段 `transactionId`，表示订单支付流水号；未记录时为 `null`。
 - 字段从订单记录的 `transaction_id` 返回；不改变支付状态、写入行为、权限或租户隔离规则。详见[订单详情支付流水号契约](feature-docs/2026-11-05-order-detail-transaction-id/contract-changes.md)。
 
+## 门店批量标签与标签筛选
+
+- 门店分页查询支持可选 `tagId`，按 `yshop_store_tag_ref` 中存在的门店-标签关联过滤结果。
+- `PUT /admin-api/store/shop/batch-tags` 接收 `shopIds` 与 `tagIds`，为所选门店追加标签并保留已有标签；重复标签幂等处理。操作按当前租户及用户可管理门店范围校验。
+
 ## OAuth2 客户端凭证授权
 
 - `POST /admin-api/system/oauth2/token` 支持 `grant_type=client_credentials`；客户端通过 HTTP Basic 传递 `client_id` / `client_secret`，可选 `scope` 必须是该客户端登记范围的子集，且客户端须启用该授权类型并处于启用状态。
