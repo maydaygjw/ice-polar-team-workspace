@@ -58,7 +58,9 @@
 
 ## 应收应付订单级结算对账
 
+- `GET /admin-api/pay/receivable-payable/page` 支持可选筛选参数 `businessRegionId`（商圈 ID）和 `shopId`（店铺 ID）；商圈 ID 作为快照冗余保存在应收应付主记录中，订单计费和 OpenAPI 计费保存对应店铺的商圈 ID，历史记录由迁移回填。商圈与店铺筛选均直接匹配应收应付主记录字段，分页列表和总数使用相同条件。
 - 应收应付列表记录增加 `reconciliation_status`：`MATCHED`（一致）、`DIFFERENT`（有差异）、`PENDING`（结算未完成或缺少可比较明细）、`NOT_APPLICABLE`（已回退等不适用场景）。仅使用本地应收应付主体快照与本地分账结算记录比较，不在读取列表或明细时请求 AdaPay。
+- `GET /admin-api/pay/receivable-payable/page` 列表响应增加 `sharing_time`，取该应收应付记录关联的最新本地分账记录的实际分账时间；无分账记录或尚未分账时为 `null`。管理后台应收应付列表以“分账时间”列展示，时间格式为 `YYYY-MM-DD HH:mm:ss`。
 - 应收应付明细接口增加 `settlement_items`，仅在结算成功时从本地分账订单明细读取结算主体、角色、收款人、Member ID（脱敏）和金额；`parties` 也返回收款人 Member ID（脱敏）。两张表分别展示本地应收主体汇总与实际分账明细；分账明细优先按 `receivable_payable_party_id` 归属当前应收订单，再按本地收款人 ID 汇总比较金额，防止拼单支付把其他订单的分账记录并入当前对账。Member ID 只用于展示，不以脱敏值作为匹配键。
 
 ## AdaPay 分账收款人同步
