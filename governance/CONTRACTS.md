@@ -26,7 +26,8 @@
 ## 外卖订单应收应付状态与手工生成
 
 - `GET /admin-api/order/store-order/page` 每条订单响应增加 `receivablePayableGenerated`：直接读取订单表冗余标记；仅 `SUCCESS` / `SUCCESS_WITH_DIFFERENCE` 应收应付记录置为 `true`，无记录或 `FAILED` 置为 `false`。列表不得为该字段联查应收应付表。
-- `POST /admin-api/order/store-order/generate-receivable-payable?id={storeOrderId}` 使用 `order:store-order:update` 权限。仅当前租户下已支付、未退款、外卖类型且订单状态为 `2`（待评价）或 `3`（已完成）的订单可触发；若已有成功应收应付则不重算。失败记录允许按现有幂等计费逻辑重试，响应 `true` 表示生成成功，`false` 表示不符合条件或生成未成功。
+- `POST /admin-api/order/store-order/generate-receivable-payable?id={storeOrderId}` 使用 `order:store-order:update` 权限。仅当前租户下已支付、未退款、外卖类型且订单状态为 `2`（待评价）或 `3`（已完成）的未生成订单可触发；若已有成功应收应付则不重算。失败记录允许按现有幂等计费逻辑重试，响应 `true` 表示本次生成成功，`false` 表示不符合条件、已生成或生成未成功。
+- `POST /admin-api/order/store-order/generate-receivable-payable/batch` 使用 `order:store-order:update` 权限，请求体为 `{ "ids": [storeOrderId, ...] }`，最大 100 个 ID。服务端逐单复用单笔生成校验和幂等逻辑，仅处理当前租户下已支付、未退款、外卖类型、状态为 `2/3` 且尚未成功生成的订单；重复、越权、不符合条件或生成失败的订单均不生成。响应包含 `totalCount`、`successCount` 和逐 ID 结果（`generated` 布尔值），允许部分成功。
 - 管理端外卖订单列表展示应收应付生成状态；只有状态 `2/3` 且尚未成功生成的订单，在“更多”菜单显示“生成应收应付”。
 - 订单模块内部 `OrderApi` 按租户和订单号更新该冗余标记；pay 计费成功时置为 `true`，失败时置为 `false`。数据库迁移为订单表新增默认 `false` 的字段，并按租户/订单号回填历史成功记录。
 
