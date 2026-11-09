@@ -58,7 +58,7 @@
 
 ## 订单结算管理商圈筛选
 
-- `GET /admin-api/order/store-order/settlement-page` 新增可选 `businessRegionId`（商圈 ID）查询参数，按当前租户下店铺所属商圈筛选结算记录；原 `shopId` 店铺筛选继续有效，同时传入时结果需同时满足两个条件。租户隔离以结算记录、店铺关联的租户 ID 为准。
+- `GET /admin-api/order/store-order/settlement-page` 新增可选 `businessRegionId`（商圈 ID）查询参数，按应收应付记录保存的商圈快照筛选结算记录；原 `shopId` 店铺筛选继续有效，同时传入时结果需同时满足两个条件。租户隔离以结算记录的租户 ID 为准。
 - 管理后台订单结算管理页提供商圈下拉筛选；选择商圈后查询分页接口，清空商圈则恢复全部商圈范围。
 - 详细契约见[订单结算管理商圈筛选契约](feature-docs/2026-11-09-order-settlement-business-region/contract-changes.md)。
 

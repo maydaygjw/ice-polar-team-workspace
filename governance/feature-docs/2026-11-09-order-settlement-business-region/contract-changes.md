@@ -7,8 +7,8 @@
 ## API
 
 - `GET /admin-api/order/store-order/settlement-page` 增加可选 `businessRegionId`（Long）查询参数。
-- 参数有值时，仅返回当前租户下 `yshop_store_shop.business_region_id` 等于该值、且 `yshop_store_shop.id` 匹配结算记录 `shop_id` 的记录。
-- 店铺和结算记录关联同时校验租户 ID；商圈为空时保持现有查询结果和行为。
+- 参数有值时，仅返回当前租户下应收应付记录 `business_region_id` 快照等于该值的记录。快照由计费时门店所属商圈写入，历史记录由数据库迁移回填。
+- 商圈筛选不依赖门店当前归属；商圈为空时保持现有查询结果和行为。
 - 现有 `shopId` 条件继续有效。若同时传商圈和店铺 ID，结果须同时符合两个条件。
 - 响应结构、分页排序、状态映射和结算快照均不变。
 
