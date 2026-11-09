@@ -14,6 +14,15 @@
 - 中国工作日日历存储在全局参考表 `yshop_pay_settlement_calendar_day`，已初始化 2025—2027 年放假和补班日期；新年度安排发布后通过数据库迁移补充。
 - 详见[分账结算记录预计打款日期契约](feature-docs/2026-07-13-adapay-profit-sharing/contract-changes.md#预计打款日期)。
 
+## 店铺收入报表日期与打款金额核对
+
+- 店铺收入报表汇总响应新增 `nonWorkingDayLabel`：按中国结算日历标记非工作日，法定节假日返回假期名称，普通周末返回「周末」，调休补班日及普通工作日返回 `null`。该字段仅用于展示，不改变各指标日期归属。
+- 管理后台新增打款金额核对列，逐日比较 `estimatedPaymentIncome` 与 `paymentAmount` 的分值；相等显示一致图标，不等显示不一致图标。两项均为 0 时按相等处理。
+- 汇总分页支持 `periodType=DAY|WEEK|MONTH`，默认 `DAY`；周从周一到周日，月按自然月。日期筛选两端包含，边界周期只累计筛选范围内数据。`settlementDate` 表示周期起日，并新增 `periodEndDate` 表示周期止日。
+- 明细分页继续兼容单日 `settlementDate`；周/月汇总行可传 `settlementDateStart` 和 `settlementDateEnd` 查询周期内明细。
+- 管理后台新增综合费率列，按聚合后的 `incomeAmount / orderAmount` 计算；订单金额为 0 时显示 `—`。费率不新增接口字段。
+- 详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
+
 ## 后台订单详情费用字段
 
 - `/admin-api/order/store-order/get` 与 `/admin-api/order/store-order/getInfo` 响应包含 `platformSubsidyAmount`（平台补贴金额），并新增 `boxFeeForPlatform`（平台餐盒费抽成）和 `serviceFee`（订单服务费）；后两个字段暂不由业务流程赋值，数据库默认 `0.00`。原 `boxFeePrice` 仍表示餐盒费。详见[后台订单详情费用字段契约](feature-docs/2026-11-07-order-detail-fee-fields/contract-changes.md)。
