@@ -56,6 +56,12 @@
 - 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（0 未结算、1 待分账、2 分账中、3 已结算、4 分账失败）；确认列表为空时返回 0。同步读取 AdaPay `div_members[].fee_flag` 更新本地明细 `feeFlag`，并读取支付确认的 `fee_amt` 保存手续费金额；详情将手续费金额显示在承担手续费的明细行。未查询到金额时响应 `null`。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 - `GET /order/store-order/settlement-page` 响应增加 `estimatedPaymentDate`（`date | null`），仅对已成功分账且有 `sharingTime` 的订单，按当前 AdaPay 结算策略推算；详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 
+## 订单结算管理商圈筛选
+
+- `GET /admin-api/order/store-order/settlement-page` 新增可选 `businessRegionId`（商圈 ID）查询参数，按当前租户下店铺所属商圈筛选结算记录；原 `shopId` 店铺筛选继续有效，同时传入时结果需同时满足两个条件。租户隔离以结算记录、店铺关联的租户 ID 为准。
+- 管理后台订单结算管理页提供商圈下拉筛选；选择商圈后查询分页接口，清空商圈则恢复全部商圈范围。
+- 详细契约见[订单结算管理商圈筛选契约](feature-docs/2026-11-09-order-settlement-business-region/contract-changes.md)。
+
 ## 应收应付订单级结算对账
 
 - `GET /admin-api/pay/receivable-payable/page` 支持可选筛选参数 `businessRegionId`（商圈 ID）和 `shopId`（店铺 ID）；商圈 ID 作为快照冗余保存在应收应付主记录中，订单计费和 OpenAPI 计费保存对应店铺的商圈 ID，历史记录由迁移回填。商圈与店铺筛选均直接匹配应收应付主记录字段，分页列表和总数使用相同条件。
