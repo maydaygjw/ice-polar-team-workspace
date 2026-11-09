@@ -64,8 +64,10 @@
 ## AdaPay 分账收款人同步
 
 - `POST /admin-api/pay/profit-recipient/sync` 使用 `pay:profit-recipient:create` 权限，普通 Member 按当前租户 AdaPay 配置及输入的 `memberId` 查询个人或企业 Member，并查询其已有结算账户；只允许关联当前租户 AdaPay 商户下可查到的 Member。
+- 店铺级同步请求可选传入 `shopIds: Long[]`，只创建或刷新一条本地收款人记录；传入店铺时将同一收款人 ID 写入所选店铺的 `yshop_store_shop.profit_sharing_recipient_id`，未传店铺时暂不关联店铺。绑定关系与店铺分账启用状态分开保存；同步创建的收款人默认禁用、店铺分账保持原状态。门店编辑页可调整绑定，候选项包含当前租户已启用的店铺级收款人及当前店铺已绑定的收款人。平台级同步仍使用单条平台记录，不能提交 `shopIds`。
 - 当 `memberId="0"` 时表示当前租户的 AdaPay 平台商户，按平台级“平台”角色同步，跳过 Member/CorpMember 查询。平台商户使用 AdaPay 基本账户，不创建结算账户对象；本地以 Member 类型 `0` 标记平台商户、账户绑定状态标记为已绑定且结算账户 ID 为空。平台商户银行卡详情不从本同步接口读取或保存。
-- 若当前租户已存在相同非零 `memberId` 的本地收款人，保留其级别、角色、店铺、启用状态和绑定历史，仅刷新 Member 信息快照及 AdaPay 结算账户 ID/脱敏摘要；若不存在，调用方须提供收款人级别及相应角色或店铺，新建记录默认禁用。普通 Member 没有远端结算账户时保存为未绑定。平台商户同步规则见上项。
+- 店铺级同步以当前租户 `memberId` 查找并复用本地收款人；新记录的 `shopId` 使用所选店铺中的一个作为收款人归属信息。未选择店铺时允许创建 `shopId` / `shopName` 为空的店铺级收款人，之后可在门店编辑页绑定。每个所选店铺的绑定通过店铺服务写入门店表；不覆盖已有启用中的其他收款人绑定。旧版 `shopId` 单店请求继续兼容。新建收款人默认禁用。普通 Member 没有远端结算账户时保存为未绑定。平台商户同步规则见上项。
+- 门店可绑定同一租户下任意店铺级收款人；候选列表包括所有已启用的店铺级收款人及当前门店已关联的收款人。绑定关系保存在 `yshop_store_shop.profit_sharing_recipient_id`，与 `profit_sharing_enabled` 独立维护。启用分账仍要求收款人已启用；更换启用中门店的收款人须从门店编辑页显式操作。
 - 同步为幂等操作，不创建或修改 AdaPay Member/结算账户；不返回完整银行卡号或证件号码。结算账户摘要只保存脱敏卡号/姓名、银行及地区信息。
 - 个人 Member 缺少姓名或证件字段时，按已查询结算账户 `account_info` 回退；银行名称为空时按 `bank_code` 匹配本地银行字典，号码仅按远端脱敏值保存和展示。详见[分账收款人同步类型选择契约](feature-docs/2026-11-07-adapay-member-type-sync/contract-changes.md)。
 - 企业 Member 同步时保存 AdaPay `CorpMember.query` 返回的 `audit_state` / `audit_desc`，在收款人查询响应中返回枚举字段 `memberAuditState` 和说明字段 `memberAuditDesc`，并于管理后台详情展示；个人 Member 和平台商户不设置这两个字段。状态码 `A/B/C/D/E` 分别表示待审核、审核失败、开户失败、开户成功但未创建结算账户、开户和创建结算账户成功；未知码映射为 `UNKNOWN`。保留 AdaPay 返回的原始状态描述。详见[企业 Member 审核状态同步契约](feature-docs/2026-11-09-adapay-corp-audit-state/contract-changes.md)。
@@ -75,6 +77,11 @@
 - `PUT /admin-api/pay/profit-recipient/update` 更新本地分账收款人资料。请求只含 `memberInfo` 时更新本地 Member 信息快照，不改绑定的结算账户；请求只含 `settleAccount` 时创建并绑定/更换 AdaPay 结算账户，不改 Member 信息。收款人级别、角色、店铺和 Member 类型保持不变。
 - 管理页面将 Member 信息编辑与结算账户绑定/更换作为两个独立操作；完整银行卡信息只在绑定/更换请求中提交，列表与详情仅返回脱敏摘要。
 - 结算账户类型 `1` 为个人借记卡，对应 AdaPay `bank_acct_type=2`；必填卡号、户名、手机号及证件号/类型，其中手机号和证件信息从 Member 资料带入，银行代码和开户省市无需填写。类型 `2` 为对公账户，对应 AdaPay `bank_acct_type=1`；卡号、户名、手机号、银行代码及开户省市必填，银行支行可选。
+
+## 后台订单按商圈和店铺筛选
+
+- `GET /admin-api/order/store-order/page` 新增可选 `businessRegionId` 和 `shopId` 查询参数。`businessRegionId` 通过当前租户有效店铺筛选订单；`shopId` 继续精确筛选店铺。两者同时传入时结果同时满足两个条件，且保留登录用户自身店铺的数据范围限制。
+- 管理后台外卖订单列表提供商圈、店铺级联筛选；切换商圈会清空已选店铺，店铺候选项仅包含该商圈的店铺。未选择商圈时可从全部店铺中选择。
 
 ## 管理后台订单详情支付流水号
 
