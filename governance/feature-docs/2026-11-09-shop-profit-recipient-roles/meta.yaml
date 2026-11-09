@@ -1,0 +1,8 @@
+feature: shop-profit-recipient-roles
+status: done
+risk: high
+targets: [backend, admin]
+contract: true
+ui: true
+e2e: true
+blocked: false

@@ -253,3 +253,10 @@
 - `POST /admin-api/mp/wecom-moment/schedule/cancel`：取消尚未结束的周期发送计划。
 - 每个到期时间点独立创建一条 `mp_wecom_moment_task` 朋友圈任务；原有 `POST /admin-api/mp/wecom-moment/create` 即时发送接口保持兼容。
 - backend Quartz handler `wecomMomentScheduledPushJob` 每 10 分钟扫描执行。图片和链接封面在实际执行时调用朋友圈专用素材上传接口，不复用普通素材上传逻辑。
+
+## 店铺多分账收款人绑定与结算匹配
+
+- `yshop_store_shop.profit_sharing_recipient_id` 继续唯一表示店铺主分账收款人；本系统订单分账与应收应付店铺收款主体只使用该主收款人。
+- 店铺可另绑多个非主收款人并标记 `VALID` / `INVALID`；标记仅作关系记录，不改变本系统出账授权，也不影响订单结算管理同步分账状态时按该店铺绑定关系匹配 AdaPay `Member ID`。
+- 订单结算管理同步时，主收款人及全部非主收款人均可匹配；按完整 Member ID 匹配，不能唯一解析时不猜测归属。外部账单不含来源渠道时，不推断分账渠道来源。
+- `GET /admin-api/store/shop/profit-recipient-bindings` 与 `PUT /admin-api/store/shop/profit-recipient-bindings` 维护绑定；分别使用 `store:shop:query` 和 `store:shop:update` 权限。原单主收款人绑定接口保持兼容。详细 DTO、数据迁移与匹配规则见[店铺多分账收款人绑定与结算匹配契约](feature-docs/2026-11-09-shop-profit-recipient-roles/contract-changes.md)。
