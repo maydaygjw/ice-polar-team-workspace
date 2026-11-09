@@ -88,6 +88,8 @@
 
 `ReceivablePayableRespVO` 核心字段：
 
+分页响应额外返回 `sharing_time`（`LocalDateTime | null`），取关联的最新本地分账记录的实际分账时间；无分账记录或尚未分账时为 `null`。管理后台以 `YYYY-MM-DD HH:mm:ss` 格式展示。
+
 - 识别与范围：`id`, `orderId`, `shopId`, `shopName`, `businessRegionId`, `businessRegionName`。
 - 计算快照：`templateId`, `templateNameSnapshot`, `beforeCouponAmount`, `discountAmount`, `afterCouponAmount`, `platformSubsidyAmount`, `allocatableAmount`。
 - 状态：`calculationStatus`, `differenceFlag`, `errorCode`, `errorMessage`, `retryCount`, `calculatedAt`。
