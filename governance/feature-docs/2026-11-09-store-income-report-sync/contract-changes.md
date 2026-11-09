@@ -1,0 +1,98 @@
+# 契约变更 — 店铺收入报表独立数据源与打款指标
+
+## API
+
+### 汇总分页
+
+`GET /admin-api/pay/profit-sharing-income/summary-page`
+
+- 权限：`pay:profit-sharing-income:query`（不变）。
+- 请求：沿用分页参数、`shopId`、`settlementDateStart`、`settlementDateEnd`；日期两端包含。
+- 响应既有字段保持不变，新增：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `estimatedPaymentIncome` | `decimal` | 预计打款日期归属当日的店铺角色金额合计 |
+| `estimatedPaymentCount` | `long` | 对应预计打款订单数，按订单去重 |
+| `paymentAmount` | `decimal` | 成功店铺收款流水净到账金额合计 |
+
+查询只读 `yshop_pay_store_income_report_daily`，按 `tenant_id`、可访问店铺和日期筛选；按日期倒序、店铺 ID 升序分页。旧客户端忽略新增字段即可保持兼容。
+
+### 分页明细
+
+`GET /admin-api/pay/profit-sharing-income/detail-page`
+
+- URL、权限和请求/响应结构不变。
+- 继续读取本地分账事实和订单表，按店铺、分账日期分页；不调用 AdaPay。
+- 此明细仅对应原有 Adapay 分账订单收入，不包含没有订单关系的实际打款流水。
+
+### 手工同步
+
+`POST /admin-api/pay/profit-sharing-income/sync`
+
+- 权限：复用现有 `pay:profit-sharing-income:query`；不新增权限点。同步只重建本地可再生的报表投影，不更新订单、分账或收款人结算事实。
+- 请求：
+
+```json
+{
+  "shopId": 123,
+  "settlementDateStart": "2026-10-01",
+  "settlementDateEnd": "2026-10-31"
+}
+```
+
+- 必填：`shopId`、`settlementDateStart`、`settlementDateEnd`；结束日期不得早于开始日期。只支持单店铺和闭区间自然日。
+- 服务端校验当前租户及调用人的店铺范围；越权目标拒绝执行，不返回部分数据。
+- 成功响应包含 `shopId`、`settlementDateStart`、`settlementDateEnd`、`rebuiltRowCount` 和 `unassignedPayoutRecordCount`。最后一项是该租户、该期间成功但没有 `shop_id` 的店铺级打款流水数；仅对可访问全租户店铺的管理员返回实际数量，受限店铺用户返回 0，避免泄露其他店铺数据。接口同步执行，返回成功表示事务已提交。
+- 错误语义：参数非法使用统一参数校验错误；店铺不存在或无权限返回权限/资源错误；同店铺同步锁冲突返回可重试冲突错误；源查询或写入失败回滚并返回统一服务错误。
+- 重复请求幂等；每次都从现有本地源数据重算所选范围，不产生累计副作用。不访问远端系统。
+
+## DB
+
+### 新表：`yshop_pay_store_income_report_daily`
+
+此表保存可重建的报表日聚合，不是订单或结算原始财务事实。列定义：
+
+| 字段 | 类型 | 约束/说明 |
+|---|---|---|
+| `id` | `BIGINT` | 主键，自增 |
+| `tenant_id` | `BIGINT` | 非空，租户隔离 |
+| `shop_id` | `BIGINT` | 非空，店铺维度 |
+| `shop_name` | `VARCHAR(100)` | 非空；优先使用分账、订单、结算明细中的可用名称快照，均缺失时回退为 `店铺 {shopId}` |
+| `report_date` | `DATE` | 非空；该行不同指标按各自业务日期合并后的自然日 |
+| `settlement_order_count` | `BIGINT` | 非空，默认 0；原有成功分账订单数 |
+| `order_amount` | `DECIMAL(14,2)` | 非空，默认 0；原有关联订单实付金额 |
+| `income_amount` | `DECIMAL(14,2)` | 非空，默认 0；原有店铺角色分账收入 |
+| `estimated_payment_income` | `DECIMAL(14,2)` | 非空，默认 0；预计打款店铺收入 |
+| `estimated_payment_count` | `BIGINT` | 非空，默认 0；预计打款订单笔数 |
+| `payment_amount` | `DECIMAL(14,2)` | 非空，默认 0；实际成功净到账金额 |
+| `creator` / `updater` | `VARCHAR(64)` | 审计用户 |
+| `create_time` / `update_time` | `DATETIME` | 创建和最近重建时间 |
+
+表使用 InnoDB、`utf8mb4`、`utf8mb4_0900_ai_ci`。唯一键 `uk_tenant_shop_date (tenant_id, shop_id, report_date)`；范围查询索引 `idx_tenant_date_shop (tenant_id, report_date, shop_id)`。该投影表不使用逻辑删除：所选范围的旧聚合在同一事务中物理删除并重建，失败会回滚。
+
+### 源表
+
+- 复用 `yshop_adapay_profit_sharing_order`、`yshop_adapay_profit_sharing_order_item`、`yshop_store_order` 和 `yshop_pay_receivable_payable_order` 计算原有分账收入、预测金额及笔数。
+- 复用 `yshop_adapay_profit_recipient_settlement_detail` 计算实际到账；过滤 `recipient_type=2`（`SHOP_RECIPIENT`）、`settle_stat=succeeded`、`is_active_version=1`、`deleted=0`，汇总 `net_settle_amount`。
+- 不修改源表，不更改源表历史数据。
+
+### 迁移与回滚
+
+- 使用 `backend/sql/migrations/V<版本>__store_income_report_daily.sql` 新建投影表；不新增权限数据。版本实现时以 migrations 目录最高版本为准。
+- 回滚代码时移除新增按钮权限及 API/页面；投影表可随回滚删除。投影数据可从本地源表重新生成，不含不可恢复的财务事实。
+- 不修改已经执行的 Flyway migration，不修改基线 SQL。
+
+## 权限与数据范围
+
+| 权限 | 语义 |
+|---|---|
+| `pay:profit-sharing-income:query` | 现有权限，查询汇总、分账明细并按店铺和期间重算本地报表投影 |
+
+所有接口均限制当前租户；应用服务沿用现有 `getAccessibleShopIds()` 店铺范围规则。租户管理员/超级管理员可同步当前租户任一店铺；普通用户只能查询和同步其授权店铺。同步必须校验传入 `shopId`，不能依赖前端隐藏按钮。
+
+## 依赖与外部系统
+
+- 无新增权限依赖、MQ 或外部系统。
+- 复用项目已有 Redisson、`ProfitSharingSettlementDateCalculator` 和本地结算日历。
+- 同步、列表、订单明细均不得调用 AdaPay；收款人结算的既有本地采集任务不在本契约范围内。
