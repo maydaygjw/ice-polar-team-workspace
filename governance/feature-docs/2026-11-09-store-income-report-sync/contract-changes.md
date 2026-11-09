@@ -17,10 +17,13 @@
 | `paymentAmount` | `decimal` | 成功店铺收款流水净到账金额合计 |
 | `periodEndDate` | `date` | 周期结束日期，含首尾筛选边界；日视图与 `settlementDate` 相同 |
 | `nonWorkingDayLabel` | `string \| null` | 日视图按中国结算日历返回非工作日标识；周/月视图中周期包含非工作日时返回「含休息日」，否则为 `null` |
+| `memberId` | `string \| null` | 店铺当前绑定的主分账收款人 MemberId；未绑定或收款人不存在时为 `null` |
 
 `settlementDate` 在周/月视图表示该周期与筛选范围重叠部分的起日；`periodEndDate` 表示重叠部分止日。周按周一至周日、月按自然月聚合；不完整首尾周期只累计筛选范围内数据。汇总数值字段按日投影相加，分页发生在周期聚合之后。
 
 管理后台在日期旁展示非空 `nonWorkingDayLabel`。新增综合费率列，由聚合后的 `incomeAmount / orderAmount` 计算，订单金额为 0 时显示 `—`。新增「打款金额核对」列，按分比较 `estimatedPaymentIncome` 与 `paymentAmount`：相同显示一致图标，不同显示不一致图标；两项均为 0 时视为一致。费率与核对列由现有汇总字段计算，不新增接口字段。
+
+管理后台在店铺列内展示完整 `memberId`，不做脱敏；没有 MemberId 时显示 `--`。
 
 查询只读 `yshop_pay_store_income_report_daily`，按 `tenant_id`、可访问店铺和日期筛选；按日期倒序、店铺 ID 升序分页。旧客户端忽略新增字段即可保持兼容。
 
