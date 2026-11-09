@@ -43,7 +43,8 @@
 ## 订单结算状态远端同步
 
 - 订单结算管理页为 AdaPay 订单提供“同步分账状态”操作；后端按当前租户调用 AdaPay 查询支付确认对象，将远端状态同步至已有本地分账记录；若尚无本地分账记录，则按订单支付流水号查询并将结果显示在当前列表行。
-- 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（0 未结算、1 待分账、2 分账中、3 已结算、4 分账失败）；确认列表为空时返回 0。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
+- 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（0 未结算、1 待分账、2 分账中、3 已结算、4 分账失败）；确认列表为空时返回 0。同步同时按 AdaPay `div_members[].fee_flag` 更新本地明细 `feeFlag`。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
+- `GET /order/store-order/settlement-page` 响应增加 `estimatedPaymentDate`（`date | null`），仅对已成功分账且有 `sharingTime` 的订单，按当前 AdaPay 结算策略推算；详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 
 ## 应收应付订单级结算对账
 

@@ -38,9 +38,14 @@
   "createTime": "datetime",
   "profitSharingOrderId": "long | null",
   "settlementStatus": "int",
-  "sharingTime": "datetime | null"
+  "sharingTime": "datetime | null",
+  "estimatedPaymentDate": "date | null"
 }
 ```
+
+`estimatedPaymentDate` 仅在分账成功且存在 `sharingTime` 时返回，按当前 AdaPay 结算策略计算；无预计日期时为 `null`。
+
+同步订单分账状态时，后端同时读取 AdaPay 确认记录中的 `div_members[].fee_flag`，并按收款人 Member ID 更新本地分账明细的 `feeFlag`。详情仍展示是否承担手续费标记（`feeFlag`，是/否）；AdaPay 状态查询不提供实际手续费金额。
 
 **settlementStatus 枚举**:
 | 值 | 含义 |
