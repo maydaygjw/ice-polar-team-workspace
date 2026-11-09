@@ -23,6 +23,13 @@
 - 商城订单可计算金额 = 券前金额 - 优惠金额；平台补贴作为订单计费属性参与明细分配，但不增加整单可分配上限。详见[订单计费模板与应收应付契约](feature-docs/2026-08-14-order-billing-template/contract-changes.md)。
 - 计费模板明细收款类型支持 `CURRENT_MERCHANT`（当前商家）、`FIXED`（指定分账收款人）和 `PLATFORM`（AdaPay 平台）。`PLATFORM` 仅作收款目标标记，不关联分账收款人记录；模板及应收应付明细的 `recipientId` 为空，执行 AdaPay 分账时直接使用 `memberId=0`。
 
+## 外卖订单应收应付状态与手工生成
+
+- `GET /admin-api/order/store-order/page` 每条订单响应增加 `receivablePayableGenerated`：直接读取订单表冗余标记；仅 `SUCCESS` / `SUCCESS_WITH_DIFFERENCE` 应收应付记录置为 `true`，无记录或 `FAILED` 置为 `false`。列表不得为该字段联查应收应付表。
+- `POST /admin-api/order/store-order/generate-receivable-payable?id={storeOrderId}` 使用 `order:store-order:update` 权限。仅当前租户下已支付、未退款、外卖类型且订单状态为 `2`（待评价）或 `3`（已完成）的订单可触发；若已有成功应收应付则不重算。失败记录允许按现有幂等计费逻辑重试，响应 `true` 表示生成成功，`false` 表示不符合条件或生成未成功。
+- 管理端外卖订单列表展示应收应付生成状态；只有状态 `2/3` 且尚未成功生成的订单，在“更多”菜单显示“生成应收应付”。
+- 订单模块内部 `OrderApi` 按租户和订单号更新该冗余标记；pay 计费成功时置为 `true`，失败时置为 `false`。数据库迁移为订单表新增默认 `false` 的字段，并按租户/订单号回填历史成功记录。
+
 ## 订单计费项表达式
 
 - 计费项 `billingType` 支持 `ORDER_PERCENTAGE`（订单比例）、`ORDER_ATTRIBUTE`（单一订单金额属性）和 `ORDER_EXPRESSION`（订单属性表达式）。表达式保存在计费项 `orderExpression` 字段，仅允许受控订单金额属性、十进制数字、括号及 `+ - * /` 运算符；属性名为标识符（如 `pay_postage`），不支持函数或任意代码。运算遵循常规优先级和括号，除零或属性值为空时计费失败。表达式结果作为该明细的理论金额，并按两位小数四舍五入；既有订单结算快照不回算。
