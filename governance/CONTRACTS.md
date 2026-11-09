@@ -57,6 +57,7 @@
 - 若当前租户已存在相同非零 `memberId` 的本地收款人，保留其级别、角色、店铺、启用状态和绑定历史，仅刷新 Member 信息快照及 AdaPay 结算账户 ID/脱敏摘要；若不存在，调用方须提供收款人级别及相应角色或店铺，新建记录默认禁用。普通 Member 没有远端结算账户时保存为未绑定。平台商户同步规则见上项。
 - 同步为幂等操作，不创建或修改 AdaPay Member/结算账户；不返回完整银行卡号或证件号码。结算账户摘要只保存脱敏卡号/姓名、银行及地区信息。
 - 个人 Member 缺少姓名或证件字段时，按已查询结算账户 `account_info` 回退；银行名称为空时按 `bank_code` 匹配本地银行字典，号码仅按远端脱敏值保存和展示。详见[分账收款人同步类型选择契约](feature-docs/2026-11-07-adapay-member-type-sync/contract-changes.md)。
+- 企业 Member 同步时保存 AdaPay `CorpMember.query` 返回的 `audit_state` / `audit_desc`，在收款人查询响应中返回枚举字段 `memberAuditState` 和说明字段 `memberAuditDesc`，并于管理后台详情展示；个人 Member 和平台商户不设置这两个字段。状态码 `A/B/C/D/E` 分别表示待审核、审核失败、开户失败、开户成功但未创建结算账户、开户和创建结算账户成功；未知码映射为 `UNKNOWN`。保留 AdaPay 返回的原始状态描述。详见[企业 Member 审核状态同步契约](feature-docs/2026-11-09-adapay-corp-audit-state/contract-changes.md)。
 
 ## AdaPay 分账收款人信息与结算账户维护
 
