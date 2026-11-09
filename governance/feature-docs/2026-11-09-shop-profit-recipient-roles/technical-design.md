@@ -40,7 +40,7 @@
 3. 仅有一个本地收款人 ID 时，远端明细关联该收款人并保存既有结算明细；无匹配或匹配到多个不同收款人时保留未映射语义，不能任意归属。
 4. 对已有本地分账记录，同步仍只更新远端状态、手续费和既有本地明细的 `feeFlag`。支付时固化的本地收款人和金额不被远端同步改写。
 
-当前 `resolveImportedRecipient` 仅以 `ProfitRecipientDO.shopId` 判断店铺归属；实现时应改为按绑定历史中的店铺关系解析，使非主收款人和曾经绑定过的收款人都可被匹配。Member ID 仅在本地查询和服务端处理中使用；响应按现有规则脱敏。
+订单结算远端明细按当前租户、订单 `shopId` 和完整 Member ID 查询绑定历史；不依赖 `ProfitRecipientDO.shopId`。店铺主绑定和非主关系都在绑定历史中留下版本快照，按唯一收款人 ID 匹配；Member ID 仅在本地查询和服务端处理中使用，响应按现有规则脱敏。
 
 订单结算管理同步仍只查询 AdaPay 已有支付确认，不创建或重试分账。AdaPay Div/确认数据未提供来源渠道字段，因此不能据此断言异常分账来自哪个渠道，也不能控制 AdaPay 控制台或独立外部系统。
 
@@ -64,7 +64,7 @@
 
 ## 事务、幂等与兼容
 
-- 店铺主/非主绑定写入复用现有 `store:shop:update` 权限和服务端校验；状态同步复用 `order:settlement:query`。
+- 店铺主/非主绑定写入复用现有 `store:shop:update` 权限和服务端校验；状态同步复用 `order:settlement:query`。店铺级收款人可绑定多个同租户店铺，绑定关系不存放在收款人记录上。
 - 新的批量绑定写入以 `(tenant_id, shop_id, recipient_id, binding_purpose)` 幂等处理；重复 ID 拒绝或归一化，不产生重复有效关系。
 - pay-api 只提供内部绑定历史写入能力，store-biz 不依赖 pay-biz；pay-biz 不读取 store-biz 数据库表。
 - 既有 `bind-profit-recipient` 继续可用并只操作主收款人。新增配置接口用于一次提交主收款人与非主列表，避免新管理页出现两套写入语义。

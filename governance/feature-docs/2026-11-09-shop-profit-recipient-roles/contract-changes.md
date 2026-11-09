@@ -2,6 +2,13 @@
 
 ## 管理端 HTTP API
 
+### 分账收款人店铺字段
+
+- `POST /admin-api/pay/profit-recipient/create` 的店铺级请求仍接受 `shopId`，仅用于生成 AdaPay Member ID 的本地编号空间；此字段不代表已绑定店铺，也不写入收款人表。实际绑定由门店主/非主收款人绑定接口维护。
+- `PUT /admin-api/pay/profit-recipient/update` 不接受或修改店铺归属；店铺关联通过门店绑定接口维护。
+- `GET /admin-api/pay/profit-recipient/page` 保留可选 `shopId` 筛选，按当前租户有效绑定历史匹配收款人。
+- 收款人响应以 `shopIds` 和 `shopNames` 返回当前有效绑定的店铺集合；不再返回单值 `shopId` / `shopName`。
+
 ### 查询店铺收款人绑定
 
 `GET /admin-api/store/shop/profit-recipient-bindings?shopId={shopId}`
@@ -70,6 +77,15 @@
 - 既有历史行回填 `binding_purpose=1`、`mark_status=1`，不更改关系状态、有效区间或快照。
 - 当前店铺主收款人字段继续作为实时主绑定来源；迁移不创建 AdaPay Member，也不调用 AdaPay。
 - 回滚采用应用侧关闭次级绑定读写和回退旧接口；新增列与已写历史保留。若必须移除新增列，须确认没有次级记录依赖后单独评估数据备份，不在常规回滚中删除历史。
+
+## 收款人表移除单店字段
+
+- 从 `yshop_adapay_profit_recipient` 移除 `shop_id` 与依赖该单店关系的 `shop_name`；收款人实体不再拥有唯一店铺归属字段。
+- 当前主绑定仍由 `yshop_store_shop.profit_sharing_recipient_id` 保存；主绑定、非主对账绑定和关系历史统一以 `yshop_adapay_profit_recipient_binding_history` 的 `tenant_id + shop_id + recipient_id` 表达。
+- 新增前向迁移在删除字段前补齐店铺表当前主收款人指向的有效主绑定历史；旧收款人 `shop_id` 与当前主绑定不一致时只写入已关闭的迁移审计记录，不推断为当前有效绑定。迁移保留租户、店铺、收款人、Member ID、结算账户和时间快照，不覆盖有效关系。
+- 同一收款人可在同一生效时间绑定多个店铺，因此绑定历史唯一键调整为包含 `shop_id` 与 `binding_purpose`；结算账户版本和店铺/用途共同确定关系唯一性。
+- 收款人分页/详情响应从关系历史批量汇总 `shopIds` / `shopNames`。店铺筛选、绑定验证、同步刷新和管理端展示均不得再读取收款人表单店字段。
+- 使用 `V2026110907__remove_profit_recipient_shop_fields.sql` Flyway 前向迁移删除字段；不修改已发布迁移或基线 SQL。已完成订单、分账、应收应付和结算事实保持不变。
 
 ## 权限、隔离与兼容
 
