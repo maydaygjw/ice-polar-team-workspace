@@ -21,6 +21,7 @@
 - 表单沿用 `Dialog`、`el-form` 和 `formRef.validate()` 模式
 - 复用现有组件和权限模式
 - UI 变化遵循 `ui-ux-design.md`
+- 表格单元格默认禁止换行，内容保持单行；仅在需求明确指定时才允许换行。长内容优先使用省略号和悬浮提示，避免自动换行撑高行高。
 - H5 使用 Vant、Pinia 和 Axios，遵循现有路由和页面组织
 - H5 认证使用后端 ticket 换取 access token；不得在 URL 中传递 `openid` 或 access token
 - H5 页面须兼容移动端视口
