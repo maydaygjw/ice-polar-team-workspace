@@ -56,6 +56,13 @@
 - 支付计费模块每日扫描候选订单，仅对没有应收应付主记录或状态为 `FAILED` 的记录执行计算；失败记录允许后续日任务重试。订单状态流转不再同步调用计费模块。
 - 详见[订单应收应付每日补算契约](feature-docs/2026-11-06-daily-order-billing/contract-changes.md)。
 
+## 按日期和店铺批量生成应收应付
+
+- 应收应付管理页提供独立的批量生成入口，按单个支付日期及 1–100 个店铺筛选本地订单；仅处理当前租户下订单表 `receivable_payable_generated=false`、已支付、未退款或退款已拒绝、状态为待评价/已完成的订单。该订单表标志是唯一生成资格标记，已为 `true` 的订单必须跳过。
+- `POST /admin-api/pay/receivable-payable/generation-tasks` 使用 `pay:receivable-payable:generate` 权限，接收 `{ "payDate": "YYYY-MM-DD", "shopIds": [1, ...] }` 并快速返回任务 ID。生成在后台逐单执行，任务进度持久化；`GET /admin-api/pay/receivable-payable/generation-tasks/{id}` 仅允许创建任务的当前租户/用户读取，返回状态、总数、已处理数、成功数、跳过数、失败数及进度百分比。任务终态为 `SUCCESS`（无失败）或 `COMPLETED_WITH_ERRORS`（存在失败）。
+- 一个租户同一时刻最多运行一个此类任务。任务按订单主键游标扫描和现有计费幂等逻辑执行，单笔失败不阻断后续订单。管理端轮询进度，任务运行期间冻结生成表单和页面操作并展示进度；页面刷新后可继续查询该用户未完成的任务。
+- 详见[按日期和店铺批量生成应收应付契约](feature-docs/2026-11-10-batch-receivable-payable-generation/contract-changes.md)。
+
 ## 订单结算状态远端同步
 
 - 订单结算管理页为 AdaPay 订单提供“同步分账状态”操作；后端按当前租户调用 AdaPay 查询支付确认对象。已有本地分账记录时，读取相关支付确认并同步远端状态、手续费；远端返回完整 `div_members` 时，在单一事务内以远端明细替换本地明细，本地分账主记录及支付级记录保留。拼单中已回退到本地 Revenue 的支付级明细保留，其余支付级明细按各自 AdaPay 确认重建。远端明细缺失时只更新状态和手续费，保留已有明细；查询失败或无有效确认时不改写本地记录。若尚无本地分账记录，则按订单支付流水号查询并导入查询结果。
