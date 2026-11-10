@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage:
 #   bash governance/SCRIPTS/deploy-yunxiao.sh --target backend [--branch <branch>]
 #   bash governance/SCRIPTS/deploy-yunxiao.sh --target all
-#   bash governance/SCRIPTS/deploy-yunxiao.sh --target db-info|db-migrate|db-validate
+#   bash governance/SCRIPTS/deploy-yunxiao.sh --target db-info|db-migrate|db-validate|db-repair
 
 workspace_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 env_file="${workspace_root}/.env.local"
@@ -46,7 +46,7 @@ while (($#)); do
 done
 
 if [[ -z "$target" ]]; then
-  echo 'Usage: deploy-yunxiao.sh --target backend|admin|h5|all|db-info|db-migrate|db-validate [--branch <branch>]' >&2
+  echo 'Usage: deploy-yunxiao.sh --target backend|admin|h5|all|db-info|db-migrate|db-validate|db-repair [--branch <branch>]' >&2
   exit 2
 fi
 
@@ -126,7 +126,7 @@ case "$target" in
     trigger_pipeline admin "$admin_id" "$admin_repo" ADMIN_ENV dev2
     trigger_pipeline h5 "$h5_id" "$h5_repo" H5_ENV dev2
     ;;
-  db-info|db-migrate|db-validate)
+  db-info|db-migrate|db-validate|db-repair)
     command="${target#db-}"
     trigger_pipeline "db-${command}" "$db_id" "$backend_repo" '' '' "$command"
     ;;

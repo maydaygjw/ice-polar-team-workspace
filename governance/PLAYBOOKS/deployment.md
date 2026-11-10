@@ -42,7 +42,7 @@ bash governance/SCRIPTS/deploy-yunxiao.sh --target db-info --branch feat/example
 bash governance/SCRIPTS/deploy-yunxiao.sh --target db-validate --branch feat/example
 ```
 
-先看 `info` 的目标库和待执行迁移，再决定是否 `migrate`。存在预期的 `PENDING` 迁移时不要先跑 `validate`。流水线没有受控 `rollback`；回退须由人工使用审核过的方案和备份，不得删除 Flyway 历史或以 `repair` 代替回退。
+先看 `info` 的目标库和待执行迁移，再决定是否 `migrate`。存在预期的 `PENDING` 迁移时不要先跑 `validate`。若 MySQL 非事务 DDL 造成迁移失败，只有在核实已执行的部分变更并确认修正后的迁移可安全重跑后，才可执行 `db-repair` 清理失败迁移元数据，随后立即 `db-info`、`db-migrate`、`db-info`、`db-validate`。`repair` 不回滚数据库对象或数据；不得删除成功的 Flyway 历史，也不得以 `repair` 代替回退。流水线没有受控 `rollback`；需要回退时须由人工使用审核过的方案和备份。
 
 ## 生产发布
 
