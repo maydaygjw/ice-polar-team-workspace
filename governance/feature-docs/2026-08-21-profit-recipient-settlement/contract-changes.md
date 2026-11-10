@@ -10,7 +10,7 @@
 
 请求参数：分页参数、Tab 类型（`SHOP`/`PLATFORM`/`MERCHANT`）、结算日期范围、汇总方式（`DAY`/`WEEK`/`MONTH`）、商圈/店铺/收款人 ID 或名称/平台角色/绑定关系筛选项。`MERCHANT` 只使用结算日期范围，忽略收款人、店铺、商圈、角色和绑定关系筛选。
 
-响应至少包含：汇总周期、收款人、角色、历史商圈/店铺、当前关系状态、结算金额、结算手续费、净到账金额、记录数和采集状态。
+响应至少包含：汇总周期、收款人、角色、历史商圈/店铺、当前关系状态、结算金额、结算手续费、净到账金额、记录数和采集状态。店铺级收款人另返回 `shopNames`，列出当前绑定的全部可访问店铺名称；`shopName` 继续表示该汇总行对应的历史店铺快照。非店铺级主体的 `shopNames` 为空。
 
 ### 明细查询
 
@@ -115,10 +115,9 @@
 | `member_type` | TINYINT | NOT NULL | `0` 平台商户自身，`1` 个人，`2` 企业 |
 | `member_id` | VARCHAR(64) | NOT NULL | AdaPay Member ID 快照 |
 | `settle_account_id` | VARCHAR(64) | NOT NULL DEFAULT `''` | AdaPay 结算账户 ID 快照；平台商户自身无账户时保存空字符串 |
-| `shop_id` | BIGINT | NULL | 原关联店铺 ID，平台级为空 |
-| `shop_name` | VARCHAR(100) | NULL | 原关联店铺名称快照 |
-| `business_region_id` | BIGINT | NULL | 原关联商圈 ID |
-| `business_region_name` | VARCHAR(100) | NULL | 原关联商圈名称快照 |
+| `shop_name` | VARCHAR(100) | NULL | 本次调用代表绑定的店铺名称快照；完整店铺关联以绑定历史为准 |
+| `business_region_id` | BIGINT | NULL | 代表绑定店铺的商圈 ID |
+| `business_region_name` | VARCHAR(100) | NULL | 代表绑定店铺的商圈名称快照 |
 | `execution_status` | VARCHAR(32) | NOT NULL DEFAULT `PENDING` | `PENDING/RUNNING/SUCCEEDED/FAILED` |
 | `error_code` | VARCHAR(64) | NULL | SDK/AdaPay/数据校验错误码 |
 | `error_message` | VARCHAR(1000) | NULL | 收款人级错误信息 |
@@ -132,9 +131,11 @@
 
 约束和索引：
 
-- 唯一键：`uk_task_recipient_account_deleted (task_id, recipient_id, settle_account_id, deleted)`。
+- 唯一键：`uk_task_recipient_account_deleted (task_id, recipient_id, settle_account_id, deleted)`。同一收款人及结算账户即使关联多个店铺，也只建立一个任务目标并调用 AdaPay 一次；任务目标表不保存 `shop_id`，`binding_history_id` 指向本次采用的代表绑定，全部店铺关联以绑定历史为准。
 - 查询索引：`idx_tenant_recipient_status (tenant_id, recipient_id, execution_status, deleted)`。
 - 任务完成后，成功收款人将本行置为活动版本；失败收款人不改变上一成功版本。
+- 同一收款人、Member ID 和结算账户可绑定多个店铺；这些店铺共享一个采集目标和任务结果，不按店铺重复查询 AdaPay。
+- 任务目标记录创建失败时，继续处理其他目标并将任务标记为失败或部分失败；不得让异步任务异常退出后永久保持 `RUNNING`。
 
 #### 3. 收款人绑定历史表：`yshop_adapay_profit_recipient_binding_history`
 
