@@ -134,9 +134,9 @@
 **权限**: `order:settlement:query`
 **说明**: 查询当前用户创建的分账状态同步任务进度，响应沿用 `ReceivablePayableGenerationTaskRespVO` 并增加 `taskType`。
 
-响应包含任务类型、支付日期、状态、候选总数、已处理数、成功/跳过/失败数、百分比、失败摘要和结束时间。分账状态同步任务按订单 ID 游标处理该支付日和店铺范围内已支付的 AdaPay 订单；逐单复用单笔同步规则，单笔失败不中断任务。接口不创建或重试分账。任务记录复用 `yshop_pay_receivable_payable_generation_task`，新增 `task_type` 区分应收应付生成和分账状态同步，任务进度可在管理后台轮询及页面刷新后恢复。
+响应包含任务类型、支付日期、状态、候选总数、已处理数、成功/跳过/失败数、百分比、失败摘要和结束时间。分账状态同步任务按订单 ID 游标处理该支付日和店铺范围内已支付的 AdaPay 订单，且仅包含退款正常或已驳回（`refund_status` 0、3）的订单，排除退款中和已退款订单；逐单复用单笔同步规则，单笔失败不中断任务。接口不创建或重试分账。任务记录复用 `yshop_pay_receivable_payable_generation_task`，新增 `task_type` 区分应收应付生成和分账状态同步，任务进度可在管理后台轮询及页面刷新后恢复。
 
-订单模块内部 `OrderApi` 增加通用 `countPaidOrders(LocalDate payDate, List<Long> shopIds, PayTypeEnum payType)` 和 `listPaidOrderIds(Long afterId, LocalDate payDate, List<Long> shopIds, PayTypeEnum payType, int limit)`，按支付日期、店铺集合、支付方式和订单 ID 游标统计/查询已支付订单号；支付方式可省略以查询全部方式。Pay 模块传入 `PayTypeEnum.ADAPAY`，订单模块不包含分账或结算专用查询接口，Pay 模块也不直接访问订单表。管理后台创建一个任务后轮询该同步任务的进度接口。
+订单模块内部 `OrderApi` 增加通用 `countPaidOrders(LocalDate payDate, List<Long> shopIds, PayTypeEnum payType, List<OrderInfoEnum> refundStatuses)` 和 `listPaidOrderIds(Long afterId, LocalDate payDate, List<Long> shopIds, PayTypeEnum payType, List<OrderInfoEnum> refundStatuses, int limit)`，按支付日期、店铺集合、支付方式、可选退款状态及订单 ID 游标统计/查询已支付订单号。支付方式或退款状态可省略以查询全部值。Pay 模块同步结算状态时传入 `PayTypeEnum.ADAPAY` 和退款状态 `REFUND_STATUS_0`、`REFUND_STATUS_3`；订单模块不包含分账或结算专用查询接口，Pay 模块也不直接访问订单表。管理后台创建一个任务后轮询该同步任务的进度接口。
 
 ## 数据库变更
 

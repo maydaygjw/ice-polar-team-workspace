@@ -60,7 +60,7 @@
 
 - 订单结算管理页为 AdaPay 订单提供“同步分账状态”操作；后端按当前租户调用 AdaPay 查询支付确认对象。已有本地分账记录时，读取相关支付确认并同步远端状态、手续费；远端返回完整 `div_members` 时，在单一事务内以远端明细替换本地明细，本地分账主记录及支付级记录保留。拼单中已回退到本地 Revenue 的支付级明细保留，其余支付级明细按各自 AdaPay 确认重建。远端明细缺失时只更新状态和手续费，保留已有明细；查询失败或无有效确认时不改写本地记录。若尚无本地分账记录，则按订单支付流水号查询并导入查询结果。
 - 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（0 未结算、1 待分账、2 分账中、3 已结算、4 分账失败）；确认列表为空时返回 0。远端 Member ID 为 `0` 时分账角色记为“平台”，不据此匹配平台级收款人；其他 Member ID 可按租户和 Member ID 匹配启用的平台级收款人，或按该订单店铺的有效绑定历史匹配店铺级收款人。候选收款人不唯一时不猜测归属。同步读取 AdaPay `div_members[].fee_flag` 更新本地明细 `feeFlag`，并读取支付确认的 `fee_amt` 保存手续费金额；详情将手续费金额显示在承担手续费的明细行。未查询到金额时响应 `null`。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
-- 管理后台可提交一个支付日期和最多 100 家店铺，创建异步分账状态同步任务；任务复用应收应付生成任务表并通过 `task_type` 区分，逐单复用 AdaPay 状态同步规则并持久化进度，页面轮询且刷新后恢复。订单模块仅提供通用的按支付日期、店铺、支付方式及主键游标查询已支付订单的 `OrderApi`；Pay 模块传入 AdaPay 支付方式，不由订单模块提供结算专用查询，也不由 Pay 模块直接访问订单表。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
+- 管理后台可提交一个支付日期和最多 100 家店铺，创建异步分账状态同步任务；任务复用应收应付生成任务表并通过 `task_type` 区分，逐单复用 AdaPay 状态同步规则并持久化进度，页面轮询且刷新后恢复。订单模块仅提供通用的按支付日期、店铺、支付方式、退款状态及主键游标查询已支付订单的 `OrderApi`；Pay 模块传入 AdaPay 支付方式及可选退款状态。结算状态同步只选取退款正常或已驳回（`refund_status` 0、3）的订单，排除退款中或已退款订单；不由订单模块提供结算专用查询，也不由 Pay 模块直接访问订单表。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 - `GET /order/store-order/settlement-page` 响应增加 `estimatedPaymentDate`（`date | null`），仅对已成功分账且有 `sharingTime` 的订单，按当前 AdaPay 结算策略推算；详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 
 ## 订单结算管理商圈筛选
