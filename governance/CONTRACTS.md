@@ -27,6 +27,7 @@
 - 明细分页继续兼容单日 `settlementDate`；周/月汇总行可传 `settlementDateStart` 和 `settlementDateEnd` 查询周期内明细。
 - 管理后台新增综合费率列，按聚合后的 `incomeAmount / orderAmount` 计算；订单金额为 0 时显示 `—`。费率不新增接口字段。
 - 详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
+- 汇总分页新增可选 `shopIds` 多店铺筛选，传入时只返回所选店铺；该条件与当前用户可访问店铺范围取交集。省略或传空集合表示不按所选店铺过滤，原 `shopId` 单店参数继续兼容。
 
 ## 后台订单详情费用字段
 

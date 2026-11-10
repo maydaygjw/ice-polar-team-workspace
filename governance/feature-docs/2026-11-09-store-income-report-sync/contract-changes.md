@@ -7,7 +7,7 @@
 `GET /admin-api/pay/profit-sharing-income/summary-page`
 
 - 权限：`pay:profit-sharing-income:query`（不变）。
-- 请求：沿用分页参数、`shopId`、`settlementDateStart`、`settlementDateEnd`，新增 `periodType`（`DAY`、`WEEK`、`MONTH`，缺省为 `DAY`）；日期两端包含。
+- 请求：沿用分页参数、`shopId`、`settlementDateStart`、`settlementDateEnd`，新增 `periodType`（`DAY`、`WEEK`、`MONTH`，缺省为 `DAY`）和可选 `shopIds` 多店铺筛选；日期两端包含。传入非空 `shopIds` 时仅返回所选店铺，且与当前用户可访问店铺范围取交集；省略或传空集合表示不过滤所选店铺。原 `shopId` 单店参数继续兼容。
 - 汇总行粒度为 `settlementDate + shopId + recipientId`，因此一个日期和店铺可返回多行。店铺级订单数、订单金额、收入、预计打款收入和预计打款笔数只在主收款人行返回；非主收款人行对应字段为 0。`paymentAmount` 是该收款人在当前店铺绑定范围内的净到账展示金额。`storePaymentAmount` 为同店铺同日所有非共享收款人净到账总额，仅用于主收款人行的店铺级打款金额核对。
 - 本地同步筛选该店铺当前主绑定和有效对账绑定（`binding_purpose=RECONCILIATION` 且 `mark_status=VALID`）；无效对账关系不纳入。同步只重建本地已采集结算明细，不请求 AdaPay。共享目标按租户、收款人、Member ID 和结算账户识别；若同一目标绑定多个不同店铺，则把完整净到账金额展示在每一家当前有效绑定店铺的对应收款人行，并通过 `sharedPaymentAmount` 标记共享金额。该金额不按店铺拆分，不计入 `storePaymentAmount`，跨店铺相加会重复统计；管理端须在金额旁显示「(共享)」。
 - 响应既有字段保持不变，新增：
