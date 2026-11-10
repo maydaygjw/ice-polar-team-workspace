@@ -118,7 +118,29 @@
 
 远端 `div_members[].member_id` 为 `0` 时，本地分账角色映射为“平台”，不将该标识当作平台级收款人的 Member ID。其他 Member ID 按当前租户匹配启用的平台级收款人，或按订单店铺匹配有效绑定历史中的店铺级收款人。若多个不同收款人同时匹配同一 Member ID，则不猜测归属，明细保留为未匹配外部收款人。
 
+#### `POST /pay/receivable-payable/sync-settlement-status/tasks`
+
+**模块**: `yshop-module-pay-biz`
+**权限**: `order:settlement:query`
+**说明**: 创建按一个支付日期和多店铺范围执行的异步分账状态同步任务。
+
+请求体：`payDate`（必填日期）、`shopIds`（必填，1—100 个当前租户店铺 ID）。
+
+响应：任务 ID。一个租户同时只能运行一个应收应付生成或分账状态同步任务；任务创建时验证所有店铺归属当前租户。
+
+#### `GET /pay/receivable-payable/sync-settlement-status/tasks/{id}`
+
+**模块**: `yshop-module-pay-biz`
+**权限**: `order:settlement:query`
+**说明**: 查询当前用户创建的分账状态同步任务进度，响应沿用 `ReceivablePayableGenerationTaskRespVO` 并增加 `taskType`。
+
+响应包含任务类型、支付日期、状态、候选总数、已处理数、成功/跳过/失败数、百分比、失败摘要和结束时间。分账状态同步任务按订单 ID 游标处理该支付日和店铺范围内已支付的 AdaPay 订单；逐单复用单笔同步规则，单笔失败不中断任务。接口不创建或重试分账。任务记录复用 `yshop_pay_receivable_payable_generation_task`，新增 `task_type` 区分应收应付生成和分账状态同步，任务进度可在管理后台轮询及页面刷新后恢复。
+
+订单模块内部 `OrderApi` 增加通用 `countPaidOrders(LocalDate payDate, List<Long> shopIds, PayTypeEnum payType)` 和 `listPaidOrderIds(Long afterId, LocalDate payDate, List<Long> shopIds, PayTypeEnum payType, int limit)`，按支付日期、店铺集合、支付方式和订单 ID 游标统计/查询已支付订单号；支付方式可省略以查询全部方式。Pay 模块传入 `PayTypeEnum.ADAPAY`，订单模块不包含分账或结算专用查询接口，Pay 模块也不直接访问订单表。管理后台创建一个任务后轮询该同步任务的进度接口。
+
 ## 数据库变更
+
+`yshop_pay_receivable_payable_generation_task` 新增 `task_type` 字段，默认 `GENERATE_RECEIVABLE_PAYABLE` 以兼容已有任务，并以 `SYNC_SETTLEMENT_STATUS` 标记分账状态同步任务；不新建任务表。
 
 `yshop_adapay_profit_sharing_order` 和 `yshop_adapay_profit_sharing_payment` 增加可空 `fee_amount`，记录 AdaPay 支付确认返回的手续费金额。不对历史数据估算回填。另新增菜单数据：
 
