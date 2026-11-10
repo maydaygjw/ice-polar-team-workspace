@@ -4,6 +4,7 @@
 
 - 收款人结算任务目标按收款人、Member ID 和结算账户区分；同一目标绑定多个店铺时只向 AdaPay 查询一次。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#任务收款人结果表)。
 - 汇总响应为店铺级收款人增加 `shopNames`，返回其当前绑定的全部可访问店铺名称；`shopName` 仍是汇总行对应的历史店铺快照。非店铺级主体的 `shopNames` 为空。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#汇总查询)。
+- 分账收款人结算汇总响应增加 `memberIdLast4`，取本地结算明细快照中 MemberId 的后四位；管理后台在收款人名称下展示为 `****后四位`，接口不返回完整 MemberId。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#汇总查询)。
 - 分账收款人结算汇总/明细查询新增 `MERCHANT` Tab，展示当前租户 AdaPay 商户自身的结算流水；只接受日期范围和汇总方式筛选，查询通过 `SettleAccount.detail` 固定传 `member_id=0`，不传 `settle_account_id`。
 - 每日采集和手工单日重拉除当前/历史分账收款人外，均增加一个商户自身采集目标。其本地快照使用 `recipient_type=3`、`recipient_id=0`、名称「平台商户」，不关联角色、店铺或绑定关系；与收款人及租户数据隔离。
 - 已完成的历史采集任务不会自动回填该主体；需对目标日期手动重拉。详细字段和筛选规则见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md)。
@@ -18,7 +19,7 @@
 
 ## 店铺收入报表日期与打款金额核对
 
-- 店铺收入报表汇总响应新增 `memberId`，取店铺当前绑定的主分账收款人 MemberId；未绑定或收款人不存在时返回 `null`。管理后台在店铺列中追加完整 MemberId，不做脱敏。
+- 店铺收入报表汇总按日期、店铺、收款人返回多行；本地同步只纳入店铺主收款人及有效对账收款人的结算明细，无效对账关系不纳入。店铺级订单及预测指标只放在主收款人行，实际打款金额按收款人展示；金额核对在主收款人行比较店铺预测总额和所有有效收款人的实际到账总额。收款人 MemberId 与银行卡仅返回后四位。详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
 - 店铺收入报表汇总响应新增 `nonWorkingDayLabel`：按中国结算日历标记非工作日，法定节假日返回假期名称，普通周末返回「周末」，调休补班日及普通工作日返回 `null`。该字段仅用于展示，不改变各指标日期归属。
 - 管理后台新增打款金额核对列，逐日比较 `estimatedPaymentIncome` 与 `paymentAmount` 的分值；相等显示一致图标，不等显示不一致图标。两项均为 0 时按相等处理。
 - 汇总分页支持 `periodType=DAY|WEEK|MONTH`，默认 `DAY`；周从周一到周日，月按自然月。日期筛选两端包含，边界周期只累计筛选范围内数据。`settlementDate` 表示周期起日，并新增 `periodEndDate` 表示周期止日。

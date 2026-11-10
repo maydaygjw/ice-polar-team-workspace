@@ -8,24 +8,31 @@
 
 - 权限：`pay:profit-sharing-income:query`（不变）。
 - 请求：沿用分页参数、`shopId`、`settlementDateStart`、`settlementDateEnd`，新增 `periodType`（`DAY`、`WEEK`、`MONTH`，缺省为 `DAY`）；日期两端包含。
+- 汇总行粒度为 `settlementDate + shopId + recipientId`，因此一个日期和店铺可返回多行。店铺级订单数、订单金额、收入、预计打款收入和预计打款笔数只在主收款人行返回；非主收款人行对应字段为 0。`paymentAmount` 是该收款人当日净到账金额。`storePaymentAmount` 为同店铺同日所有纳入收款人的净到账总额，仅用于主收款人行的打款金额核对。
+- 本地同步筛选该店铺当前主绑定和有效对账绑定（`binding_purpose=RECONCILIATION` 且 `mark_status=VALID`）；无效对账关系不纳入。同步只重建本地已采集结算明细，不请求 AdaPay。
 - 响应既有字段保持不变，新增：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `estimatedPaymentIncome` | `decimal` | 预计打款日期归属当日的店铺角色金额合计 |
 | `estimatedPaymentCount` | `long` | 对应预计打款订单数，按订单去重 |
-| `paymentAmount` | `decimal` | 成功店铺收款流水净到账金额合计 |
+| `paymentAmount` | `decimal` | 当前收款人成功流水净到账金额合计 |
 | `periodEndDate` | `date` | 周期结束日期，含首尾筛选边界；日视图与 `settlementDate` 相同 |
 | `nonWorkingDayLabel` | `string \| null` | 日视图按中国结算日历返回非工作日标识；周/月视图中周期包含非工作日时返回「含休息日」，否则为 `null` |
-| `memberId` | `string \| null` | 店铺当前绑定的主分账收款人 MemberId；未绑定或收款人不存在时为 `null` |
+| `recipientId` | `long` | 当前行收款人 ID；无主绑定的店铺级指标行使用 `0` |
+| `recipientName` | `string` | 收款人名称快照 |
+| `isPrimaryRecipient` | `boolean` | 当前行为主收款人行或店铺指标承载行；店铺级指标和金额核对只在该行展示 |
+| `memberIdLast4` | `string \| null` | 收款人 MemberId 后四位；接口不返回完整 MemberId |
+| `bankCardLast4` | `string \| null` | 收款人银行卡后四位；接口不返回完整银行卡号 |
+| `storePaymentAmount` | `decimal` | 同店铺同日期全部纳入收款人的净到账总额；仅用于主行金额核对 |
 
 `settlementDate` 在周/月视图表示该周期与筛选范围重叠部分的起日；`periodEndDate` 表示重叠部分止日。周按周一至周日、月按自然月聚合；不完整首尾周期只累计筛选范围内数据。汇总数值字段按日投影相加，分页发生在周期聚合之后。
 
-管理后台在日期旁展示非空 `nonWorkingDayLabel`。新增综合费率列，由聚合后的 `incomeAmount / orderAmount` 计算，订单金额为 0 时显示 `—`。新增「打款金额核对」列，按分比较 `estimatedPaymentIncome` 与 `paymentAmount`：相同显示一致图标，不同显示不一致图标；两项均为 0 时视为一致。费率与核对列由现有汇总字段计算，不新增接口字段。
+管理后台在日期旁展示非空 `nonWorkingDayLabel`。新增综合费率列，由主收款人行的 `incomeAmount / orderAmount` 计算，订单金额为 0 时显示 `—`。新增「打款金额核对」列，仅在主行按分比较 `estimatedPaymentIncome` 与 `storePaymentAmount`：相同显示一致图标，不同显示不一致图标；两项均为 0 时视为一致。
 
-管理后台在店铺列内展示完整 `memberId`，不做脱敏；没有 MemberId 时显示 `--`。
+管理后台每位收款人单独一行，展示收款人姓名、银行卡后四位和 MemberId 后四位。订单及预测指标只显示在主收款人行；打款金额按收款人显示，金额核对只在主行按店铺实际到账总额比较。接口不返回完整银行卡号或完整 MemberId。
 
-查询只读 `yshop_pay_store_income_report_daily`，按 `tenant_id`、可访问店铺和日期筛选；按日期倒序、店铺 ID 升序分页。旧客户端忽略新增字段即可保持兼容。
+查询只读 `yshop_pay_store_income_report_daily`，按 `tenant_id`、可访问店铺和日期筛选；按日期倒序、店铺 ID 升序、主收款人优先分页。旧客户端忽略新增字段即可保持兼容。
 
 ### 分页明细
 
@@ -67,28 +74,34 @@
 | `id` | `BIGINT` | 主键，自增 |
 | `tenant_id` | `BIGINT` | 非空，租户隔离 |
 | `shop_id` | `BIGINT` | 非空，店铺维度 |
+| `recipient_id` | `BIGINT` | 非空，收款人维度；无主绑定且需要承载店铺指标时使用 `0` |
+| `recipient_name` | `VARCHAR(100)` | 非空，收款人名称快照 |
+| `is_primary_recipient` | `TINYINT` | 非空，默认 `0`；主行或店铺指标承载行标记为 `1` |
+| `member_id_last4` | `VARCHAR(4)` | 可空，仅保存 MemberId 后四位 |
+| `bank_card_last4` | `VARCHAR(4)` | 可空，仅保存银行卡后四位 |
 | `shop_name` | `VARCHAR(100)` | 非空；优先使用分账、订单、结算明细中的可用名称快照，均缺失时回退为 `店铺 {shopId}` |
-| `report_date` | `DATE` | 非空；该行不同指标按各自业务日期合并后的自然日 |
+| `report_date` | `DATE` | 非空；订单、预测、打款指标各自按业务日期归属到的自然日 |
 | `settlement_order_count` | `BIGINT` | 非空，默认 0；原有成功分账订单数 |
 | `order_amount` | `DECIMAL(14,2)` | 非空，默认 0；原有关联订单实付金额 |
 | `income_amount` | `DECIMAL(14,2)` | 非空，默认 0；原有店铺角色分账收入 |
 | `estimated_payment_income` | `DECIMAL(14,2)` | 非空，默认 0；预计打款店铺收入 |
 | `estimated_payment_count` | `BIGINT` | 非空，默认 0；预计打款订单笔数 |
 | `payment_amount` | `DECIMAL(14,2)` | 非空，默认 0；实际成功净到账金额 |
+| `store_payment_amount` | `DECIMAL(14,2)` | 非空，默认 0；全收款人店铺当日净到账总额，仅主行用于核对 |
 | `creator` / `updater` | `VARCHAR(64)` | 审计用户 |
 | `create_time` / `update_time` | `DATETIME` | 创建和最近重建时间 |
 
-表使用 InnoDB、`utf8mb4`、`utf8mb4_0900_ai_ci`。唯一键 `uk_tenant_shop_date (tenant_id, shop_id, report_date)`；范围查询索引 `idx_tenant_date_shop (tenant_id, report_date, shop_id)`。该投影表不使用逻辑删除：所选范围的旧聚合在同一事务中物理删除并重建，失败会回滚。
+表使用 InnoDB、`utf8mb4`、`utf8mb4_0900_ai_ci`。唯一键 `uk_tenant_shop_date_recipient (tenant_id, shop_id, report_date, recipient_id)`；范围查询索引 `idx_tenant_date_shop (tenant_id, report_date, shop_id)`。该投影表不使用逻辑删除：所选范围的旧聚合在同一事务中物理删除并重建，失败会回滚。
 
 ### 源表
 
 - 复用 `yshop_adapay_profit_sharing_order`、`yshop_adapay_profit_sharing_order_item`、`yshop_store_order` 和 `yshop_pay_receivable_payable_order` 计算原有分账收入、预测金额及笔数。
-- 复用 `yshop_adapay_profit_recipient_settlement_detail` 计算实际到账；过滤 `recipient_type=2`（`SHOP_RECIPIENT`）、`settle_stat=succeeded`、`is_active_version=1`、`deleted=0`，汇总 `net_settle_amount`。
+- 复用 `yshop_adapay_profit_recipient_settlement_detail` 计算实际到账；过滤 `recipient_type=2`（`SHOP_RECIPIENT`）、`settle_stat=succeeded`、`is_active_version=1`、`deleted=0`，并只纳入当前主绑定及 `mark_status=VALID` 的对账绑定，按收款人汇总 `net_settle_amount`。
 - 不修改源表，不更改源表历史数据。
 
 ### 迁移与回滚
 
-- 使用 `backend/sql/migrations/V<版本>__store_income_report_daily.sql` 新建投影表；不新增权限数据。版本实现时以 migrations 目录最高版本为准。
+- 使用 `V2026111002__store_income_report_recipient_rows.sql` 扩展既有投影表和唯一键；已执行的 `V2026110904` 不可修改。不新增权限数据。
 - 回滚代码时移除新增按钮权限及 API/页面；投影表可随回滚删除。投影数据可从本地源表重新生成，不含不可恢复的财务事实。
 - 不修改已经执行的 Flyway migration，不修改基线 SQL。
 
