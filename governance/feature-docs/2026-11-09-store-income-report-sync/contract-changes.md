@@ -18,7 +18,7 @@
 | `estimatedPaymentCount` | `long` | 对应预计打款订单数，按订单去重 |
 | `paymentAmount` | `decimal` | 当前收款人成功流水净到账金额合计 |
 | `sharedPaymentAmount` | `decimal` | 当前收款人共享目标净到账金额；展示在每个当前绑定店铺，跨店重复，单店核对不计入 |
-| `periodEndDate` | `date` | 周期结束日期，含首尾筛选边界；日视图与 `settlementDate` 相同 |
+| `periodEndDate` | `date` | 周期结束日期；周/月视图分别为周日/月末，日视图与 `settlementDate` 相同 |
 | `nonWorkingDayLabel` | `string \| null` | 日视图按中国结算日历返回非工作日标识；周/月视图中周期包含非工作日时返回「含休息日」，否则为 `null` |
 | `recipientId` | `long` | 当前行收款人 ID；无主绑定的店铺级指标行使用 `0` |
 | `recipientName` | `string` | 收款人名称快照 |
@@ -27,7 +27,7 @@
 | `bankCardLast4` | `string \| null` | 收款人银行卡后四位；接口不返回完整银行卡号 |
 | `storePaymentAmount` | `decimal` | 同店铺同日期全部非共享收款人的净到账总额；仅用于主行金额核对 |
 
-`settlementDate` 在周/月视图表示该周期与筛选范围重叠部分的起日；`periodEndDate` 表示重叠部分止日。周按周一至周日、月按自然月聚合；不完整首尾周期只累计筛选范围内数据。汇总数值字段按日投影相加，分页发生在周期聚合之后。
+`settlementDate` 和 `periodEndDate` 在周/月视图分别表示完整自然周或自然月的首日和末日。日期筛选两端包含，周/月视图会将命中的首尾周期扩展至完整自然周或自然月后查询和聚合；店铺周期内某些日期没有日报数据，不影响周期仍显示完整日期范围。汇总数值字段按日投影相加，分页发生在周期聚合之后。
 
 管理后台在日期旁展示非空 `nonWorkingDayLabel`。新增综合费率列，由主收款人行的 `incomeAmount / orderAmount` 计算，订单金额为 0 时显示 `—`。新增「打款金额核对」列，仅在主行按分比较 `estimatedPaymentIncome` 与 `storePaymentAmount`：相同显示一致图标，不同显示不一致图标；两项均为 0 时视为一致。
 

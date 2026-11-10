@@ -23,7 +23,7 @@
 - 店铺收入报表汇总按日期、店铺、收款人返回多行；本地同步只纳入店铺主收款人及有效对账收款人的结算明细，无效对账关系不纳入。同一收款人、Member ID 和结算账户绑定多家店铺时，完整净到账金额展示在每家当前有效绑定店铺并标注「(共享)」；该金额跨店重复展示、不按店铺拆分，且不参与单店金额核对。店铺级订单及预测指标只放在主收款人行；核对只比较非共享实际到账总额。收款人 MemberId 与银行卡仅返回后四位。详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
 - 店铺收入报表汇总响应新增 `nonWorkingDayLabel`：按中国结算日历标记非工作日，法定节假日返回假期名称，普通周末返回「周末」，调休补班日及普通工作日返回 `null`。该字段仅用于展示，不改变各指标日期归属。
 - 管理后台新增打款金额核对列，逐日比较 `estimatedPaymentIncome` 与 `storePaymentAmount` 的分值；`storePaymentAmount` 不计入多店共享到账，避免共享金额造成重复核对。相等显示一致图标，不等显示不一致图标。两项均为 0 时按相等处理。
-- 汇总分页支持 `periodType=DAY|WEEK|MONTH`，默认 `DAY`；周从周一到周日，月按自然月。日期筛选两端包含，边界周期只累计筛选范围内数据。`settlementDate` 表示周期起日，并新增 `periodEndDate` 表示周期止日。
+- 汇总分页支持 `periodType=DAY|WEEK|MONTH`，默认 `DAY`；周按完整自然周（周一至周日）、月按完整自然月聚合。周/月视图日期筛选两端包含，命中的首尾周期均扩展为完整周期后查询，不因店铺个别日期无数据而截短周期；`settlementDate` 和 `periodEndDate` 分别返回周期首日和末日。
 - 明细分页继续兼容单日 `settlementDate`；周/月汇总行可传 `settlementDateStart` 和 `settlementDateEnd` 查询周期内明细。
 - 管理后台新增综合费率列，按聚合后的 `incomeAmount / orderAmount` 计算；订单金额为 0 时显示 `—`。费率不新增接口字段。
 - 详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
