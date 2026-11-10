@@ -71,6 +71,7 @@
 - 应收应付列表记录增加 `reconciliation_status`：`MATCHED`（一致）、`DIFFERENT`（有差异）、`PENDING`（结算未完成或缺少可比较明细）、`NOT_APPLICABLE`（已回退等不适用场景）。仅使用本地应收应付主体快照与本地分账结算记录比较，不在读取列表或明细时请求 AdaPay。店铺收入类应收主体（`subject_type=MERCHANT`）与实际店铺角色分账（`role=SHOP`）按订单店铺收入总额比较，不以应收快照中的店铺收款人 `recipientId` 作为匹配键；该快照仍保留其原分账收款人含义。平台及其他收款主体继续按收款人 ID 独立比较。
 - `GET /admin-api/pay/receivable-payable/page` 列表响应增加 `sharing_time`，取该应收应付记录关联的最新本地分账记录的实际分账时间；无分账记录或尚未分账时为 `null`。管理后台应收应付列表以“分账时间”列展示，时间格式为 `YYYY-MM-DD HH:mm:ss`。
 - 应收应付明细接口增加 `settlement_items`，仅在结算成功时从本地分账订单明细读取结算主体、角色、收款人、Member ID（脱敏）和金额；`parties` 也返回收款人 Member ID（脱敏）。两张表分别展示本地应收主体汇总与实际分账明细；分账明细优先按 `receivable_payable_party_id` 归属当前应收订单，再按本地收款人 ID 保留收款人级明细，防止拼单支付把其他订单的分账记录并入当前对账。店铺绑定收款人的实际分账仍逐收款人显示；仅用于店铺收入对账时，将该订单 `role=SHOP` 的实际金额合计与 `subject_type=MERCHANT` 的应收金额比较。应收上的收款人 ID 不用于决定店铺收入归属；平台及配送、固定/其他主体等仍按各自收款人 ID 独立比较。Member ID 只用于展示，不以脱敏值作为匹配键。
+- 分页查询新增可选 `sharingTimeStart`、`sharingTimeEnd`（`YYYY-MM-DD`）日期参数，按关联的最新本地分账记录 `sharing_time` 筛选；起止日期均包含，无分账时间的记录不匹配日期筛选。分页结果与总数使用相同条件。管理后台店铺下拉支持输入搜索，分账日期使用日期范围筛选。
 
 ## AdaPay 分账收款人同步
 

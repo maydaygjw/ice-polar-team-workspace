@@ -57,6 +57,8 @@
 
 应收应付明细接口沿用现有响应字段，不增加 API schema。`parties` 中店铺收入主体仍保留生成时的店铺分账收款人快照；该 `recipientId` 只说明本系统生成应收时计划使用的出账收款人，不作为远端结算明细与店铺收入匹配的键。
 
+- `GET /admin-api/pay/receivable-payable/page` 新增可选日期参数 `sharingTimeStart`、`sharingTimeEnd`（`YYYY-MM-DD`），按最新本地分账记录的 `sharing_time` 筛选，起止日期均包含；无分账时间的记录不匹配日期筛选。分页结果与总数使用相同条件。管理后台店铺筛选支持输入搜索，并提供分账日期范围筛选。
+
 - `subject_type=MERCHANT` 的应收金额作为本订单店铺收入预期，与同订单所有已映射店铺绑定收款人对应的 `role=SHOP` 实际分账金额合计比较，并据此计算订单 `reconciliation_status`。
 - 实际店铺分账明细仍按绑定收款人和完整 Member ID 逐笔映射、逐收款人展示，不改写或合并明细的 `recipientId`、Member ID、名称或金额。只有店铺收入总额比较使用其合计。
 - 平台、配送、固定及其他收款主体不并入店铺收入；继续按原主体类别和本地收款人 ID 独立比较。未映射的远端收款人不猜测为店铺收入。
