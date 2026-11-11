@@ -75,6 +75,11 @@
 - 管理后台订单结算管理页提供商圈下拉筛选；选择商圈后查询分页接口，清空商圈则恢复全部商圈范围。
 - 详细契约见[订单结算管理商圈筛选契约](feature-docs/2026-11-09-order-settlement-business-region/contract-changes.md)。
 
+## 订单结算管理分账日期筛选
+
+- `GET /admin-api/order/store-order/settlement-page` 新增可选 `sharingTimeStart`、`sharingTimeEnd` 查询参数，格式为 `YYYY-MM-DD HH:mm:ss`，按订单关联的最新本地分账记录的实际分账时间筛选；起止时间均包含，未分账记录不因该条件命中。
+- 管理后台订单结算管理页提供“分账日期”范围筛选；日期范围默认覆盖所选日期的 `00:00:00` 至 `23:59:59`，与支付时间及其他查询条件同时生效。
+
 ## 应收应付订单级结算对账
 
 - `GET /admin-api/pay/receivable-payable/page` 支持可选筛选参数 `businessRegionId`（商圈 ID）和 `shopId`（店铺 ID）；商圈 ID 作为快照冗余保存在应收应付主记录中，订单计费和 OpenAPI 计费保存对应店铺的商圈 ID，历史记录由迁移回填。商圈与店铺筛选均直接匹配应收应付主记录字段，分页列表和总数使用相同条件。
