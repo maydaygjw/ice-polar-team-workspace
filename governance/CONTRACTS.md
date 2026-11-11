@@ -35,6 +35,7 @@
 - 每次下载形成独立 ZIP 版本并保存到主 OSS；`Charge`、`PaymentConfirm`、`Div` 三个 CSV 不单独归档，只从 ZIP 解析后写入三张原始明细节表。
 - 同一租户同一天只允许一个下载任务。成功重拉时在同一事务中物理删除旧明细并写入新明细；任一步失败保留旧明细和上次成功 ZIP 版本。日期状态由 `GET /admin-api/pay/adapay-bill/calendar` 返回，优先级为 `RUNNING > SUCCEEDED > FAILED > NONE`。
 - 明细按最新成功版本分页展示解析字段，并在 `extraFields` 返回未知尾部列；Div 明细支持 `memberId` 对“分账用户”字段精确筛选。
+- PaymentConfirm 增加应收应付批量匹配：按账单日期、最多 100 家店铺范围，以 `paymentId` 关联当前租户应收应付记录；结果持久化为 `MATCHED`（成功）或 `MISSING`（缺失），空值表示未匹配。分页支持按此状态筛选；重新拉取账单后新明细均为未匹配。
 - 新增权限 `pay:adapay-bill:query` 和 `pay:adapay-bill:download`；所有接口按当前租户隔离。详见 [AdaPay 对账单管理契约](feature-docs/2026-11-11-adapay-bill-management/contract-changes.md)。
 
 ## 后台订单详情费用字段

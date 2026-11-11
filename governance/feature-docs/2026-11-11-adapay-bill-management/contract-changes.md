@@ -13,6 +13,7 @@ Base path：`/admin-api/pay/adapay-bill`。
 | `GET /archives?billDate=YYYY-MM-DD` | `pay:adapay-bill:query` | 查询某日全部成功 ZIP 版本，按版本倒序 |
 | `GET /charge-details/page` | `pay:adapay-bill:query` | 分页查询 Charge 明细，支持支付ID、商户订单号、店铺筛选并返回商家名称 |
 | `GET /confirm-details/page` | `pay:adapay-bill:query` | 分页查询 PaymentConfirm 明细，支持商户支付ID、店铺筛选并返回商家名称 |
+| `POST /confirm-details/match` | `pay:adapay-bill:query` | 按账单日期及可选店铺集合批量匹配 PaymentConfirm 的应收应付 |
 | `GET /div-details/page` | `pay:adapay-bill:query` | 分页查询 Div 明细，支持 `merchantPaymentId`、`memberId`、店铺筛选并返回商家名称 |
 | `GET /downloads/{id}/zip` | `pay:adapay-bill:query` | 下载成功任务的 ZIP 附件 |
 
@@ -102,6 +103,8 @@ Base path：`/admin-api/pay/adapay-bill`。
 - `pageNo`、`pageSize`：标准分页参数，服务端按数据库分页。
 - 仅查询该日期最新成功版本对应的明细；无成功版本时返回空分页。查询结果增加可空 `shopId`、`shopName`，为导入时按 Charge 支付ID匹配订单 `transactionId` 冗余的门快照；Confirm、Div 经商户支付ID关联同版本 Charge 继承。关联仅补充展示信息，分页查询不实时联表。
 
+Confirm 分页的 `matchStatus` 可传 `MATCHED`、`MISSING`、`UNMATCHED` 筛选；响应 `matchStatus` 为 `MATCHED`、`MISSING` 或 `null`（界面分别显示成功、缺失、未匹配）。批量匹配请求体为 `{ "billDate": "2026-11-10", "shopIds": [1, 2] }`。店铺集合可省略或为空表示全部店铺，最多 100 家。服务端限定当前租户、日期最新成功 ZIP 和所选店铺集合，按 Confirm `paymentId` 与应收应付 `order_id` 精确匹配；找到记录保存 `MATCHED`，找不到保存 `MISSING`，并覆盖本次范围内旧状态。响应 `totalCount`、`successCount`、`missingCount`。不生成或重算应收应付。新导入明细为 `null`，即未匹配。
+
 筛选参数：Charge 接受 `paymentId`、`merchantOrderNo`；Confirm 接受 `merchantPaymentId`；Div 接受 `merchantPaymentId`、`memberId`。均为可选精确匹配。
 
 Charge 响应行：
@@ -141,6 +144,7 @@ Confirm 响应行：
 | `confirmAmount` | 确认金额 |
 | `feeAmount` | 手续费金额 |
 | `confirmStatus` | 确认状态 |
+| `matchStatus` | 应收应付匹配状态：`MATCHED` 成功、`MISSING` 缺失、`UNMATCHED` 未匹配 |
 
 Div 响应行：
 
@@ -195,7 +199,7 @@ Div 响应行：
 
 ## DB
 
-新增迁移：`backend/sql/migrations/V2026111102__adapay_bill_management.sql`。
+新增迁移：`backend/sql/migrations/V2026111102__adapay_bill_management.sql`，后续迁移 `V2026111104__adapay_confirm_receivable_match_status.sql` 为 Confirm 明细增加匹配结果字段及筛选索引。
 
 ### `yshop_adapay_bill_download`
 
@@ -249,7 +253,7 @@ Div 响应行：
 - `yshop_adapay_bill_confirm_detail`：保存 Confirm 8 个固定字段。
 - `yshop_adapay_bill_div_detail`：保存 Div 11 个固定字段，其中 `member_id VARCHAR(128)` 对应“分账用户”。
 
-所有固定字段使用 `VARCHAR(512)`；`goodsDescription` 和 `orderDescription` 使用 `VARCHAR(2048)`。金额、日期和状态仍保存原始字符串。
+所有固定字段使用 `VARCHAR(512)`；`goodsDescription` 和 `orderDescription` 使用 `VARCHAR(2048)`。金额、日期和状态仍保存原始字符串。Confirm 额外 `match_status VARCHAR(16) NULL`，取值 `MATCHED` / `MISSING`；`NULL` 表示未匹配。
 
 索引：
 
@@ -265,7 +269,7 @@ Div 响应行：
 - 迁移创建四张新表和菜单权限，不修改现有对账、订单、支付或分账表。
 - 菜单：页面“对账单管理”挂在现有“日终对账记录”同级，路由 `/mall/store/adapayBill/index`，组件名 `AdapayBillManagement`；按钮权限为 `pay:adapay-bill:query`、`pay:adapay-bill:download`。
 - 迁移为所有 `tenant_admin` 角色补充两个权限，并同步补入正在使用的租户套餐；超级管理员沿用全量菜单。
-- 回滚按依赖逆序删除角色菜单、套餐菜单引用和 `system_menu` 记录，然后删除四张新表。
+- 回滚按依赖逆序删除角色菜单、套餐菜单引用和 `system_menu` 记录，再移除 Confirm 匹配状态列及索引，最后删除四张新表。
 
 ## 权限与数据范围
 
