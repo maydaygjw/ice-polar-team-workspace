@@ -35,7 +35,7 @@
 - 每次下载形成独立 ZIP 版本并保存到主 OSS；`Charge`、`PaymentConfirm`、`Div` 三个 CSV 不单独归档，只从 ZIP 解析后写入三张原始明细节表。
 - 同一租户同一天只允许一个下载任务。成功重拉时在同一事务中物理删除旧明细并写入新明细；任一步失败保留旧明细和上次成功 ZIP 版本。日期状态由 `GET /admin-api/pay/adapay-bill/calendar` 返回，优先级为 `RUNNING > SUCCEEDED > FAILED > NONE`。
 - 明细按最新成功版本分页展示解析字段，并在 `extraFields` 返回未知尾部列；Div 明细支持 `memberId` 对“分账用户”字段精确筛选。
-- PaymentConfirm 增加应收应付批量匹配：按账单日期、最多 100 家店铺范围，以 `paymentId` 关联当前租户应收应付记录；结果持久化为 `MATCHED`（成功）或 `MISSING`（缺失），空值表示未匹配。分页支持按此状态筛选；重新拉取账单后新明细均为未匹配。
+- PaymentConfirm 增加应收应付批量匹配：按账单日期、最多 100 家店铺范围，以 Confirm `paymentId` 关联当前租户应收应付的 `payment_id`；应收应付 `payment_id` 来自商城订单 `transaction_id`，生成时保存并回填历史值。结果持久化为 `MATCHED`（成功）或 `MISSING`（缺失），空值表示未匹配。分页支持按此状态筛选；重新拉取账单后新明细均为未匹配。
 - 新增权限 `pay:adapay-bill:query` 和 `pay:adapay-bill:download`；所有接口按当前租户隔离。详见 [AdaPay 对账单管理契约](feature-docs/2026-11-11-adapay-bill-management/contract-changes.md)。
 
 ## 后台订单详情费用字段
@@ -45,6 +45,7 @@
 ## 订单应收应付可计算金额
 
 - 商城订单可计算金额 = 券前金额 - 优惠金额；平台补贴作为订单计费属性参与明细分配，但不增加整单可分配上限。详见[订单计费模板与应收应付契约](feature-docs/2026-08-14-order-billing-template/contract-changes.md)。
+- 订单计费快照中的 `transactionId` 取自订单表 `transaction_id`；生成应收应付时将其保存到 `yshop_pay_receivable_payable_order.payment_id`，供 AdaPay PaymentConfirm 匹配。
 - 计费模板明细收款类型支持 `CURRENT_MERCHANT`（当前商家）、`FIXED`（指定分账收款人）和 `PLATFORM`（AdaPay 平台）。`PLATFORM` 仅作收款目标标记，不关联分账收款人记录；模板及应收应付明细的 `recipientId` 为空，执行 AdaPay 分账时直接使用 `memberId=0`。
 
 ## 外卖订单应收应付状态与手工生成

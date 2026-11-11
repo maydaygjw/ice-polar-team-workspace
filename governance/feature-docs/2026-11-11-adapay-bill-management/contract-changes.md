@@ -103,7 +103,7 @@ Base path：`/admin-api/pay/adapay-bill`。
 - `pageNo`、`pageSize`：标准分页参数，服务端按数据库分页。
 - 仅查询该日期最新成功版本对应的明细；无成功版本时返回空分页。查询结果增加可空 `shopId`、`shopName`，为导入时按 Charge 支付ID匹配订单 `transactionId` 冗余的门快照；Confirm、Div 经商户支付ID关联同版本 Charge 继承。关联仅补充展示信息，分页查询不实时联表。
 
-Confirm 分页的 `matchStatus` 可传 `MATCHED`、`MISSING`、`UNMATCHED` 筛选；响应 `matchStatus` 为 `MATCHED`、`MISSING` 或 `null`（界面分别显示成功、缺失、未匹配）。批量匹配请求体为 `{ "billDate": "2026-11-10", "shopIds": [1, 2] }`。店铺集合可省略或为空表示全部店铺，最多 100 家。服务端限定当前租户、日期最新成功 ZIP 和所选店铺集合，按 Confirm `paymentId` 与应收应付 `order_id` 精确匹配；找到记录保存 `MATCHED`，找不到保存 `MISSING`，并覆盖本次范围内旧状态。响应 `totalCount`、`successCount`、`missingCount`。不生成或重算应收应付。新导入明细为 `null`，即未匹配。
+Confirm 分页的 `matchStatus` 可传 `MATCHED`、`MISSING`、`UNMATCHED` 筛选；响应 `matchStatus` 为 `MATCHED`、`MISSING` 或 `null`（界面分别显示成功、缺失、未匹配）。批量匹配请求体为 `{ "billDate": "2026-11-10", "shopIds": [1, 2] }`。店铺集合可省略或为空表示全部店铺，最多 100 家。服务端限定当前租户、日期最新成功 ZIP 和所选店铺集合，按 Confirm `paymentId` 与应收应付 `payment_id` 精确匹配；找到记录保存 `MATCHED`，找不到保存 `MISSING`，并覆盖本次范围内旧状态。响应 `totalCount`、`successCount`、`missingCount`。不生成或重算应收应付。新导入明细为 `null`，即未匹配。
 
 筛选参数：Charge 接受 `paymentId`、`merchantOrderNo`；Confirm 接受 `merchantPaymentId`；Div 接受 `merchantPaymentId`、`memberId`。均为可选精确匹配。
 
@@ -199,7 +199,7 @@ Div 响应行：
 
 ## DB
 
-新增迁移：`backend/sql/migrations/V2026111102__adapay_bill_management.sql`，后续迁移 `V2026111104__adapay_confirm_receivable_match_status.sql` 为 Confirm 明细增加匹配结果字段及筛选索引。
+新增迁移：`backend/sql/migrations/V2026111102__adapay_bill_management.sql`，后续迁移 `V2026111104__adapay_confirm_receivable_match_status.sql` 为 Confirm 明细增加匹配结果字段及筛选索引；`V2026111105__receivable_payable_payment_id.sql` 为应收应付主表增加支付流水号并回填历史商城订单。
 
 ### `yshop_adapay_bill_download`
 

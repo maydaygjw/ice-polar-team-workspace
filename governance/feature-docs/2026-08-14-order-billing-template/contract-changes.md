@@ -118,6 +118,8 @@
 
 `BillingCalculationResultDTO`：`recordId`, `orderId`, `status`, `differenceFlag`, `errorCode`, `errorMessage`。
 
+订单模块 `BillingOrderDataDTO.transactionId` 返回订单表 `transaction_id`。Pay 模块生成应收应付时将其保存到主记录 `payment_id`；订单计费失败记录也保存该值，成功重算时同步刷新。OpenAPI 支付应收应付的 `payment_id` 使用其支付 ID。该字段用于与 AdaPay PaymentConfirm `paymentId` 匹配；历史商城订单由数据库迁移按租户和订单号回填 `transaction_id`。
+
 ## 数据库契约
 
 迁移脚本：`backend/sql/upgrade-2026-08-14-order-billing-template.sql`、`backend/sql/upgrade-2026-08-16-billing-template-fee-bearer.sql`。新业务表均包含 `tenant_id`、审计字段和逻辑删除字段；金额使用 `decimal(12,2)`，比例使用 `decimal(7,4)`。
@@ -180,6 +182,7 @@
 | `id` | bigint PK | 应收应付记录 ID。 |
 | `tenant_id` | bigint NOT NULL | 租户 ID。 |
 | `order_id` | varchar(32) NOT NULL | 订单号，同一租户内唯一。 |
+| `payment_id` | varchar(64) NULL | 支付流水号；商城订单取 `yshop_store_order.transaction_id`，OpenAPI 支付取支付 ID。 |
 | `shop_id` | bigint NOT NULL | 门店 ID。 |
 | `business_region_id` | bigint NOT NULL | 商圈 ID。 |
 | `template_id` | bigint NULL | 命中的模板 ID；匹配失败时为空。 |
@@ -263,6 +266,9 @@
 | `subject_name_snapshot` | varchar(128) NULL | 动态收款主体名称快照。 |
 
 ### 复用与兼容
+
+- 迁移 `V2026111105__receivable_payable_payment_id.sql` 新增 `payment_id` 和 `(tenant_id, payment_id, deleted)` 索引，并按租户及订单号回填商城历史订单的 `transaction_id`。
+- 计费服务创建、失败落库及重算时均同步保存 `payment_id`；OpenAPI 支付应收应付以支付 ID 作为该字段值。AdaPay 账单匹配使用 Confirm `paymentId = yshop_pay_receivable_payable_order.payment_id`。
 
 - 继续复用 `yshop_adapay_profit_recipient` 作为收款主体及 AdaPay 结算账户来源，新模板直接选择具体收款人。
 - 平台级收款人允许同角色多条记录同时启用；计费模板明细通过指定收款人 ID 选择实际收款对象，因此不同模板可配置不同配送方等同角色收款人，不再通过旧固定角色唯一推导收款人。
