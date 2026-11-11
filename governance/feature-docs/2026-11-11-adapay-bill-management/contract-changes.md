@@ -11,10 +11,12 @@ Base path：`/admin-api/pay/adapay-bill`。
 | `GET /calendar?month=YYYY-MM` | `pay:adapay-bill:query` | 查询当前租户指定月份每日状态 |
 | `GET /daily?billDate=YYYY-MM-DD` | `pay:adapay-bill:query` | 查询某日最新成功版本和最近任务状态 |
 | `GET /archives?billDate=YYYY-MM-DD` | `pay:adapay-bill:query` | 查询某日全部成功 ZIP 版本，按版本倒序 |
-| `GET /charge-details/page` | `pay:adapay-bill:query` | 分页查询 Charge 明细，支持支付ID、商户订单号筛选并返回商家名称 |
-| `GET /confirm-details/page` | `pay:adapay-bill:query` | 分页查询 PaymentConfirm 明细，支持商户支付ID筛选并返回商家名称 |
-| `GET /div-details/page` | `pay:adapay-bill:query` | 分页查询 Div 明细，支持 `merchantPaymentId`、`memberId` 筛选并返回商家名称 |
+| `GET /charge-details/page` | `pay:adapay-bill:query` | 分页查询 Charge 明细，支持支付ID、商户订单号、店铺筛选并返回商家名称 |
+| `GET /confirm-details/page` | `pay:adapay-bill:query` | 分页查询 PaymentConfirm 明细，支持商户支付ID、店铺筛选并返回商家名称 |
+| `GET /div-details/page` | `pay:adapay-bill:query` | 分页查询 Div 明细，支持 `merchantPaymentId`、`memberId`、店铺筛选并返回商家名称 |
 | `GET /downloads/{id}/zip` | `pay:adapay-bill:query` | 下载成功任务的 ZIP 附件 |
+
+三类分页接口均可选传入 `shopIds: Long[]`。未传或空数组表示不限制店铺；非空时仅返回 `shop_id` 在所选集合中的明细。该参数与现有租户、账单日期和最新成功版本条件同时生效。
 
 ### 创建下载任务
 

@@ -156,6 +156,11 @@
 - 现有 02:00 AdaPay 日终对账增加 OpenAPI AdaPay 支付来源；成功分账沿用 PaymentConfirm/Div 对账。微信账单对账和 AdaPay Refund/RefundDiv 退款对账不在本 feature。
 - 详细字段、路由、状态和迁移见 [OpenAPI AdaPay 结算与对账 Feature Contract](feature-docs/2026-11-04-openapi-adapay-settlement/contract-changes.md)。
 
+### AdaPay 对账账单店铺筛选
+
+- `GET /admin-api/pay/adapay-bill/{charge,confirm,div}-details/page` 均可选传入 `shopIds: Long[]`，按明细保存的 `shop_id` 过滤；未传或空数组表示不按店铺筛选。租户隔离和账单日期/版本筛选保持不变。
+- 店铺快照仍仅在账单导入时通过 Charge `payment_id` 匹配同租户店铺订单 `transaction_id` 后保存；筛选不会补写或回填历史快照。详见 [AdaPay 对账单管理契约](feature-docs/2026-11-11-adapay-bill-management/contract-changes.md)。
+
 ## 活动模板画像中奖策略（2026-10-30）
 
 活动模板增加公平开奖、偏向新用户、偏向流失/低频用户和留存唤醒分层四种策略；开奖与即时抽奖按会员用户画像阶段赔率加权，缺失画像按公平处理。期次保存策略快照，游戏模式不变。详见 [活动模板中奖策略契约](feature-docs/2026-10-30-activity-winning-strategy/contract-changes.md)。
