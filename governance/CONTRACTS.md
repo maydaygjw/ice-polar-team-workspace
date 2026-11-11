@@ -29,6 +29,14 @@
 - 详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
 - 汇总分页新增可选 `shopIds` 多店铺筛选，传入时只返回所选店铺；该条件与当前用户可访问店铺范围取交集。省略或传空集合表示不按所选店铺过滤，原 `shopId` 单店参数继续兼容。
 
+## AdaPay 对账单管理
+
+- 管理后台新增“对账单管理”页面，按当前租户、按账单日期手动下载 AdaPay 标准账单 ZIP；不提供自动下载，也不执行订单或分账业务对账。
+- 每次下载形成独立 ZIP 版本并保存到主 OSS；`Charge`、`PaymentConfirm`、`Div` 三个 CSV 不单独归档，只从 ZIP 解析后写入三张原始明细节表。
+- 同一租户同一天只允许一个下载任务。成功重拉时在同一事务中物理删除旧明细并写入新明细；任一步失败保留旧明细和上次成功 ZIP 版本。日期状态由 `GET /admin-api/pay/adapay-bill/calendar` 返回，优先级为 `RUNNING > SUCCEEDED > FAILED > NONE`。
+- 明细按最新成功版本分页展示解析字段，并在 `extraFields` 返回未知尾部列；Div 明细支持 `memberId` 对“分账用户”字段精确筛选。
+- 新增权限 `pay:adapay-bill:query` 和 `pay:adapay-bill:download`；所有接口按当前租户隔离。详见 [AdaPay 对账单管理契约](feature-docs/2026-11-11-adapay-bill-management/contract-changes.md)。
+
 ## 后台订单详情费用字段
 
 - `/admin-api/order/store-order/get` 与 `/admin-api/order/store-order/getInfo` 响应包含 `platformSubsidyAmount`（平台补贴金额），并新增 `boxFeeForPlatform`（平台餐盒费抽成）和 `serviceFee`（订单服务费）；后两个字段暂不由业务流程赋值，数据库默认 `0.00`。原 `boxFeePrice` 仍表示餐盒费。详见[后台订单详情费用字段契约](feature-docs/2026-11-07-order-detail-fee-fields/contract-changes.md)。
@@ -282,3 +290,10 @@
 - 店铺可另绑多个非主收款人并标记 `VALID` / `INVALID`；标记仅作关系记录，不改变本系统出账授权，也不影响订单结算管理同步分账状态时按该店铺绑定关系匹配 AdaPay `Member ID`。
 - 订单结算管理同步时，主收款人及全部非主收款人均可匹配；按完整 Member ID 匹配，不能唯一解析时不猜测归属。外部账单不含来源渠道时，不推断分账渠道来源。
 - `GET /admin-api/store/shop/profit-recipient-bindings` 与 `PUT /admin-api/store/shop/profit-recipient-bindings` 维护绑定；分别使用 `store:shop:query` 和 `store:shop:update` 权限。原单主收款人绑定接口保持兼容。详细 DTO、数据迁移与匹配规则见[店铺多分账收款人绑定与结算匹配契约](feature-docs/2026-11-09-shop-profit-recipient-roles/contract-changes.md)。
+
+
+### AdaPay 对账单管理：门店快照与筛选
+
+- Charge 明细支持支付ID、商户订单号精确筛选；PaymentConfirm 支持商户支付ID筛选；Div 支持商户支付ID、MemberId 筛选。
+- 三类明细表冗余 `shop_id`、`shop_name`（迁移 V2026111103）：导入时 Charge 以账单支付ID匹配订单 `transactionId` 取得门店快照，PaymentConfirm、Div 经商户支付ID关联同版本 Charge 继承；分页查询直接读冗余字段，不实时联表。
+- 关联只补充展示字段，不改变原始账单、不执行对账判断；未匹配时仍返回原始明细，门店字段为空。查询必须保持租户隔离。
