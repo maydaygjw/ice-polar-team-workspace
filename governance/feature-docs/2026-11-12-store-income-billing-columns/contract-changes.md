@@ -8,6 +8,8 @@
 
 金额取应收应付明细 `theoretical_amount`，关联应收应付订单的店铺和订单，并通过该订单当期有效成功 AdaPay 分账记录确定报表结算日期。日报按自然日汇总，周/月视图在周期内相加。项目名称使用应收应付明细的 `item_name_snapshot`，没有历史明细时使用当前计费项名称。旧客户端忽略该字段可兼容。
 
+店铺收入明细 `GET /admin-api/pay/profit-sharing-income/detail-page` 的每个订单响应也返回 `billingItemAmounts`，元素包含 `billingItemId`、`itemName`、`slotNo` 和该订单该计费项的理论金额 `amount`。仅返回当前已配置槽位且该订单存在应收应付明细的项目；后台按当前启用计费项列定义渲染，未匹配金额显示 `0.00`。结算时间格式化显示到秒，明细表不展示分账状态。
+
 ## 配置
 
 `yshop_pay_billing_item.slot_no` 可空，范围 1–10；空值不在收入报表显示。槽位在租户内唯一。计费项维护页面支持设置/清除槽位。槽位和列名使用当前配置，金额历史按明细名称快照展示。

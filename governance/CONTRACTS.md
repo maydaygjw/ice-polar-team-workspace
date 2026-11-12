@@ -22,6 +22,8 @@
 
 - 店铺收入报表在「交易订单金额」与「交易订单收入」之间展示最多 10 个动态计费项列。计费项使用 `yshop_pay_billing_item.slot_no` 配置 1–10 的展示位置；空值表示不展示，同一租户槽位唯一。汇总行新增 `billingItemAmounts`，按计费项 ID、名称快照和槽位返回金额；金额按应收应付明细 `theoretical_amount` 汇总，归属应收应付订单对应的成功分账日期及店铺，周/月视图按周期累加。历史项目名称优先使用明细 `item_name_snapshot`。后台计费项编辑可设置槽位，收入报表按槽位顺序显示动态列。详见[店铺收入报表动态计费项列契约](feature-docs/2026-11-12-store-income-billing-columns/contract-changes.md)。
 
+- 店铺收入明细分页响应新增 `billingItemAmounts`，按订单返回该订单关联的应收应付明细理论金额，元素包含 `billingItemId`、`itemName`、`slotNo`、`amount`；后台按当前租户已配置的计费项槽位展示金额列。结算时间格式化显示到秒，明细表不展示分账状态列。
+
 - 店铺收入报表汇总按日期、店铺、收款人返回多行；本地同步只纳入店铺主收款人及有效对账收款人的结算明细，无效对账关系不纳入。同一收款人、Member ID 和结算账户绑定多家店铺时，完整净到账金额展示在每家当前有效绑定店铺并标注「(共享)」；该金额跨店重复展示、不按店铺拆分，且不参与单店金额核对。店铺级订单及预测指标只放在主收款人行；核对只比较非共享实际到账总额。收款人 MemberId 与银行卡仅返回后四位。详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
 - 店铺收入报表汇总响应新增 `nonWorkingDayLabel`：按中国结算日历标记非工作日，法定节假日返回假期名称，普通周末返回「周末」，调休补班日及普通工作日返回 `null`。该字段仅用于展示，不改变各指标日期归属。
 - 管理后台新增打款金额核对列，逐日比较 `estimatedPaymentIncome` 与 `storePaymentAmount` 的分值；`storePaymentAmount` 不计入多店共享到账，避免共享金额造成重复核对。相等显示一致图标，不等显示不一致图标。两项均为 0 时按相等处理。
