@@ -30,6 +30,7 @@
 - 管理后台新增综合费率列，按聚合后的 `incomeAmount / orderAmount` 计算；订单金额为 0 时显示 `—`。费率不新增接口字段。
 - 详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
 - 汇总分页新增可选 `shopIds` 多店铺筛选，传入时只返回所选店铺；该条件与当前用户可访问店铺范围取交集。省略或传空集合表示不按所选店铺过滤，原 `shopId` 单店参数继续兼容。
+- 汇总分页新增可选 `showNonWorkingDay`（默认 `true`）；为 `false` 时后端在汇总、分页和总数计算前排除中国结算日历标记为非工作日的日期，适用于 DAY/WEEK/MONTH 周期中的底层日期。
 
 ## AdaPay 对账单管理
 
