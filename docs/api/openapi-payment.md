@@ -1,6 +1,6 @@
 # 第三方支付 OpenAPI
 
-本文供接入平台支付能力的第三方后端开发者和平台管理员使用，说明 OAuth2 客户端令牌、微信/汇付支付、支付查询、全额退款、微信商家转账及支付结果 Webhook。
+本文供接入平台支付能力的第三方后端开发者和平台管理员使用，说明 OAuth2 客户端令牌、微信/AdaPay 支付、支付查询、AdaPay 结算、全额退款、微信商家转账及支付结果 Webhook。
 
 第三方后端通过本 API 创建和管理支付单；付款人通过所选渠道完成付款。平台不提供托管收银页面，第三方不需要维护支付商户密钥或证书。
 
@@ -9,9 +9,9 @@
 平台管理员需要完成以下配置：
 
 1. 在系统的 OAuth2 客户端管理中创建并启用 `client_credentials` 客户端，安全保存 `client_id` 和 `client_secret`。
-2. 在该客户端的 scope 文本框中输入获准的权限，多个 scope 用英文逗号分隔，支付与用户转账 OpenAPI 使用 `payment`。创建支付请求的 `payType` 可选 `weixin`（默认）或 `adapay`。scope 与后台菜单权限相互独立。
-3. 在当前租户的支付配置中，启用所需渠道支付配置的“允许外部 OpenAPI 调用”开关，并配置 Webhook 地址。微信渠道需且只能启用一个微信小程序或公众号配置；汇付渠道需启用当前租户的 Adapay H5 配置。
-4. 使用微信支付时，确认第三方提供的 `payerOpenId` 属于已启用配置对应的微信 AppID。发起用户转账时，`openid` 必须对应当前租户已有会员的小程序 OpenID。
+2. 在该客户端的 scope 文本框中输入获准的权限，多个 scope 用英文逗号分隔，支付、结算与用户转账 OpenAPI 使用 `payment`。创建支付请求的 `payType` 可选 `weixin`（默认）或 `adapay`。scope 与后台菜单权限相互独立。
+3. 在当前租户的支付配置中，启用所需渠道配置的“允许外部 OpenAPI 调用”开关，并配置 Webhook 地址。微信渠道需且只能启用一个微信小程序或公众号配置；AdaPay 渠道需启用当前租户的 AdaPay 配置，并配置微信小程序子 AppID。
+4. 使用微信或 AdaPay 小程序支付时，确认第三方提供的 `payerOpenId` 属于对应微信小程序 AppID。发起用户转账时，`openid` 必须对应当前租户已有会员的小程序 OpenID。
 
 OpenAPI 不接受请求方提交的商户号、密钥、证书、支付配置 ID 或临时通知地址。商户支付配置由平台在当前租户内统一维护。
 
@@ -33,7 +33,7 @@ OpenAPI 不接受请求方提交的商户号、密钥、证书、支付配置 ID
 
 | Scope | 能力 |
 |---|---|
-| `payment` | 创建、查询微信/汇付支付单、申请全额原路退款，以及向当前租户会员发起微信商家转账 |
+| `payment` | 创建、查询微信/AdaPay 支付单、结算 AdaPay 支付单、申请全额原路退款，以及向当前租户会员发起微信商家转账 |
 
 令牌请求的 `scope` 可省略；省略时授予客户端登记的全部 scope。显式请求 scope 时，所有 scope 必须已由客户端精确授权。支付接口统一检查 `payment` scope。scope 配置不支持通配符。令牌只代表第三方客户端，不是会员或管理员身份。客户端凭证、访问令牌和支付渠道参数均不得写入日志。
 
@@ -79,10 +79,25 @@ grant_type=client_credentials&scope=payment
 |---|---|:---:|---|
 | `payType` | string | 否 | `weixin` 或 `adapay`，默认 `weixin` |
 | `clientOrderNo` | string | 是 | 第三方业务订单号，最多 128 个字符；在同一 OAuth2 客户端内唯一 |
+| `businessRegionCode` | string | 是 | 已启用的商圈编码，最多 64 个字符；用于确定订单归属及平台默认店铺 |
 | `amount` | integer | 是 | 支付金额，人民币分，必须大于 0 |
 | `currency` | string | 是 | 币种，首期只支持 `CNY` |
 | `subject` | string | 是 | 支付标题，最多 128 个字符 |
-| `payerOpenId` | string | 条件必填 | 微信支付时必填的用户 OpenID，最多 128 个字符，必须属于平台选用支付配置的 AppID；汇付无需传入 |
+| `payerOpenId` | string | 是 | 微信 JSAPI 或 AdaPay 小程序支付的付款人 OpenID，最多 128 个字符，必须属于对应微信小程序 AppID |
+| `beforeCouponAmount` | integer | 否 | 券前金额，人民币分，非负；省略时按 `amount - freightPrice + couponPrice + deductionPrice` 推算 |
+| `platformSubsidyAmount` | integer | 否 | 平台补贴金额，人民币分，非负；省略时为 `0` |
+| `totalPostage` | integer | 否 | 订单总邮费，人民币分，非负 |
+| `payPostage` | integer | 否 | 支付邮费，人民币分，非负 |
+| `freightPrice` | integer | 否 | 运费金额，人民币分，非负；参与实付金额校验 |
+| `boxFeePrice` | integer | 否 | 餐盒费，人民币分，非负 |
+| `deductionPrice` | integer | 否 | 抵扣金额，人民币分，非负；参与实付金额校验 |
+| `couponPrice` | integer | 否 | 优惠券金额，人民币分，非负；参与实付金额校验 |
+| `boxFeeForPlatform` | integer | 否 | 平台餐盒费抽成，人民币分，非负 |
+| `serviceFee` | integer | 否 | 订单服务费，人民币分，非负 |
+
+计费字段是请求对象的普通顶层字段，不放在嵌套的 `billingAttributes` 对象中。计费字段只适用于 `payType=adapay`；任一计费字段用于微信支付会被拒绝。AdaPay 实付金额必须满足：`amount = max(beforeCouponAmount - couponPrice - deductionPrice, 0) + freightPrice`。计算单位均为人民币分；缺省的 `couponPrice`、`deductionPrice` 和 `freightPrice` 按 `0` 计算。省略 `beforeCouponAmount` 时，按上述字段反推券前金额。
+
+`businessRegionCode` 必须对应已启用商圈。商圈配置了 OpenAPI 默认店铺时，订单使用该店铺计费；未配置默认店铺时，按平台直接收款生成平台专用计费快照，不要求提供店铺。
 
 ```http
 POST /open-api/v1/payments
@@ -94,10 +109,35 @@ Content-Type: application/json
 {
   "payType": "weixin",
   "clientOrderNo": "order-20261102-001",
+  "businessRegionCode": "REGION001",
   "amount": 12800,
   "currency": "CNY",
   "subject": "订单支付",
   "payerOpenId": "oUpF8uMuAJO_M2pxb1Q9zNjWeS6o"
+}
+```
+
+AdaPay 创建请求示例（计费项均为顶层字段）：
+
+```json
+{
+  "payType": "adapay",
+  "clientOrderNo": "order-20261102-002",
+  "businessRegionCode": "REGION001",
+  "amount": 12800,
+  "currency": "CNY",
+  "subject": "订单支付",
+  "payerOpenId": "oUpF8uMuAJO_M2pxb1Q9zNjWeS6o",
+  "beforeCouponAmount": 12800,
+  "platformSubsidyAmount": 0,
+  "totalPostage": 1000,
+  "payPostage": 1000,
+  "freightPrice": 1000,
+  "boxFeePrice": 0,
+  "deductionPrice": 500,
+  "couponPrice": 500,
+  "boxFeeForPlatform": 0,
+  "serviceFee": 0
 }
 ```
 
@@ -131,7 +171,7 @@ Content-Type: application/json
 }
 ```
 
-`paymentData` 按渠道返回网关调起数据：微信渠道是 JSAPI 参数，汇付渠道是 Adapay 收银参数。调用方应按所选渠道把数据传递到对应的支付客户端，不要将支付参数或完整支付响应写入普通业务日志。
+`paymentData` 按渠道返回网关调起数据：微信渠道是 JSAPI 参数，AdaPay 渠道是小程序支付参数。调用方应按所选渠道把数据传递到对应的支付客户端，不要将支付参数或完整支付响应写入普通业务日志。AdaPay 返回网关状态 `succeeded` 只表示创建支付请求成功，不等于用户已完成付款；以平台支付单 `status=SUCCESS` 为准。
 
 支付单有效期为创建后 2 小时。微信预支付参数暂时未生成时，接口仍可能返回 `PENDING` 且 `paymentData` 为空对象；使用相同请求内容和相同幂等键重试创建，可继续获取该支付单的调起参数，不会新建另一笔支付单。
 
@@ -157,7 +197,37 @@ tenant-id: 1001
 
 需要 `payment` scope。`clientOrderNo` 应按 URL 路径段进行编码。
 
-两个查询接口返回与创建接口相同的支付单字段。微信 `PENDING` 支付和 `PROCESSING` 退款由微信查单刷新；汇付支付和退款状态由经过验签的 Adapay 回调刷新。支付成功以平台确认的状态为准，不要仅凭客户端支付 SDK 的回调判断成功。
+两个查询接口返回与创建接口相同的支付单字段。微信 `PENDING` 支付和 `PROCESSING` 退款由微信查单刷新；AdaPay 支付与退款状态由经过验签的 AdaPay 回调和后台查单刷新。支付成功以平台确认的状态为准，不要仅凭支付接口创建成功、客户端支付 SDK 回调或 AdaPay 预支付响应判断成功。
+
+## 主动结算 AdaPay 支付单
+
+`POST /open-api/v1/payments/by-client-order/{clientOrderNo}/settle`
+
+需要 `payment` scope。仅支持当前 OAuth2 客户端创建且平台状态为 `SUCCESS` 的 AdaPay 支付单。订单退款处理中或已退款时不能结算。商圈配置了默认店铺时，接口按订单计费快照执行结算；商圈没有默认店铺、平台直接收款时，返回 `NOT_REQUIRED`，表示无需分账。
+
+```http
+POST /open-api/v1/payments/by-client-order/order-20261102-001/settle
+Authorization: Bearer <access-token>
+tenant-id: 1001
+```
+
+响应示例：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "paymentId": "1969876543210000001",
+    "clientOrderNo": "order-20261102-001",
+    "settlementStatus": "SUCCESS",
+    "settled": true,
+    "message": "结算成功"
+  }
+}
+```
+
+`settlementStatus` 可能为 `SUCCESS`、`NOT_REQUIRED` 或 `NOT_SETTLED`。`NOT_SETTLED` 表示结算尚未完成，可检查分账状态后重试；调用结算接口前应先查询支付单确认 `status=SUCCESS`。
 
 ## 申请全额退款
 
@@ -232,7 +302,7 @@ Content-Type: application/json
 |---|---|
 | `PENDING` | 等待支付结果 |
 | `SUCCESS` | 平台已确认支付成功 |
-| `FAILED` | 微信返回支付失败 |
+| `FAILED` | 支付渠道确认支付失败 |
 | `CLOSED` | 支付单已关闭 |
 
 ### 退款状态 `refundStatus`
@@ -248,7 +318,7 @@ Content-Type: application/json
 
 ## 支付结果 Webhook
 
-管理员在当前租户对应的支付渠道配置中维护 Webhook 地址。支付状态变化后，平台向该地址发送明文 JSON `POST`；不添加应用层签名或加密。生产环境请配置 HTTPS 接收地址。
+管理员在当前租户对应的支付渠道配置中维护 Webhook 地址。平台确认支付成功、支付失败、支付关闭或退款成功后，会创建对应事件并向该地址发送明文 JSON `POST`；不添加应用层签名或加密。AdaPay 预支付请求创建成功不会单独触发支付成功 Webhook；必须等实际支付状态被平台确认。生产环境请配置 HTTPS 接收地址。
 
 ```http
 POST <支付配置中维护的 Webhook URL>
@@ -290,6 +360,11 @@ Webhook 的 `eventType` 枚举值为 `payment.succeeded`、`payment.failed`、`p
 | `2026110216` | 原支付单使用的支付渠道配置不可用 |
 | `2026110217` | 租户未配置所选渠道的 OpenAPI 支付配置 |
 | `2026110218` | OpenAPI 访问令牌无效 |
+| `2026110412` | 支付所属商圈不存在或未启用 |
+| `2026110413` | 商圈配置的 OpenAPI 默认店铺不可用 |
+| `2026110419` | 主动结算仅支持 AdaPay 支付单 |
+| `2026110420` | 仅平台已确认支付成功的订单支持结算 |
+| `2026110421` | 退款处理中或已退款的订单不能结算 |
 
 收到令牌缺失、过期或无效错误时，重新申请令牌。创建支付或退款遇到超时、连接中断或 5xx 时，先使用原幂等键重试或查询，不要换键重复创建交易。
 
