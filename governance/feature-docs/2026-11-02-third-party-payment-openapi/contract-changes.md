@@ -26,20 +26,33 @@
 
 ```json
 {
-  "payType": "weixin",
+  "payType": "adapay",
   "clientOrderNo": "第三方业务订单号",
   "amount": 12800,
   "currency": "CNY",
   "subject": "订单标题",
-  "payerOpenId": "微信用户 OpenID"
+  "beforeCouponAmount": 13600,
+  "platformSubsidyAmount": 0,
+  "totalPostage": 300,
+  "payPostage": 300,
+  "freightPrice": 200,
+  "boxFeePrice": 100,
+  "deductionPrice": 0,
+  "couponPrice": 1000,
+  "boxFeeForPlatform": 50,
+  "serviceFee": 200
 }
 ```
 
-- `amount` 是人民币分的正整数；只接受 `CNY`。进入现有支付 SDK 前按分精确转换为两位小数，不经过浮点数。
+- `amount` 是实际支付金额（人民币分）的正整数；只接受 `CNY`。进入现有支付 SDK 前按分精确转换为两位小数，不经过浮点数。下面的订单计费字段仅用于 `adapay`；微信请求传入这些字段时拒绝请求。
 - `clientOrderNo` 在同一 OAuth 客户端内唯一。
+- `amount` 对应普通订单最终 `payPrice`，单位为人民币分。`deductionPrice`、`couponPrice`、`freightPrice` 等订单金额属性也用人民币分传入，后端无浮点转换地还原为普通计费快照。`discountAmount` 不由调用方单独传入，而按普通订单语义计算为 `couponPrice + deductionPrice`。`beforeCouponAmount` 可选；省略时由 `amount - freightPrice + discountAmount` 推算。后端按普通订单公式校验 `amount = max(beforeCouponAmount - couponPrice - deductionPrice, 0) + freightPrice`。`platformSubsidyAmount` 省略时默认为 `0`。
+- 与 `/app-api/order/store-order/create` 的 `AppOrderParam` 一致使用 `deductionPrice`、`payType` 等订单语义；该 app-api 另接收商品、规格、数量、优惠券 ID 等字段并在服务端计算价格。OpenAPI 是支付接口，不创建商城订单，因此不接收购物车字段，也不重复执行商品定价、会员折扣或优惠券核销；调用方传入已计算的金额属性。后端校验金额组成，并复用普通订单的计费模板、属性求值及分配规则。
+- 支付请求直接展开普通订单金额属性：`totalPostage`、`payPostage`、`freightPrice`、`boxFeePrice`、`deductionPrice`、`couponPrice`、`boxFeeForPlatform`、`serviceFee` 及 `platformSubsidyAmount`，值均为人民币分的非负整数。`amount` 映射为普通订单属性 `pay_price`；`platformSubsidyAmount` 映射为 `platform_subsidy_amount`。这些属性可省略；服务端只校验和读取所选计费模板实际引用的属性，模板引用了未提供的属性时拒绝创建。`ORDER_ATTRIBUTE` 和 `ORDER_EXPRESSION` 使用普通订单相同的属性白名单、计算及金额分配规则；模板选择、计费项求值和分配不因 OpenAPI 来源改变。
 - `payType` 可为 `weixin`（默认）或 `adapay`。微信时 `payerOpenId` 属于 token 租户启用的微信 JSAPI AppID；汇付无需传入。两种渠道都不接受 `tenantId`、商户密钥、商户号、支付配置 ID 或请求级 notify URL。
+- AdaPay 支付仍使用商圈配置的默认店铺和该店铺匹配的计费模板；若默认店铺没有有效的店铺级 AdaPay 收款人，`CURRENT_MERCHANT` 计费项及剩余金额归入平台（AdaPay Member `0`），模板中明确配置的 `PLATFORM` 和固定收款人项保持原规则。已绑定但 AdaPay Member 未就绪的收款人仍拒绝创建。
 - JSAPI AppID 从当前租户唯一启用 OpenAPI 的微信小程序/公众号配置中取得；汇付使用当前租户启用的 Adapay H5 配置。请求体不允许选择渠道配置 ID。
-- 相同客户端、订单号、幂等键、金额、币种和标题重试，返回同一支付单；同订单号或幂等键对应的关键内容不一致返回 `409`。
+- 相同客户端、订单号、幂等键及相同的支付金额、订单金额属性、币种、标题和其他关键字段重试，返回同一支付单；同订单号或幂等键对应的关键内容不一致返回 `409`。旧请求省略新增计费字段时继续按旧字段摘要兼容重试。
 
 创建请求新增 `payType`（`weixin` 或 `adapay`，默认 `weixin`）。创建及查询响应包括 `paymentId`、`clientOrderNo`、`payType`、`amount`、`currency`、`status`、`expireTime`、`appId` 和 `paymentData`。`payType` 复用平台渠道值（支持 `weixin` 与 `adapay`）。`paymentData` 按渠道返回支付网关数据：微信包含 JSAPI 调起字段；汇付返回现有 Adapay H5/小程序收银所需参数。微信请求需提供 `payerOpenId`，汇付不需要。
 

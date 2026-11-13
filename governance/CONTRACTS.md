@@ -65,6 +65,7 @@
 ## 订单计费项表达式
 
 - 计费项 `billingType` 支持 `ORDER_PERCENTAGE`（订单比例）、`ORDER_ATTRIBUTE`（单一订单金额属性）和 `ORDER_EXPRESSION`（订单属性表达式）。表达式保存在计费项 `orderExpression` 字段，仅允许受控订单金额属性、十进制数字、括号及 `+ - * /` 运算符；属性名为标识符（如 `pay_postage`），不支持函数或任意代码。运算遵循常规优先级和括号，除零或属性值为空时计费失败。表达式结果作为该明细的理论金额，并按两位小数四舍五入；既有订单结算快照不回算。
+- OpenAPI AdaPay 支付创建直接接收普通订单金额属性（如 `deductionPrice`、`boxFeeForPlatform`、`serviceFee`、`payPostage`、`freightPrice`），金额以人民币分传入；`discountAmount` 按普通订单语义由优惠券金额和抵扣金额计算。模板实际引用的属性按普通订单相同白名单求值，并复用同一模板选择及金额分配规则。详见[第三方支付 OpenAPI 契约](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md#支付创建-dto)。
 
 ## 订单应收应付每日补算
 
