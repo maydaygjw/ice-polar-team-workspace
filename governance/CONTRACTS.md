@@ -158,10 +158,11 @@
 
 ## OpenAPI AdaPay 结算与对账
 
+- 商圈未配置 OpenAPI 默认店铺时仍允许创建支付；支付款直接由 AdaPay 商户（Member `0`）收取，不生成店铺计费和延迟分账记录。配置默认店铺时沿用其计费模板及分账快照规则。
 - [AdaPay 分账收款人同步类型选择](feature-docs/2026-11-07-adapay-member-type-sync/contract-changes.md)：普通 Member 请求必须显式提交个人/企业类型，后端不再从 `member_id` 推断；`member_id=0` 固定表示平台商户并使用 AdaPay 平台商户基本账户。
 - [AdaPay 分账收款人本地删除](feature-docs/2026-11-07-adapay-recipient-local-delete/contract-changes.md)：新增仅删除本地收款人记录及本地结算账户快照的操作，不调用 AdaPay 删除接口；保留现有远端删除操作。
-- OpenAPI 支付创建请求提交商圈代码；平台按当前租户商圈配置解析专用默认店铺，不接受客户端指定店铺、计费模板或收款人。请求金额全额作为计费基数，无优惠和平台补贴。
-- AdaPay 支付成功时，以支付创建时保存的计费上下文快照幂等生成通用应收应付事实；OpenAPI 内部使用 paymentId 关联账务，clientOrderNo 保持为客户端外部订单号，不关联商城订单表。
+- OpenAPI 支付创建请求提交商圈代码；若商圈配置了默认店铺，平台解析该店铺，不接受客户端指定店铺、计费模板或收款人。请求金额全额作为计费基数，无优惠和平台补贴。
+- 配置默认店铺的 AdaPay 支付成功时，以支付创建时保存的计费上下文快照幂等生成通用应收应付事实；OpenAPI 内部使用 paymentId 关联账务，clientOrderNo 保持为客户端外部订单号，不关联商城订单表。无默认店铺时直接由平台收款，不生成应收应付事实。
 - 客户端可用 `payment` scope 按自身 clientOrderNo 主动请求 AdaPay 结算；系统每日 00:05 自动任务处理相同待结算队列。主动/自动执行及全额退款互斥；分账处理中或成功时拒绝退款，退款成功后不再结算，退款失败恢复资格。
 - 现有 02:00 AdaPay 日终对账增加 OpenAPI AdaPay 支付来源；成功分账沿用 PaymentConfirm/Div 对账。微信账单对账和 AdaPay Refund/RefundDiv 退款对账不在本 feature。
 - 详细字段、路由、状态和迁移见 [OpenAPI AdaPay 结算与对账 Feature Contract](feature-docs/2026-11-04-openapi-adapay-settlement/contract-changes.md)。
