@@ -154,7 +154,7 @@
 - OpenAPI 支付统一使用 `payment` scope，创建、查询、退款接口均校验此范围。客户端 scope 以逗号分隔文本维护，不支持通配符；申请 token 时可显式请求已登记的 scope 子集，省略 `scope` 时授予客户端登记的全部 scope。商户支付配置页负责启用租户的 OpenAPI 支付接入并维护 Webhook 地址，不建立 client 到支付配置的绑定表。业务订单和支付结果按租户及 client 隔离。
 - 详细 API、状态和通知契约见 [第三方支付 OpenAPI Feature Contract](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md)。
 
-- `POST /open-api/v1/payments/transfers` 使用 `payment` scope 向微信 OpenID 发起商家转账；请求含 `openid`、`amount`（人民币分正整数）、租户内唯一 `outBillNo` 和可选 `remark`。后端要求该 OpenID 对应当前租户会员，并复用当前租户微信支付配置及统一用户转账记录。请求未知时使用原 `outBillNo` 重试；接口受理不代表款项到账。详见[第三方用户转账契约](feature-docs/2026-11-07-openapi-user-transfer/contract-changes.md)。
+- `POST /open-api/v1/payments/transfers` 使用 `payment` scope 向微信 OpenID 发起商家转账；请求含 `openid`、`openidType`（`MINIAPP` 或 `MP`，缺省 `MINIAPP`）、`amount`（人民币分正整数）、租户内唯一 `outBillNo` 和可选 `remark`。后端要求该类型 OpenID 对应当前租户会员，并复用对应微信支付配置及统一用户转账记录。请求未知时使用原 `outBillNo` 重试；接口受理不代表款项到账。详见[第三方用户转账契约](feature-docs/2026-11-07-openapi-user-transfer/contract-changes.md)。
 
 ## OpenAPI AdaPay 结算与对账
 

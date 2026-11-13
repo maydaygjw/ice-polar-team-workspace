@@ -11,7 +11,7 @@
 1. 在系统的 OAuth2 客户端管理中创建并启用 `client_credentials` 客户端，安全保存 `client_id` 和 `client_secret`。
 2. 在该客户端的 scope 文本框中输入获准的权限，多个 scope 用英文逗号分隔，支付、结算与用户转账 OpenAPI 使用 `payment`。创建支付请求的 `payType` 可选 `weixin`（默认）或 `adapay`。scope 与后台菜单权限相互独立。
 3. 在当前租户的支付配置中，启用所需渠道配置的“允许外部 OpenAPI 调用”开关，并配置 Webhook 地址。微信渠道需且只能启用一个微信小程序或公众号配置；AdaPay 渠道需启用当前租户的 AdaPay 配置，并配置微信小程序子 AppID。
-4. 使用微信或 AdaPay 小程序支付时，确认第三方提供的 `payerOpenId` 属于对应微信小程序 AppID。发起用户转账时，`openid` 必须对应当前租户已有会员的小程序 OpenID。
+4. 使用微信或 AdaPay 小程序支付时，确认第三方提供的 `payerOpenId` 属于对应微信小程序 AppID。发起用户转账时，`openidType` 默认是 `MINIAPP`；选择 `MP` 时，`openid` 必须对应当前租户已有会员的公众号 OpenID。
 
 OpenAPI 不接受请求方提交的商户号、密钥、证书、支付配置 ID 或临时通知地址。商户支付配置由平台在当前租户内统一维护。
 
@@ -253,11 +253,12 @@ Content-Type: application/json
 
 `POST /open-api/v1/payments/transfers`
 
-需要 `payment` scope。此接口使用微信 APIv3 商家转账能力，向指定微信 OpenID 转账；`openid` 必须匹配当前租户会员的小程序 OpenID。调用方无需传会员 `userId`、AppID、商户号、场景 ID、回调地址或商户密钥，这些由后端按当前租户关联会员并使用已配置的微信小程序支付商户配置。
+需要 `payment` scope。此接口使用微信 APIv3 商家转账能力，向指定微信 OpenID 转账；`openidType` 选择 OpenID 所属应用，支持小程序和公众号，缺省为小程序。`openid` 必须匹配当前租户会员对应应用的 OpenID。调用方无需传会员 `userId`、AppID、商户号、场景 ID、回调地址或商户密钥，这些由后端按当前租户关联会员并使用对应的微信支付商户配置。此接口不支持 AdaPay。
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|:---:|---|
-| `openid` | string | 是 | 收款人的微信小程序 OpenID |
+| `openid` | string | 是 | 收款人的微信 OpenID，所属应用由 `openidType` 指定 |
+| `openidType` | string | 否 | OpenID 所属应用：`MINIAPP`（小程序，默认）或 `MP`（公众号） |
 | `amount` | integer | 是 | 转账金额，人民币分，必须大于 0；例如 `1000` 表示 ¥10.00 |
 | `outBillNo` | string | 是 | 商户转账单号，1–32 位字母、数字、下划线或连字符；同一笔转账重试必须复用 |
 | `remark` | string | 否 | 转账备注；未传时使用默认备注 |
@@ -270,6 +271,7 @@ Content-Type: application/json
 
 {
   "openid": "oUpF8uMuAJO_M2pxb1Q9zNjWeS6o",
+  "openidType": "MINIAPP",
   "amount": 1000,
   "outBillNo": "transfer-20261107-001",
   "remark": "活动奖励"
