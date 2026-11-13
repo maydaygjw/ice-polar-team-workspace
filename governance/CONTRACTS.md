@@ -159,6 +159,7 @@
 ## OpenAPI AdaPay 结算与对账
 
 - 商圈未配置 OpenAPI 默认店铺时仍允许创建支付；支付款直接由 AdaPay 商户（Member `0`）收取，不生成店铺计费和延迟分账记录。配置默认店铺时沿用其计费模板及分账快照规则。
+- AdaPay `WX_LITE` OpenAPI 支付要求请求提供 `payerOpenId`；后端从 AdaPay 商户配置的子 AppID 组装 `expend.open_id` 和 `expend.wx_app_id`，用于微信小程序支付。
 - [AdaPay 分账收款人同步类型选择](feature-docs/2026-11-07-adapay-member-type-sync/contract-changes.md)：普通 Member 请求必须显式提交个人/企业类型，后端不再从 `member_id` 推断；`member_id=0` 固定表示平台商户并使用 AdaPay 平台商户基本账户。
 - [AdaPay 分账收款人本地删除](feature-docs/2026-11-07-adapay-recipient-local-delete/contract-changes.md)：新增仅删除本地收款人记录及本地结算账户快照的操作，不调用 AdaPay 删除接口；保留现有远端删除操作。
 - OpenAPI 支付创建请求提交商圈代码；若商圈配置了默认店铺，平台解析该店铺，不接受客户端指定店铺、计费模板或收款人。请求金额全额作为计费基数，无优惠和平台补贴。
