@@ -1,6 +1,6 @@
 # 第三方支付 OpenAPI
 
-本文供接入平台支付能力的第三方后端开发者和平台管理员使用，说明 OAuth2 客户端令牌、微信/AdaPay 支付、支付查询、AdaPay 结算、全额退款、微信商家转账及支付结果 Webhook。
+本文供接入平台支付能力的第三方后端开发者和平台管理员使用，说明 OAuth2 客户端令牌、微信/AdaPay 支付、支付查询、AdaPay 结算、全额退款、微信商家转账及支付/转账结果 Webhook。
 
 第三方后端通过本 API 创建和管理支付单；付款人通过所选渠道完成付款。平台不提供托管收银页面，第三方不需要维护支付商户密钥或证书。
 
@@ -260,7 +260,7 @@ Content-Type: application/json
 | `openid` | string | 是 | 收款人的微信 OpenID，所属应用由 `openidType` 指定 |
 | `openidType` | string | 否 | OpenID 所属应用：`MINIAPP`（小程序，默认）或 `MP`（公众号） |
 | `amount` | integer | 是 | 转账金额，人民币分，必须大于 0；例如 `1000` 表示 ¥10.00 |
-| `outBillNo` | string | 是 | 商户转账单号，1–32 位字母、数字、下划线或连字符；同一笔转账重试必须复用 |
+| `clientOrderNo` | string | 是 | 第三方转账业务单号，1–32 位字母、数字、下划线或连字符；同一笔转账重试必须复用。后端将其作为微信商户单号 `outBillNo` 使用 |
 | `remark` | string | 否 | 转账备注；未传时使用默认备注 |
 
 ```http
@@ -273,7 +273,7 @@ Content-Type: application/json
   "openid": "oUpF8uMuAJO_M2pxb1Q9zNjWeS6o",
   "openidType": "MINIAPP",
   "amount": 1000,
-  "outBillNo": "transfer-20261107-001",
+  "clientOrderNo": "transfer-20261107-001",
   "remark": "活动奖励"
 }
 ```
@@ -285,6 +285,7 @@ Content-Type: application/json
   "code": 0,
   "msg": "",
   "data": {
+    "clientOrderNo": "transfer-20261107-001",
     "outBillNo": "transfer-20261107-001",
     "transferBillNo": "wx-transfer-bill-no",
     "createTime": "2026-11-07T10:15:30+08:00",
@@ -294,7 +295,7 @@ Content-Type: application/json
 }
 ```
 
-成功响应包含微信返回的 `outBillNo`、`transferBillNo`、`state`、`createTime` 和 `packageInfo`。微信可能要求用户确认收款；接口受理或返回 `packageInfo` 不代表款项已到账。最终状态以后端查单/微信转账通知为准。网络超时或结果未知时，必须用相同 `outBillNo` 重试，不得换单号重复打款。转账记录会写入统一用户转账明细，可在平台现有查询能力中查看。
+成功响应包含 `clientOrderNo`、微信返回的 `outBillNo`、`transferBillNo`、`state`、`createTime` 和 `packageInfo`。当前 `outBillNo` 与 `clientOrderNo` 相同。微信可能要求用户确认收款；接口受理或返回 `packageInfo` 不代表款项已到账。最终状态以后端查单/微信转账通知为准。网络超时或结果未知时，必须用相同 `clientOrderNo` 重试，不得换单号重复打款。转账记录会写入统一用户转账明细，可在平台现有查询能力中查看。
 
 ## 状态字段
 
@@ -318,7 +319,7 @@ Content-Type: application/json
 
 时间字段 `expireTime`、`paidTime`、`refundTime` 可能为空；除 `expireTime` 外，支付或退款尚未进入对应终态时相关时间为空。
 
-## 支付结果 Webhook
+## 支付与转账结果 Webhook
 
 管理员在当前租户对应的支付渠道配置中维护 Webhook 地址。平台确认支付成功、支付失败、支付关闭或退款成功后，会创建对应事件并向该地址发送明文 JSON `POST`；不添加应用层签名或加密。AdaPay 预支付请求创建成功不会单独触发支付成功 Webhook；必须等实际支付状态被平台确认。生产环境请配置 HTTPS 接收地址。
 
@@ -342,6 +343,24 @@ X-OpenAPI-Event-Id: <eventId>
 ```
 
 Webhook 的 `eventType` 枚举值为 `payment.succeeded`、`payment.failed`、`payment.closed`、`payment.refunded`；`payType` 为 `weixin` 或 `adapay`；`status` 为 `PENDING`、`SUCCESS`、`FAILED`、`CLOSED`；`refundStatus` 为 `NOT_REFUNDED`、`PROCESSING`、`SUCCESS`、`FAILED`。接收端应先持久化事件，再返回任意 `2xx`；用 `eventId` 做幂等去重。平台按至少一次方式投递，同一事件可能重复到达，事件 ID 在重试时保持不变。
+
+微信商家转账进入终态后，平台也会向同一 Webhook 地址发送统一的转账事件。所有转账终态使用相同结构，通过 `eventType` 和 `state` 表达结果：
+
+```json
+{
+  "eventId": "0db4aa9400004...",
+  "eventType": "transfer.succeeded",
+  "clientOrderNo": "transfer-20261107-001",
+  "outBillNo": "transfer-20261107-001",
+  "transferBillNo": "wx-transfer-bill-no",
+  "state": "SUCCESS",
+  "amount": 1000,
+  "currency": "CNY",
+  "occurredAt": "2026-11-07T10:20:00"
+}
+```
+
+转账事件类型为 `transfer.succeeded`、`transfer.failed`、`transfer.cancelled`，分别对应微信终态 `SUCCESS`、`FAIL`、`CANCELLED`。`clientOrderNo` 是调用方业务单号，`outBillNo` 是微信商户单号（当前两者相同）；`amount` 单位为人民币分。消息不包含 OpenID、`packageInfo` 或商户凭据。接收端按 `eventId` 幂等去重，并在成功处理后返回 `2xx`。
 
 首次投递在后台任务调度后执行，非 `2xx` 或网络错误会重试，单次连接/读取/调用超时为 5 秒。最多投递 8 次，失败重试间隔为 1 分钟、5 分钟、30 分钟、2 小时、6 小时、12 小时、24 小时。超过次数后停止自动投递。接收地址必须是标准 HTTP/HTTPS 地址（80/443 端口），并解析到公网 IP；平台不跟随重定向。
 

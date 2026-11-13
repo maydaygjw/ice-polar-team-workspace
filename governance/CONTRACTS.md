@@ -1,5 +1,11 @@
 # 跨模块接口契约索引
 
+## 第三方支付 OpenAPI 转账
+
+- `POST /open-api/v1/payments/transfers` 请求以 `clientOrderNo` 表示第三方转账业务单号，保持与支付 OpenAPI 一致；响应返回 `clientOrderNo`，微信商户单号作为平台/渠道字段 `outBillNo`。同一租户和客户端内该标识唯一，并继续复用为微信 `out_bill_no`，相同请求重试保持幂等。
+- 转账终态 Webhook 复用支付 Webhook outbox 和配置地址；事件类型为 `transfer.succeeded`、`transfer.failed`、`transfer.cancelled`。通用转账 JSON 包含 `eventId`、`eventType`、`clientOrderNo`、`outBillNo`、`transferBillNo`、`state`、`amount`（人民币分）、`currency`、`occurredAt`。不含 OpenID、`packageInfo` 或渠道凭据；按 `X-OpenAPI-Event-Id` / `eventId` 去重，投递和重试规则与支付事件一致。
+- 微信转账回调及查单状态变更幂等更新统一转账记录；终态变化为 OpenAPI 转账单创建唯一 outbox 事件并投递到当前租户支付配置的 OpenAPI Webhook 地址。详见[第三方支付 OpenAPI 契约](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md#商家转账-dto)。
+
 ## 分账收款人结算中的平台商户
 
 - 收款人结算任务目标按收款人、Member ID 和结算账户区分；同一目标绑定多个店铺时只向 AdaPay 查询一次。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#任务收款人结果表)。

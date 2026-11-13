@@ -18,7 +18,7 @@
 | `GET /open-api/v1/payments/{paymentId}` | `payment` | 查询当前客户端的支付单及退款状态。 |
 | `GET /open-api/v1/payments/by-client-order/{clientOrderNo}` | `payment` | 按第三方业务订单号查询。 |
 | `POST /open-api/v1/payments/{paymentId}/refund` | `payment` | 申请全额原路退款；要求 `Idempotency-Key`。 |
-| `POST /open-api/v1/transfers` | `payment` | 通过当前租户已配置的微信商户向用户发起转账；要求 `Idempotency-Key`。 |
+| `POST /open-api/v1/payments/transfers` | `payment` | 通过当前租户已配置的微信商户向用户发起转账；请求以 `clientOrderNo` 标识第三方业务单号，与支付接口统一。 |
 
 ### 支付创建 DTO
 
@@ -71,10 +71,10 @@
 }
 ```
 
-- `amount` 是人民币分的正整数，只接受 `CNY`。`userId` 为平台会员 ID，必须属于当前 token 租户且存在小程序 `routineOpenid`；`clientOrderNo` 在同一 OAuth2 客户端内唯一。同单同内容重试返回原转账单，同订单号或幂等键对应的会员、金额或备注不一致返回 `409`。
+- `amount` 是人民币分的正整数，只接受 `CNY`。`userId` 为平台会员 ID，必须属于当前 token 租户且存在指定类型微信 OpenID；`clientOrderNo` 在同一 OAuth2 客户端内唯一。同单重试复用原微信商户单号；已存在业务单号的会员、金额或 OpenID 类型不一致返回 `409`。`clientOrderNo` 同时作为微信 `out_bill_no` 使用，因此遵循 1–32 位字母、数字、下划线或连字符格式。
 - API 不接受 OpenID。Pay 模块从当前租户会员记录读取 `routineOpenid`，并确认其对应当前配置的小程序 AppID；会员不存在、跨租户或缺少小程序 OpenID 时拒绝发起。OpenID 不写入 OpenAPI 关联记录或普通日志。
 - AppID、商户号、商户密钥、转账场景 ID、场景报备信息及 `notifyUrl` 均由平台读取当前租户微信支付配置，不接受调用方覆盖。商家转账能力、场景报备或转账开关未配置时拒绝发起。
-- 响应包括 `outBillNo`、`transferBillNo`、`clientOrderNo`、`amount`、`currency`、`state`、`appId`、`mchId` 和 `packageInfo`。`packageInfo` 供第三方小程序调用微信用户确认收款能力；接口受理和返回 `packageInfo` 均不表示到账。为支持相同请求幂等重试恢复原响应，`packageInfo` 仅短期保存并在有效期后清理。
+- 响应包括 `clientOrderNo`、`outBillNo`、`transferBillNo`、`amount`、`currency`、`state`、`appId`、`mchId` 和 `packageInfo`。`clientOrderNo` 是第三方业务单号；当前实现中它原样复用为微信 `out_bill_no`，故 `outBillNo` 响应字段与之相同。`packageInfo` 供第三方小程序调用微信用户确认收款能力；接口受理和返回 `packageInfo` 均不表示到账。为支持相同请求幂等重试恢复原响应，`packageInfo` 仅短期保存并在有效期后清理。
 - `state` 复用平台商家转账状态：`ACCEPTED`、`PROCESSING`、`WAIT_USER_CONFIRM`、`TRANSFERING`、`SUCCESS`、`FAIL`、`CANCELING`、`CANCELLED`。仅 `SUCCESS` 表示到账成功；失败/撤销终态由 Webhook 通知。
 - 本期只提供转账发起接口，不提供独立查询或撤销接口；最终状态通过下文定义的 Webhook 通知。
 
@@ -90,7 +90,7 @@ JSON 请求只接收 `reason`（可选）；退款幂等键通过 `Idempotency-K
 
 - 接收地址由管理员在支付配置页面维护；只接受 HTTP/HTTPS，禁止创建支付请求动态覆盖地址。Webhook 以 JSON 明文 POST，不另加签名或加密。
 - 事件类型：`payment.succeeded`、`payment.failed`、`payment.closed`、`payment.refunded`、`transfer.succeeded`、`transfer.failed`、`transfer.cancelled`。
-- 支付 JSON 载荷含 `eventId`、`eventType`、`payType`、`paymentId`、`clientOrderNo`、`status`、`refundStatus`、`amount`、`currency`、`occurredAt`。转账载荷含 `eventId`、`eventType`、`outBillNo`、`transferBillNo`、`clientOrderNo`、`state`、`amount`、`currency`、`occurredAt`。状态值使用 OpenAPI 稳定枚举；不得在通知载荷中包含 OpenID、`packageInfo` 或商户凭据。
+- 支付 JSON 载荷含 `eventId`、`eventType`、`payType`、`paymentId`、`clientOrderNo`、`status`、`refundStatus`、`amount`、`currency`、`occurredAt`。所有转账终态共用统一载荷：`eventId`、`eventType`、`clientOrderNo`、`outBillNo`、`transferBillNo`、`state`、`amount`、`currency`、`occurredAt`。`clientOrderNo` 是调用方业务单号，`outBillNo` 是微信商户单号（当前与 `clientOrderNo` 相同）。状态值使用 OpenAPI 稳定枚举；不得在通知载荷中包含 OpenID、`packageInfo` 或商户凭据。终态事件依据已验签微信通知或平台查单状态变更生成，同状态重复通知不重复创建事件。
 - 请求头包含 `X-OpenAPI-Event-Id`；接收端使用 `eventId` 去重并在成功处理后返回 2xx。使用明文 HTTP/HTTPS 传输。
 - 平台至少一次投递；首次状态变化后立即发送，HTTP 超时为 5 秒，未收到 2xx 时最多投递 8 次，重试间隔依次为 1 分钟、5 分钟、30 分钟、2 小时、6 小时、12 小时和 24 小时。耗尽后记录为失败，可重放同一事件（保持相同 `eventId` 和载荷）。
 
@@ -112,8 +112,8 @@ JSON 请求只接收 `reason`（可选）；退款幂等键通过 `Idempotency-K
 
 - 在 `merchant_details` 增加 OpenAPI 启用标识和 webhook 地址；按租户及渠道读取支付配置。移除 `system_open_api_client_config`。
 - 新增 `pay_open_api_order`：第三方订单与平台支付单关联，包含 `pay_type` 渠道字段；创建幂等键及请求摘要、金额币种、状态、退款幂等键及退款快照。`pay_type` 复用 `pay_out_order_no.pay_type` 值；支持微信 V3 与 Adapay。唯一键 `(tenant_id, client_id, client_order_no)`、`(tenant_id, client_id, create_idempotency_key)` 和 `(tenant_id, payment_id)`。
-- 新增 `pay_open_api_webhook_event`：唯一事件 ID、资源类型/ID、事件载荷、尝试次数、状态、下次重试时间和最后错误摘要；`(tenant_id, resource_type, resource_id, event_type)` 唯一约束保证支付或转账的同一状态事件只创建一次。
-- 新增 `pay_open_api_transfer`：按租户/client/第三方订单号关联会员 ID、统一用户转账记录、微信商户单号和最终状态；唯一键 `(tenant_id, client_id, client_order_no)`、`(tenant_id, client_id, idempotency_key)`。不存 OpenID；`package_info` 如用于幂等响应恢复，仅短期保存并过期清理。
+- `pay_open_api_webhook_event` 使用通用 `resource_type` / `resource_id` 关联 `PAYMENT` 或 `TRANSFER` 资源；唯一事件 ID、事件载荷、尝试次数、状态、下次重试时间和最后错误摘要；`(tenant_id, resource_type, resource_id, event_type)` 唯一约束保证支付或转账的同一状态事件只创建一次。
+- OpenAPI 转账关联信息保存在统一用户转账记录中，增加可空的 `client_id`、`client_order_no`、`payment_details_id` 字段关联调用方和当前支付配置；唯一键 `(tenant_id, client_id, client_order_no)`、`(tenant_id, client_id, idempotency_key)`。不存 OpenID；`package_info` 如用于幂等响应恢复，仅短期保存并过期清理。
 - `system_oauth2_client` 使用标准租户字段与 MyBatis 租户拦截器隔离；管理页面不需要增加租户选择。租户拦截器在创建客户端时写入当前租户，并在查询、认证时只允许访问当前租户的数据。迁移时将历史全局客户端归入租户 1。
 - 复用 `system_oauth2_client.scopes` 保存客户端已授予 scope；管理页面用逗号分隔文本维护，接口按已实现的 scope 校验。
 - 迁移放在 `backend/sql/migrations/`；新增 `merchant_details` 字段并删除旧的 `system_open_api_client_config`。保留支付单和 Webhook 事件表。
@@ -132,7 +132,7 @@ JSON 请求只接收 `reason`（可选）；退款幂等键通过 `Idempotency-K
 
 - 微信支付回调继续使用现有 `WxPayMessageHandler` 完成验签/解密，并沿用 `order.pay.notice` 支付结果消息；商家转账终态 `MCHTRANSFER.BILL.FINISHED` 由同一通知入口分流到转账处理器。
 - `bizType=open_api` 的记录由 pay 模块 OpenAPI 专用消费组处理；更新状态幂等，不进入 mall 订单履约消费者。
-- 支付/退款/转账状态转移与 Webhook outbox 入库保持原子；HTTP 投递由后台任务处理，不在渠道回调线程调用外部系统。
+- 支付/退款/转账状态转移与 Webhook outbox 入库保持原子；HTTP 投递由后台任务处理，不在渠道回调线程调用外部系统。Webhook outbox 调度器按资源类型从支付配置解析统一回调地址。
 - 超时/网络失败/非 2xx 采用有限退避重试；对同一状态重复回调不重复创建事件。超限后告警并保留可人工安全重放的投递记录。
 
 ## 兼容性
