@@ -82,7 +82,7 @@
 ## 按日期和店铺批量生成或重新生成应收应付
 
 - 应收应付管理页提供独立的批量生成入口，按单个支付日期及 1–1000 个店铺筛选本地订单；仅处理当前租户下已支付、未退款或退款已拒绝、状态为待评价/已完成的订单。默认仅处理订单表 `receivable_payable_generated=false` 的订单；勾选“重新生成”时也纳入已生成订单，并按当前计费模板重算。已存在不可重算的进行中/成功分账记录的应收应付保持不变。
-- `POST /admin-api/pay/receivable-payable/generation-tasks` 使用 `pay:receivable-payable:generate` 权限，接收 `{ "payDate": "YYYY-MM-DD", "shopIds": [1, ...], "regenerate": false }` 并快速返回任务 ID。省略 `regenerate` 等同 `false`。生成在后台逐单执行，任务进度持久化；`GET /admin-api/pay/receivable-payable/generation-tasks/{id}` 仅允许创建任务的当前租户/用户读取，返回状态、总数、已处理数、成功数、跳过数、失败数及进度百分比。任务终态为 `SUCCESS`（无失败）或 `COMPLETED_WITH_ERRORS`（存在失败）。
+- `POST /admin-api/pay/receivable-payable/generation-tasks` 使用 `pay:receivable-payable:generate` 权限，接收 `{ "payDate": "YYYY-MM-DD", "shopIds": [1, ...], "regenerate": false }` 并快速返回任务 ID。省略 `regenerate` 等同 `false`。生成在后台逐单执行，任务进度持久化；`GET /admin-api/pay/receivable-payable/generation-tasks/{id}` 仅允许创建任务的当前租户/用户读取，返回状态、总数、已处理数、成功数、跳过数、失败数及进度百分比。`POST /admin-api/pay/receivable-payable/generation-tasks/{id}/cancel` 使用相同权限，只能中断当前用户在当前租户创建的任务。任务终态还包括 `CANCELLED`；收到中断请求后，在当前订单处理完成时停止，已完成订单保留结果，未处理订单不再执行。
 - 一个租户同一时刻最多运行一个此类任务。任务按订单主键游标扫描和现有计费幂等逻辑执行，单笔失败不阻断后续订单。管理端轮询进度，任务运行期间冻结生成表单和页面操作并展示进度；页面刷新后可继续查询该用户未完成的任务。
 - `OrderApi` 的候选订单查询增加是否包含已生成订单的参数；仍由订单模块负责租户隔离和订单筛选，Pay 模块不直接访问订单表。
 - 详见[按日期和店铺批量生成应收应付契约](feature-docs/2026-11-10-batch-receivable-payable-generation/contract-changes.md)。
@@ -91,7 +91,7 @@
 
 - 订单结算管理页为 AdaPay 订单提供“同步分账状态”操作；后端按当前租户调用 AdaPay 查询支付确认对象。已有本地分账记录时，读取相关支付确认并同步远端状态、手续费；远端返回完整 `div_members` 时，在单一事务内以远端明细替换本地明细，本地分账主记录及支付级记录保留。拼单中已回退到本地 Revenue 的支付级明细保留，其余支付级明细按各自 AdaPay 确认重建。远端明细缺失时只更新状态和手续费，保留已有明细；查询失败或无有效确认时不改写本地记录。若尚无本地分账记录，则按订单支付流水号查询并导入查询结果。
 - 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（0 未结算、1 待分账、2 分账中、3 已结算、4 分账失败）；确认列表为空时返回 0。远端 Member ID 为 `0` 时分账角色记为“平台”，不据此匹配平台级收款人；其他 Member ID 可按租户和 Member ID 匹配启用的平台级收款人，或按该订单店铺的有效绑定历史匹配店铺级收款人。候选收款人不唯一时不猜测归属。同步读取 AdaPay `div_members[].fee_flag` 更新本地明细 `feeFlag`，并读取支付确认的 `fee_amt` 保存手续费金额；详情将手续费金额显示在承担手续费的明细行。未查询到金额时响应 `null`。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
-- 管理后台可提交一个支付日期和最多 1000 家店铺，创建异步分账状态同步任务；任务复用应收应付生成任务表并通过 `task_type` 区分，逐单复用 AdaPay 状态同步规则并持久化进度，页面轮询且刷新后恢复。订单模块仅提供通用的按支付日期、店铺、支付方式、退款状态及主键游标查询已支付订单的 `OrderApi`；Pay 模块传入 AdaPay 支付方式及可选退款状态。结算状态同步只选取退款正常或已驳回（`refund_status` 0、3）的订单，排除退款中或已退款订单；不由订单模块提供结算专用查询，也不由 Pay 模块直接访问订单表。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
+- 管理后台可提交一个支付日期和最多 1000 家店铺，创建异步分账状态同步任务；任务复用应收应付生成任务表并通过 `task_type` 区分，逐单复用 AdaPay 状态同步规则并持久化进度，页面轮询且刷新后恢复。`POST /admin-api/pay/receivable-payable/sync-settlement-status/tasks/{id}/cancel` 使用 `order:settlement:query` 权限，只能中断当前用户在当前租户创建的任务；中断请求在当前订单同步完成后生效，已完成同步结果保留。订单模块仅提供通用的按支付日期、店铺、支付方式、退款状态及主键游标查询已支付订单的 `OrderApi`；Pay 模块传入 AdaPay 支付方式及可选退款状态。结算状态同步只选取退款正常或已驳回（`refund_status` 0、3）的订单，排除退款中或已退款订单；不由订单模块提供结算专用查询，也不由 Pay 模块直接访问订单表。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 - `GET /order/store-order/settlement-page` 响应增加 `estimatedPaymentDate`（`date | null`），仅对已成功分账且有 `sharingTime` 的订单，按当前 AdaPay 结算策略推算；详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 
 ## 订单结算管理商圈筛选
