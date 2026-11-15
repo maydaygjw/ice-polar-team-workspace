@@ -1,6 +1,6 @@
 # 第三方支付 OpenAPI
 
-本文供接入平台支付能力的第三方后端开发者和平台管理员使用，说明 OAuth2 客户端令牌、微信/AdaPay 支付、支付查询、AdaPay 结算、全额退款、微信商家转账及支付/转账结果 Webhook。
+本文供接入平台支付能力的第三方后端开发者和平台管理员使用，说明 OAuth2 客户端令牌、微信/AdaPay 支付、支付查询、AdaPay 结算、全额退款、分账收款人同步、微信商家转账及支付/转账结果 Webhook。
 
 第三方后端通过本 API 创建和管理支付单；付款人通过所选渠道完成付款。平台不提供托管收银页面，第三方不需要维护支付商户密钥或证书。
 
@@ -33,9 +33,9 @@ OpenAPI 不接受请求方提交的商户号、密钥、证书、支付配置 ID
 
 | Scope | 能力 |
 |---|---|
-| `payment` | 创建、查询微信/AdaPay 支付单、结算 AdaPay 支付单、申请全额原路退款，以及向当前租户会员发起微信商家转账 |
+| `payment` | 创建、查询微信/AdaPay 支付单、结算 AdaPay 支付单、申请全额原路退款、同步 AdaPay 分账收款人，以及向当前租户会员发起微信商家转账 |
 
-令牌请求的 `scope` 可省略；省略时授予客户端登记的全部 scope。显式请求 scope 时，所有 scope 必须已由客户端精确授权。支付接口统一检查 `payment` scope。scope 配置不支持通配符。令牌只代表第三方客户端，不是会员或管理员身份。客户端凭证、访问令牌和支付渠道参数均不得写入日志。
+令牌请求的 `scope` 可省略；省略时授予客户端登记的全部 scope。显式请求 scope 时，所有 scope 必须已由客户端精确授权。支付 OpenAPI 及分账收款人同步接口统一检查 `payment` scope，暂不细分 scope。scope 配置不支持通配符。令牌只代表第三方客户端，不是会员或管理员身份。客户端凭证、访问令牌和支付渠道参数均不得写入日志。
 
 ## 获取访问令牌
 
@@ -248,6 +248,57 @@ Content-Type: application/json
 ```
 
 响应仍为支付单对象，其中 `refundStatus` 表示退款进度。`PROCESSING` 仅表示平台已提交退款，不代表渠道已完成退款；继续查询支付单，直到得到 `SUCCESS` 或 `FAILED`。退款处理中或已成功时，只能使用原退款幂等键重复提交；不同键会被拒绝。
+
+## 同步 AdaPay 分账收款人
+
+`POST /open-api/v1/profit-recipients/sync`
+
+需要 `payment` scope，且当前租户的 AdaPay 支付配置必须启用“允许外部 OpenAPI 调用”。该接口从当前租户 AdaPay 配置查询 Member 及结算账户，并将资料同步到本地分账收款人；不会发起分账或收款操作。请求中不传租户 ID、client ID 或 AdaPay 凭据。
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|:---:|---|
+| `memberId` | string | 是 | AdaPay Member ID；平台商户使用字符串 `"0"` |
+| `memberType` | integer | 是 | Member 类型：`0` 平台商户、`1` 个人、`2` 企业；平台商户仅允许 `memberId="0"` |
+| `recipientType` | integer | 条件必填 | 本地尚不存在该 Member 时必填：`1` 平台级、`2` 店铺级；已存在时沿用本地收款人类型 |
+| `role` | integer | 条件必填 | 新建平台级收款人时必填：`1` 平台、`2` 配送方、`3` 销售方 |
+| `shopIds` | array of integer | 否 | 店铺级收款人可选的店铺 ID 列表；店铺必须属于当前租户。平台商户和平台级收款人不能关联店铺 |
+
+请求示例：
+
+```http
+POST /open-api/v1/profit-recipients/sync
+Authorization: Bearer <access-token>
+tenant-id: 1001
+Content-Type: application/json
+
+{
+  "memberId": "m_123_company",
+  "memberType": 2,
+  "recipientType": 2,
+  "shopIds": [10001, 10002]
+}
+```
+
+成功响应中的 `data` 是本地分账收款人 ID：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": 123456
+}
+```
+
+平台商户同步示例：
+
+```json
+{
+  "memberId": "0",
+  "memberType": 0
+}
+```
+
+新导入的收款人默认禁用；请在平台管理后台确认资料并启用后再用于平台分账。相同租户和 Member ID 会复用已有本地收款人。调用方应以相同租户下 AdaPay 已创建的 Member ID 发起同步。
 
 ## 向用户发起微信商家转账
 
