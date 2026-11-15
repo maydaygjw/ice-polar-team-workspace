@@ -261,7 +261,7 @@ Content-Type: application/json
 | `memberType` | integer | 是 | Member 类型：`0` 平台商户、`1` 个人、`2` 企业；平台商户仅允许 `memberId="0"` |
 | `recipientType` | integer | 条件必填 | 本地尚不存在该 Member 时必填：`1` 平台级、`2` 店铺级；已存在时沿用本地收款人类型 |
 | `role` | integer | 条件必填 | 新建平台级收款人时必填：`1` 平台、`2` 配送方、`3` 销售方 |
-| `shopIds` | array of integer | 否 | 店铺级收款人可选的店铺 ID 列表；店铺必须属于当前租户。平台商户和平台级收款人不能关联店铺 |
+| `shopIds` | array of integer | 否 | 店铺级收款人可选的店铺 ID 列表；OpenAPI 不校验用户门店数据权限，但店铺必须属于当前 token 租户。平台商户和平台级收款人不能关联店铺 |
 
 请求示例：
 
