@@ -79,11 +79,12 @@
 - 支付计费模块每日扫描候选订单，仅对没有应收应付主记录或状态为 `FAILED` 的记录执行计算；失败记录允许后续日任务重试。订单状态流转不再同步调用计费模块。
 - 详见[订单应收应付每日补算契约](feature-docs/2026-11-06-daily-order-billing/contract-changes.md)。
 
-## 按日期和店铺批量生成应收应付
+## 按日期和店铺批量生成或重新生成应收应付
 
-- 应收应付管理页提供独立的批量生成入口，按单个支付日期及 1–100 个店铺筛选本地订单；仅处理当前租户下订单表 `receivable_payable_generated=false`、已支付、未退款或退款已拒绝、状态为待评价/已完成的订单。该订单表标志是唯一生成资格标记，已为 `true` 的订单必须跳过。
-- `POST /admin-api/pay/receivable-payable/generation-tasks` 使用 `pay:receivable-payable:generate` 权限，接收 `{ "payDate": "YYYY-MM-DD", "shopIds": [1, ...] }` 并快速返回任务 ID。生成在后台逐单执行，任务进度持久化；`GET /admin-api/pay/receivable-payable/generation-tasks/{id}` 仅允许创建任务的当前租户/用户读取，返回状态、总数、已处理数、成功数、跳过数、失败数及进度百分比。任务终态为 `SUCCESS`（无失败）或 `COMPLETED_WITH_ERRORS`（存在失败）。
+- 应收应付管理页提供独立的批量生成入口，按单个支付日期及 1–100 个店铺筛选本地订单；仅处理当前租户下已支付、未退款或退款已拒绝、状态为待评价/已完成的订单。默认仅处理订单表 `receivable_payable_generated=false` 的订单；勾选“重新生成”时也纳入已生成订单，并按当前计费模板重算。已存在不可重算的进行中/成功分账记录的应收应付保持不变。
+- `POST /admin-api/pay/receivable-payable/generation-tasks` 使用 `pay:receivable-payable:generate` 权限，接收 `{ "payDate": "YYYY-MM-DD", "shopIds": [1, ...], "regenerate": false }` 并快速返回任务 ID。省略 `regenerate` 等同 `false`。生成在后台逐单执行，任务进度持久化；`GET /admin-api/pay/receivable-payable/generation-tasks/{id}` 仅允许创建任务的当前租户/用户读取，返回状态、总数、已处理数、成功数、跳过数、失败数及进度百分比。任务终态为 `SUCCESS`（无失败）或 `COMPLETED_WITH_ERRORS`（存在失败）。
 - 一个租户同一时刻最多运行一个此类任务。任务按订单主键游标扫描和现有计费幂等逻辑执行，单笔失败不阻断后续订单。管理端轮询进度，任务运行期间冻结生成表单和页面操作并展示进度；页面刷新后可继续查询该用户未完成的任务。
+- `OrderApi` 的候选订单查询增加是否包含已生成订单的参数；仍由订单模块负责租户隔离和订单筛选，Pay 模块不直接访问订单表。
 - 详见[按日期和店铺批量生成应收应付契约](feature-docs/2026-11-10-batch-receivable-payable-generation/contract-changes.md)。
 
 ## 订单结算状态远端同步
