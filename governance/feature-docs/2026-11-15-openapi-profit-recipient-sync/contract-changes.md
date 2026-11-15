@@ -8,6 +8,7 @@
 - 服务端从当前 OAuth token 取得租户，不接受租户 ID、client ID、AdaPay 配置或凭据作为请求字段；服务端使用当前租户 AdaPay 配置向 AdaPay 查询 Member 和结算账户，并复用本地同步逻辑。
 - 成功响应为本地收款人 ID（Long），新导入的收款人默认禁用。同步操作对同一租户和 Member ID 复用已有记录，不创建重复收款人。
 - `400` 表示请求不合法或同步数据不满足业务规则；`401` 表示 token 无效；`403` 表示客户端无 scope 或 AdaPay OpenAPI 配置未启用；AdaPay 暂时不可用时返回平台标准服务端错误。
+- `GET /open-api/v1/profit-recipients/by-member/{memberId}`：按 AdaPay Member ID 查询当前租户本地收款人，使用相同 `payment` scope 和 AdaPay OpenAPI 配置门槛。成功响应只包括本地 ID、Member ID/类型、收款人类型/角色/名称、状态、结算账户绑定状态、企业审核状态和当前绑定店铺 ID；不返回身份证、银行卡或完整结算账户资料。记录不存在时返回收款人不存在错误。
 
 ## 权限和隔离
 

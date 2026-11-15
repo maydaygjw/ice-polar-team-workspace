@@ -15,6 +15,7 @@
 ## 分账收款人结算中的平台商户
 
 - 第三方可通过 `POST /open-api/v1/profit-recipients/sync` 将当前租户 AdaPay 收款人同步到本地；要求 OAuth2 client token 具有 `payment` scope，且当前租户 AdaPay 支付配置已启用 OpenAPI。请求包含 `memberId`、`memberType`，以及本地新建收款人所需的 `recipientType`、`role`、可选 `shopIds`；平台商户 `memberId=0` 使用 `memberType=0`。服务端按 token 租户查询 AdaPay Member/结算账户并复用现有收款人同步规则，响应返回本地收款人 ID，新导入收款人默认禁用。不得接受调用方传入租户 ID 或 AdaPay 凭据。详见[分账收款人 OpenAPI 同步契约](feature-docs/2026-11-15-openapi-profit-recipient-sync/contract-changes.md)。
+- 第三方可通过 `GET /open-api/v1/profit-recipients/by-member/{memberId}` 按 AdaPay Member ID 查询当前租户本地收款人，使用相同的 `payment` scope 和 AdaPay OpenAPI 配置门槛。只返回本地收款人 ID、Member ID/类型、收款人级别/角色/名称、启用状态、结算账户绑定状态、企业审核状态及当前店铺 ID，不返回身份证、银行卡等敏感资料；本地记录不存在时按收款人不存在错误返回。详见[分账收款人 OpenAPI 同步契约](feature-docs/2026-11-15-openapi-profit-recipient-sync/contract-changes.md)。
 
 - 收款人结算任务目标按收款人、Member ID 和结算账户区分；同一目标绑定多个店铺时只向 AdaPay 查询一次。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#任务收款人结果表)。
 - 汇总响应为店铺级收款人增加 `shopNames`，返回其当前绑定的全部可访问店铺名称；`shopName` 仍是汇总行对应的历史店铺快照。非店铺级主体的 `shopNames` 为空。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#汇总查询)。

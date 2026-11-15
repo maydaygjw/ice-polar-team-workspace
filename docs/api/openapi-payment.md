@@ -300,6 +300,39 @@ Content-Type: application/json
 
 新导入的收款人默认禁用；请在平台管理后台确认资料并启用后再用于平台分账。相同租户和 Member ID 会复用已有本地收款人。调用方应以相同租户下 AdaPay 已创建的 Member ID 发起同步。
 
+### 按 Member ID 查询本地收款人
+
+`GET /open-api/v1/profit-recipients/by-member/{memberId}`
+
+需要 `payment` scope，且当前租户 AdaPay 配置已启用 OpenAPI。`memberId` 是 AdaPay Member ID，应按 URL 路径段编码。接口只查询当前租户的本地同步记录，不会向 AdaPay 发起查询；记录不存在时返回收款人不存在错误。
+
+```http
+GET /open-api/v1/profit-recipients/by-member/m_123_company
+Authorization: Bearer <access-token>
+tenant-id: 1001
+```
+
+成功响应只提供业务识别和同步状态，不返回身份证、银行卡号或完整结算账户资料：
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "id": 123456,
+    "memberId": "m_123_company",
+    "memberType": 2,
+    "recipientType": 2,
+    "role": null,
+    "recipientName": "示例商户",
+    "status": 0,
+    "settleAccountBound": 1,
+    "memberAuditState": "E",
+    "shopIds": [10001, 10002]
+  }
+}
+```
+
 ## 向用户发起微信商家转账
 
 `POST /open-api/v1/payments/transfers`
