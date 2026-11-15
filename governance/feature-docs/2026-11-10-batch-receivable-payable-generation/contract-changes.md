@@ -7,7 +7,7 @@
 | `POST /admin-api/pay/receivable-payable/generation-tasks` | `pay:receivable-payable:generate` | 创建异步生成任务。 |
 | `GET /admin-api/pay/receivable-payable/generation-tasks/{id}` | `pay:receivable-payable:generate` | 读取当前用户在当前租户创建的任务进度。 |
 
-创建请求为 `{ "payDate": "YYYY-MM-DD", "shopIds": [1, ...], "regenerate": false }`。`regenerate` 可省略，默认 `false`。`shopIds` 必填且去重后最多 100 个，服务端校验门店属于当前租户；日期是单个支付日期。响应返回 `taskId`。
+创建请求为 `{ "payDate": "YYYY-MM-DD", "shopIds": [1, ...], "regenerate": false }`。`regenerate` 可省略，默认 `false`。`shopIds` 必填且去重后最多 1000 个，服务端校验门店属于当前租户；日期是单个支付日期。响应返回 `taskId`。
 
 ## 处理规则
 
