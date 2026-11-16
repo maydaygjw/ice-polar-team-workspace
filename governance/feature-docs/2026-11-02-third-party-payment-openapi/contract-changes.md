@@ -55,7 +55,7 @@
 - JSAPI AppID 从当前租户唯一启用 OpenAPI 的微信小程序/公众号配置中取得；汇付使用当前租户启用的 Adapay H5 配置。请求体不允许选择渠道配置 ID。
 - 相同客户端、订单号、幂等键及相同的支付金额、订单金额属性、币种、标题和其他关键字段重试，返回同一支付单；同订单号或幂等键对应的关键内容不一致返回 `409`。旧请求省略新增计费字段时继续按旧字段摘要兼容重试。
 
-创建请求新增 `payType`（`weixin` 或 `adapay`，默认 `weixin`）。创建及查询响应包括 `paymentId`、`clientOrderNo`、`payType`、`amount`、`currency`、`status`、`expireTime`、`appId` 和 `paymentData`。`payType` 复用平台渠道值（支持 `weixin` 与 `adapay`）。`paymentData` 按渠道返回支付网关数据：微信包含 JSAPI 调起字段；汇付返回 AdaPay `WX_LITE` 小程序收银所需参数。微信和 AdaPay 请求均需提供 `payerOpenId`。
+创建请求新增 `payType`（`weixin` 或 `adapay`，默认 `weixin`）。创建及查询响应包括 `paymentId`、`clientOrderNo`、`payType`、`amount`、`currency`、`status`、`expireTime`、`appId` 和 `paymentData`。`payType` 复用平台渠道值（支持 `weixin` 与 `adapay`）。顶层 `appId` 始终表示实际调起微信支付的小程序/公众号 AppID：`weixin` 取微信商户配置的 `appid`，`adapay` 取 AdaPay 商户配置的 `subAppId`（即 `expend.wx_app_id`），不返回 AdaPay 控制台应用 `app_id`。`paymentData` 按渠道返回支付网关数据：微信包含 JSAPI 调起字段；汇付返回 AdaPay `WX_LITE` 小程序收银所需参数。微信和 AdaPay 请求均需提供 `payerOpenId`。
 
 ### 商家转账 DTO
 
