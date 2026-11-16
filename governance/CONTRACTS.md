@@ -271,7 +271,7 @@
 - [活动 H5 Ticket 认证](feature-docs/2026-09-15-activity-h5-auth/contract-changes.md)：已登录客户端通过一次性 ticket 安全进入 H5，兑换 backend Bearer Token。
 - [外卖用户画像](feature-docs/2026-10-19-member-user-profile/contract-changes.md)：新增租户隔离的画像数据、按订单频率和注册时间计算并持久化的用户阶段、由后端阶段枚举统一提供编码/中文名称/颜色及阶段选项接口、会员 ID 和主商圈代码展示与筛选、只读管理端分页查询和全量阶段分布统计。
 - [用户画像企微关联筛选](feature-docs/2026-10-20-user-profile-wecom-filter/contract-changes.md)：用户画像分页和阶段分布新增是否关联企业微信筛选，分页响应返回关联状态；后端按当前租户会员与企微联系人关系判定。
-- [活动报名管理画像展示](feature-docs/2026-10-20-activity-registration-profile-display/contract-changes.md)：报名分页响应补充期次奖品名称和会员用户阶段，用户阶段从当前租户关联会员的最新用户画像读取。
+- [活动报名管理画像展示](feature-docs/2026-10-20-activity-registration-profile-display/contract-changes.md)：报名分页响应补充期次奖品名称和会员用户阶段，用户阶段从当前租户关联会员的最新用户画像读取；新增 `activityNewcomer`，表示该报名是否为用户首次成功报名此活动模板。
 - [店铺商品导入异步确认](feature-docs/2026-10-28-store-product-import-async/contract-changes.md)：店铺商品导入预览和确认均改为后台异步处理，管理端通过现有查询接口跟踪 `PREVIEWING`、`DRAFT`、`PROCESSING`、`IMPORTED` 和 `FAILED` 状态。
 
 活动 H5 认证在 dev 环境额外支持 Mock Ticket：当 `yshop.security.mock-enable` 和
