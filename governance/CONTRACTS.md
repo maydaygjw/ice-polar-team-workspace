@@ -110,7 +110,7 @@
 
 - 订单结算管理页为 AdaPay 订单提供“同步分账状态”操作；后端按当前租户调用 AdaPay 查询支付确认对象。已有本地分账记录时，读取相关支付确认并同步远端状态、手续费；远端返回完整 `div_members` 时，在单一事务内以远端明细替换本地明细，本地分账主记录及支付级记录保留。拼单中已回退到本地 Revenue 的支付级明细保留，其余支付级明细按各自 AdaPay 确认重建。远端明细缺失时只更新状态和手续费，保留已有明细；查询失败或无有效确认时不改写本地记录。若尚无本地分账记录，则按订单支付流水号查询并导入查询结果。
 - 同步只查询远端既有支付确认，不创建或重试分账，响应为页面结算状态（0 未结算、1 待分账、2 分账中、3 已结算、4 分账失败）；确认列表为空时返回 0。远端 Member ID 为 `0` 时分账角色记为“平台”，不据此匹配平台级收款人；其他 Member ID 可按租户和 Member ID 匹配启用的平台级收款人，或按该订单店铺的有效绑定历史匹配店铺级收款人。候选收款人不唯一时不猜测归属。同步读取 AdaPay `div_members[].fee_flag` 更新本地明细 `feeFlag`，并读取支付确认的 `fee_amt` 保存手续费金额；详情将手续费金额显示在承担手续费的明细行。未查询到金额时响应 `null`。非 AdaPay 订单不适用。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
-- 管理后台可提交一个支付日期和最多 1000 家店铺，创建异步分账状态同步任务；任务复用应收应付生成任务表并通过 `task_type` 区分，逐单复用 AdaPay 状态同步规则并持久化进度，页面轮询且刷新后恢复。`POST /admin-api/pay/receivable-payable/sync-settlement-status/tasks/{id}/cancel` 使用 `order:settlement:query` 权限，只能中断当前用户在当前租户创建的任务；中断请求在当前订单同步完成后生效，已完成同步结果保留。订单模块仅提供通用的按支付日期、店铺、支付方式、退款状态及主键游标查询已支付订单的 `OrderApi`；Pay 模块传入 AdaPay 支付方式及可选退款状态。结算状态同步只选取退款正常或已驳回（`refund_status` 0、3）的订单，排除退款中或已退款订单；不由订单模块提供结算专用查询，也不由 Pay 模块直接访问订单表。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
+- 管理后台可提交一个支付日期和最多 1000 家店铺，创建异步分账状态同步任务；任务复用应收应付生成任务表并通过 `task_type` 区分，逐单复用 AdaPay 状态同步规则并持久化进度，页面轮询且刷新后恢复。`POST /admin-api/pay/receivable-payable/sync-settlement-status/tasks/{id}/cancel` 使用 `order:settlement:query` 权限，只能中断当前用户在当前租户创建的任务；中断请求在当前订单同步完成后生效，已完成同步结果保留。订单模块提供通用的订单支付信息单条及批量查询 API；Pay 模块用批量信息筛选 AdaPay 已支付且退款正常的自动结算候选。订单生成和状态同步使用通用的按支付日期、店铺、支付方式、退款状态及主键游标查询已支付订单的 `OrderApi`；Pay 模块传入 AdaPay 支付方式及可选退款状态。结算状态同步只选取退款正常或已驳回（`refund_status` 0、3）的订单，排除退款中或已退款订单；订单模块不提供结算专用查询，Pay 模块不直接访问订单表。详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 - `GET /order/store-order/settlement-page` 响应增加 `estimatedPaymentDate`（`date | null`），仅对已成功分账且有 `sharingTime` 的订单，按当前 AdaPay 结算策略推算；详见[订单结算管理契约](feature-docs/2026-07-13-order-settlement-management/contract-changes.md)。
 
 ## 订单结算管理商圈筛选
@@ -126,6 +126,7 @@
 
 ## 应收应付订单级结算对账
 
+- 店铺设置增加 `localSettlementEnabled`（是否本地结算，默认关闭），保存于 `yshop_store_shop`；生成应收应付时将该值快照冗余到 `yshop_pay_receivable_payable_order`，创建本地结算记录时再复制到 `yshop_adapay_profit_sharing_order`。历史快照按店铺标志回填。应收应付列表使用记录快照；关闭时禁止单笔、批量及自动本地结算，后台结算按钮置灰并提示订单不适用本地结算，结算状态通过同步结算数据流程更新。服务端结算入口校验应收应付快照，店铺配置变更不改写已有记录的结算适用性。
 - `GET /admin-api/pay/receivable-payable/page` 支持可选筛选参数 `businessRegionId`（商圈 ID）和 `shopIds`（店铺 ID 列表）；商圈 ID 作为快照冗余保存在应收应付主记录中，订单计费和 OpenAPI 计费保存对应店铺的商圈 ID，历史记录由迁移回填。商圈与店铺筛选均直接匹配应收应付主记录字段，分页列表和总数使用相同条件。管理后台使用 `ShopTagSelect` 多选店铺进行筛选。
 - 应收应付列表记录增加 `reconciliation_status`：`MATCHED`（一致）、`DIFFERENT`（有差异）、`PENDING`（结算未完成或缺少可比较明细）、`NOT_APPLICABLE`（已回退等不适用场景）。仅使用本地应收应付主体快照与本地分账结算记录比较，不在读取列表或明细时请求 AdaPay。店铺收入类应收主体（`subject_type=MERCHANT`）与实际店铺角色分账（`role=SHOP`）按订单店铺收入总额比较，不以应收快照中的店铺收款人 `recipientId` 作为匹配键；该快照仍保留其原分账收款人含义。平台及其他收款主体继续按收款人 ID 独立比较。
 - `GET /admin-api/pay/receivable-payable/page` 列表响应增加 `sharing_time`，取该应收应付记录关联的最新本地分账记录的实际分账时间；无分账记录或尚未分账时为 `null`。管理后台应收应付列表以“分账时间”列展示，时间格式为 `YYYY-MM-DD HH:mm:ss`。
@@ -133,6 +134,7 @@
 - 分页查询新增可选 `sharingTimeStart`、`sharingTimeEnd`（`YYYY-MM-DD`）日期参数，按关联的最新本地分账记录 `sharing_time` 筛选；起止日期均包含，无分账时间的记录不匹配日期筛选。分页结果与总数使用相同条件。管理后台店铺下拉支持输入搜索，分账日期使用日期范围筛选。
 - 分页查询新增可选 `payTimeStart`、`payTimeEnd`（`YYYY-MM-DD`）日期参数，按本地店铺订单 `pay_time` 或 OpenAPI 支付单 `paid_time` 筛选；起止日期均包含。分页结果与总数使用相同条件。管理后台应收应付页提供支付时间范围筛选。
 - 分页查询新增可选 `reconciliationStatus` 筛选参数，支持 `MATCHED`、`DIFFERENT`、`PENDING`、`NOT_APPLICABLE`；按现有订单级对账状态语义筛选，分页结果与总数均在对账状态过滤后计算。管理后台应收应付页提供对账状态下拉筛选。
+- 分页查询新增可选 `settlementStatus` 筛选参数：`0` 未结算、`1` 处理中、`2` 已成功、`3` 失败、`4` 已回退、`5` 退款中、`6` 已退款；状态按列表展示规则从最新本地分账记录及订单退款状态计算，分页结果与总数使用相同筛选条件。管理后台应收应付页提供结算状态下拉筛选。
 
 ## AdaPay 分账收款人同步
 
