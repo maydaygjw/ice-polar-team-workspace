@@ -180,6 +180,7 @@
 
 ## OpenAPI AdaPay 结算与对账
 
+- 新增每日外部结算状态同步任务：按前一日支付的 AdaPay 商城订单，且退款状态为正常或已驳回（`refund_status` 0、3），逐单复用管理后台“批量同步分账状态”的 AdaPay 查询和本地状态更新规则。任务每天执行一次，可通过 `handler_param` 配置租户与商圈代码，例如 `158:NT005,XTRJ001`；未配置时按当前任务租户的全部商圈处理。订单查询和 AdaPay 调用均在各自租户上下文中执行。
 - 商圈未配置 OpenAPI 默认店铺时仍允许创建支付；支付款直接由 AdaPay 商户（Member `0`）收取，不生成店铺计费和延迟分账记录。配置默认店铺时沿用其计费模板及分账快照规则。
 - 所有 OpenAPI AdaPay 支付（含无默认店铺的纯平台收款）均须向 AdaPay 传 `pay_mode=delay`；有默认店铺时按计费模板结算，无默认店铺时后续 PaymentConfirm 全额确认给平台商户 Member `0`。详见[第三方支付 OpenAPI 契约](feature-docs/2026-11-02-third-party-payment-openapi/contract-changes.md#支付创建-dto)。
 - AdaPay `WX_LITE` OpenAPI 支付要求请求提供 `payerOpenId`；后端从 AdaPay 商户配置的子 AppID 组装 `expend.open_id` 和 `expend.wx_app_id`，用于微信小程序支付。
