@@ -6,6 +6,10 @@
 - 新增 `POST /admin-api/pay/open-api-order/{id}/refund`，路径参数 `id` 为平台第三方支付订单 ID，请求体为 `{ "reason": "..." }`，响应复用 OpenAPI 支付响应中的 `refundStatus`、`refundTime`。接口由 `pay:open-api-order:refund` 权限保护，订单按当前租户读取并加锁。
 - 管理端复用现有 OpenAPI 退款业务处理、幂等、AdaPay/微信退款调用和回调状态更新；此入口只支持全额退款，不接受客户端 ID 参数，也不绕过 AdaPay 分账退款限制。详见 OpenAPI 支付退款实现。
 
+## 第三方订单管理
+
+- 管理后台新增第三方订单管理页，按当前租户分页读取 `pay_open_api_order`；支持按第三方订单号、客户端 ID、支付状态、退款状态、创建时间及支付时间筛选。响应展示第三方订单号、平台支付单号、渠道、金额/币种、商圈/门店快照、支付/退款状态及相关时间，不返回幂等键、请求摘要、支付调起数据或支付配置凭据。接口为 `GET /admin-api/pay/open-api-order/page`，使用 `pay:open-api-order:query` 权限；租户隔离由后端查询显式限定当前租户。
+
 ## 第三方支付 OpenAPI 转账
 
 - `POST /open-api/v1/payments/transfers` 请求以 `clientOrderNo` 表示第三方转账业务单号，保持与支付 OpenAPI 一致；响应返回 `clientOrderNo`，微信商户单号作为平台/渠道字段 `outBillNo`。同一租户和客户端内该标识唯一，并继续复用为微信 `out_bill_no`，相同请求重试保持幂等。
