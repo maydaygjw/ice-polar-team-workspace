@@ -29,6 +29,7 @@
 - 分账收款人结算汇总响应增加 `memberIdLast4`，取本地结算明细快照中 MemberId 的后四位；管理后台在收款人名称下展示为 `****后四位`，接口不返回完整 MemberId。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#汇总查询)。
 - 分账收款人结算汇总/明细查询新增 `MERCHANT` Tab，展示当前租户 AdaPay 商户自身的结算流水；只接受日期范围和汇总方式筛选，查询通过 `SettleAccount.detail` 固定传 `member_id=0`，不传 `settle_account_id`。
 - 每日采集和手工单日重拉除当前/历史分账收款人外，均增加一个商户自身采集目标。其本地快照使用 `recipient_type=3`、`recipient_id=0`、名称「平台商户」，不关联角色、店铺或绑定关系；与收款人及租户数据隔离。
+- 手工重拉分账收款人结算记录允许目标日期为今天或历史日期，拒绝未来日期；管理后台日期范围的开始、结束日期均可选今天。
 - 已完成的历史采集任务不会自动回填该主体；需对目标日期手动重拉。详细字段和筛选规则见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md)。
 
 ## 分账结算记录预计打款日期
