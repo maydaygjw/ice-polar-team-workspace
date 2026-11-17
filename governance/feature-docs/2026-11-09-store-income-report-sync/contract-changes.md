@@ -7,7 +7,7 @@
 `GET /admin-api/pay/profit-sharing-income/summary-page`
 
 - 权限：`pay:profit-sharing-income:query`（不变）。
-- 请求：沿用分页参数、`shopId`、`settlementDateStart`、`settlementDateEnd`，新增 `periodType`（`DAY`、`WEEK`、`MONTH`，缺省为 `DAY`）和可选 `shopIds` 多店铺筛选；日期两端包含。传入非空 `shopIds` 时仅返回所选店铺，且与当前用户可访问店铺范围取交集；省略或传空集合表示不过滤所选店铺。原 `shopId` 单店参数继续兼容。
+- 请求：沿用分页参数、`shopId`、`settlementDateStart`、`settlementDateEnd`，新增 `periodType`（`DAY`、`WEEK`、`MONTH`，缺省为 `DAY`）、可选 `shopIds` 多店铺筛选和可选 `paymentAmountMatchStatus`（`MATCHED`、`MISMATCH`、`UNAVAILABLE`）；日期两端包含。传入非空 `shopIds` 时仅返回所选店铺，且与当前用户可访问店铺范围取交集；省略或传空集合表示不过滤所选店铺。原 `shopId` 单店参数继续兼容。核对状态筛选在分页前执行。
 - 汇总行粒度为 `settlementDate + shopId + recipientId`，因此一个日期和店铺可返回多行。店铺级订单数、订单金额、收入、预计打款收入和预计打款笔数只在主收款人行返回；非主收款人行对应字段为 0。`paymentAmount` 是该收款人在当前店铺绑定范围内的净到账展示金额。`storePaymentAmount` 为同店铺同日所有非共享收款人净到账总额，仅用于主收款人行的店铺级打款金额核对。
 - 本地同步筛选该店铺当前主绑定和有效对账绑定（`binding_purpose=RECONCILIATION` 且 `mark_status=VALID`）；无效对账关系不纳入。同步只重建本地已采集结算明细，不请求 AdaPay。共享目标按租户、收款人、Member ID 和结算账户识别；若同一目标绑定多个不同店铺，则把完整净到账金额展示在每一家当前有效绑定店铺的对应收款人行，并通过 `sharedPaymentAmount` 标记共享金额。该金额不按店铺拆分，不计入 `storePaymentAmount`，跨店铺相加会重复统计；管理端须在金额旁显示「(共享)」。
 - 响应既有字段保持不变，新增：
@@ -26,10 +26,11 @@
 | `memberIdLast4` | `string \| null` | 收款人 MemberId 后四位；接口不返回完整 MemberId |
 | `bankCardLast4` | `string \| null` | 收款人银行卡后四位；接口不返回完整银行卡号 |
 | `storePaymentAmount` | `decimal` | 同店铺同日期全部非共享收款人的净到账总额；仅用于主行金额核对 |
+| `paymentAmountMatchStatus` | `string` | 主行核对状态：`MATCHED`（一致）、`MISMATCH`（不一致）、`UNAVAILABLE`（有共享打款且非共享到账为 0，无法单店核对） |
 
 `settlementDate` 和 `periodEndDate` 在周/月视图分别表示完整自然周或自然月的首日和末日。日期筛选两端包含，周/月视图会将命中的首尾周期扩展至完整自然周或自然月后查询和聚合；店铺周期内某些日期没有日报数据，不影响周期仍显示完整日期范围。汇总数值字段按日投影相加，分页发生在周期聚合之后。
 
-管理后台在日期旁展示非空 `nonWorkingDayLabel`。新增综合费率列，由主收款人行的 `incomeAmount / orderAmount` 计算，订单金额为 0 时显示 `—`。新增「打款金额核对」列，仅在主行按分比较 `estimatedPaymentIncome` 与 `storePaymentAmount`：相同显示一致图标，不同显示不一致图标；两项均为 0 时视为一致。
+管理后台在日期旁展示非空 `nonWorkingDayLabel`。新增综合费率列，由主收款人行的 `incomeAmount / orderAmount` 计算，订单金额为 0 时显示 `—`。新增「打款金额核对」列，仅在主行按分比较 `estimatedPaymentIncome` 与 `storePaymentAmount`：相同显示一致图标，不同显示不一致图标；两项均为 0 时视为一致。状态在日报投影中持久化，每次同步重算；周/月汇总和状态筛选根据聚合后的预测金额、非共享到账及共享金额重新判定。
 
 管理后台每位收款人单独一行，展示收款人姓名、银行卡后四位和 MemberId 后四位。订单及预测指标只显示在主收款人行；打款金额按收款人显示。`sharedPaymentAmount > 0` 时在该收款人的打款金额旁显示「(共享)」。共享目标的完整净到账金额展示在每一家当前绑定店铺，因此跨店铺求和不代表实际收款总额。金额核对只在主行按非共享到账总额比较。接口不返回完整银行卡号或完整 MemberId。
 
@@ -90,6 +91,7 @@
 | `payment_amount` | `DECIMAL(14,2)` | 非空，默认 0；实际成功净到账金额 |
 | `shared_payment_amount` | `DECIMAL(14,2)` | 非空，默认 0；`payment_amount` 中属于多店共享目标的金额子集 |
 | `store_payment_amount` | `DECIMAL(14,2)` | 非空，默认 0；非共享收款人店铺当日净到账总额，仅主行用于核对 |
+| `payment_amount_match_status` | `VARCHAR(16)` | 非空；`MATCHED`、`MISMATCH` 或 `UNAVAILABLE`，同步时按预测金额、非共享到账及共享金额重算 |
 | `creator` / `updater` | `VARCHAR(64)` | 审计用户 |
 | `create_time` / `update_time` | `DATETIME` | 创建和最近重建时间 |
 
@@ -103,7 +105,7 @@
 
 ### 迁移与回滚
 
-- 使用 `V2026111002__store_income_report_recipient_rows.sql` 扩展既有投影表和唯一键，并新增 `V2026111003__store_income_report_shared_payment_amount.sql` 保存共享金额子集；已执行的迁移不可修改。不新增权限数据。
+- 使用 `V2026111002__store_income_report_recipient_rows.sql` 扩展既有投影表和唯一键，`V2026111003__store_income_report_shared_payment_amount.sql` 保存共享金额子集，`V2026111701__store_income_report_payment_match_status.sql` 保存并回填核对状态；已执行的迁移不可修改。不新增权限数据。
 - 回滚代码时移除新增按钮权限及 API/页面；投影表可随回滚删除。投影数据可从本地源表重新生成，不含不可恢复的财务事实。
 - 不修改已经执行的 Flyway migration，不修改基线 SQL。
 
