@@ -105,7 +105,7 @@
 
 ### 迁移与回滚
 
-- 使用 `V2026111002__store_income_report_recipient_rows.sql` 扩展既有投影表和唯一键，`V2026111003__store_income_report_shared_payment_amount.sql` 保存共享金额子集，`V2026111701__store_income_report_payment_match_status.sql` 保存并回填核对状态；已执行的迁移不可修改。不新增权限数据。
+- 使用 `V2026111002__store_income_report_recipient_rows.sql` 扩展既有投影表和唯一键，`V2026111003__store_income_report_shared_payment_amount.sql` 保存共享金额子集，`V2026111704__store_income_report_payment_match_status.sql` 保存并回填核对状态；已执行的迁移不可修改。不新增权限数据。
 - 回滚代码时移除新增按钮权限及 API/页面；投影表可随回滚删除。投影数据可从本地源表重新生成，不含不可恢复的财务事实。
 - 不修改已经执行的 Flyway migration，不修改基线 SQL。
 
