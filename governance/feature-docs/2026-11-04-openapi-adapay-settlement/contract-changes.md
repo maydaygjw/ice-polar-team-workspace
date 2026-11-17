@@ -27,6 +27,7 @@
 - `400`：商圈、默认店铺、金额或计费模板不满足创建条件。
 - 错误体继续使用平台 `CommonResult` 稳定错误码格式。
 - OpenAPI AdaPay 全额退款若已有 PROCESSING/SUCCESS 分账必须拒绝；退款处理中时主动及自动结算都应拒绝。退款成功会将未结算应收应付标为 `CANCELLED`；退款失败后可再次结算。
+- OpenAPI AdaPay 全额退款沿用 app-api 规则：尚未创建 PaymentConfirm 时调用 AdaPay 支付撤销 `profitSharingReverse`，资金原路退回；已有 PaymentConfirm 时使用该确认对象调用 Refund。撤销请求使用稳定的退款单号，`payment_reverse.succeeded/failed` 回调按退款单号关联 OpenAPI 支付单并更新退款状态与 Webhook 事件。
 
 ## 管理端商圈接口
 
