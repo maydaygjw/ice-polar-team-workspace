@@ -205,9 +205,9 @@
 - `GET /admin-api/pay/adapay-bill/{charge,confirm,div}-details/page` 均可选传入 `shopIds: Long[]`，按明细保存的 `shop_id` 过滤；未传或空数组表示不按店铺筛选。租户隔离和账单日期/版本筛选保持不变。
 - 店铺快照仍仅在账单导入时通过 Charge `payment_id` 匹配同租户店铺订单 `transaction_id` 后保存；筛选不会补写或回填历史快照。详见 [AdaPay 对账单管理契约](feature-docs/2026-11-11-adapay-bill-management/contract-changes.md)。
 
-## 活动模板画像中奖策略（2026-10-30）
+## 活动模板画像及近期中奖策略（2026-11-18）
 
-活动模板增加公平开奖、偏向新用户、偏向流失/低频用户和留存唤醒分层四种策略；开奖与即时抽奖按会员用户画像阶段赔率加权，缺失画像按公平处理。期次保存策略快照，游戏模式不变。详见 [活动模板中奖策略契约](feature-docs/2026-10-30-activity-winning-strategy/contract-changes.md)。
+活动模板现有中奖策略统一接收 `UserActivityContext`，用户阶段在 Activity 内映射为枚举，并包含当前期次状态和同模板最近 10 个参与期次记录；即时抽奖纳入当前期次已有结果，统一开奖因当前结果尚未产生而仅取更早期次。现有策略权重统一叠加近期中奖降权：最近 3 个参与期次中至少一期中奖时再乘以 `0.1`。不新增模板策略选项或 API 字段。统一开奖和即时抽奖均应用修正；模板字段、模板/期次 API 结构和策略快照字段不变，游戏模式策略仍固定为 `FAIR`。数据库增加用户历史查询索引。详见 [活动模板中奖策略契约](feature-docs/2026-10-30-activity-winning-strategy/contract-changes.md)。
 
 ## 微信支付配置选项调整
 
