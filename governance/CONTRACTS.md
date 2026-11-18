@@ -56,6 +56,7 @@
 - 详见[店铺收入报表契约](feature-docs/2026-11-09-store-income-report-sync/contract-changes.md#汇总分页)。
 - 汇总分页新增可选 `shopIds` 多店铺筛选，传入时只返回所选店铺；该条件与当前用户可访问店铺范围取交集。省略或传空集合表示不按所选店铺过滤，原 `shopId` 单店参数继续兼容。
 - 汇总分页新增可选 `showNonWorkingDay`（默认 `true`）；为 `false` 时后端在汇总、分页和总数计算前排除中国结算日历标记为非工作日的日期，适用于 DAY/WEEK/MONTH 周期中的底层日期。
+- 汇总分页新增可选 `sortField` 与 `sortDirection`：`sortField` 仅支持 `SETTLEMENT_ORDER_COUNT`（交易订单数）和 `ORDER_AMOUNT`（交易订单金额），`sortDirection` 支持 `ASC`/`DESC`，默认降序。排序在聚合结果分页前由服务端执行；未传 `sortField` 时沿用原日期、店铺和收款人顺序。
 
 ## AdaPay 对账单管理
 
