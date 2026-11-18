@@ -6,7 +6,7 @@
 
 | 项目 | 流水线 ID | 参数 | 验收地址 |
 |---|---:|---|---|
-| backend | `1408445` | `YSHOP_ENV=dev2` | `https://api-yshop-dev.holuntech.cn` |
+| backend | `1408445` | `YSHOP_ENV=dev2, ADAPAY_DEBUG=true` | `https://api-yshop-dev.holuntech.cn` |
 | admin | `1409672` | `ADMIN_ENV=dev2` | `https://admin-yshop-dev.holuntech.cn` |
 | H5 | `1409664` | `H5_ENV=dev2` | `https://h5-yshop-dev.holuntech.cn` |
 
