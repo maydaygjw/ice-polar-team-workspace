@@ -289,6 +289,7 @@
 - [活动游戏模式](feature-docs/2026-10-15-activity-game-mode/contract-changes.md)：管理员手动新增游戏展示名称，活动模板选择游戏并配置三关奖品；新配置使用现有 H5 跳跃玩法，用户端会话由后端推进和结算。
 - [活动期次更换群活码](feature-docs/2026-10-18-activity-period-group-qrcode/contract-changes.md)：管理后台可为未结束活动期次更新群活码图片快照，不影响活动模板和历史业务记录。
 - 活动游戏关卡提交不再使用数字挑战：`POST /app-api/activity/period/game/submit` 改为接收客户端报告的 `passed` 布尔值；后端保留会话、关卡顺序、幂等和奖品结算校验，响应移除 `challenge`。
+- 活动 H5 与游戏页面解耦：活动页先调用 `POST /app-api/activity/period/game/start` 创建或恢复会话，再按期次快照中的 `gameCode` 跳转到独立游戏入口（`jump-game.html` / `racing-game.html`），传入 `periodId`、`sessionId`、当前 `levelNo`、`gameCode` 与关卡总数。游戏页只运行单个关卡，结束后回到活动页并携带本关结果；活动页再调用 `POST /app-api/activity/period/game/submit`，根据后端响应刷新进度/奖品并决定是否允许继续。`sessionId`、`levelNo`、`gameCode` 和关卡总数均为客户端导航参数，后端会话状态仍是业务进度依据；`passed` 仍是客户端报告值，服务端按既有契约校验会话归属、关卡顺序、幂等和奖品结算，但不验证游戏过程本身。
 - [活动用户端兑奖](feature-docs/2026-09-19-activity-winner-claim/contract-changes.md)：用户端可兑奖自己的中奖记录，报名和中奖结果返回兑奖状态；执行失败保持待兑奖并可重试。
 - [活动期次状态与结束操作](feature-docs/2026-09-13-activity-management/contract-changes.md)：期次生命周期状态与报名开关解耦，后台支持显式结束期次，状态扫描任务每 5 分钟推进期次状态和报名开关。
 - 用户端 `GET /app-api/activity/period/detail` 与 `/latest` 的期次详情响应新增 `drawStatus`：`0` 未开奖、`1` 开奖中、`2` 已开奖、`3` 开奖失败。H5 定时开奖模式仅在 `drawStatus=2` 且用户无中奖记录时展示未中奖结果。
