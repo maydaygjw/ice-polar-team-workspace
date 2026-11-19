@@ -13,7 +13,7 @@
 - 支持对已有成功日期重新拉取；重新拉取后，解析明细删除重建，ZIP 历史版本全部保留。
 - Charge 支持按支付ID、商户订单号筛选；PaymentConfirm 支持按商户支付ID筛选；Div 支持按支付对象ID、MemberId（CSV 字段“分账用户”）筛选。
 - PaymentConfirm 和 Div 支持按账单日期及可选店铺集合批量匹配应收应付；Div 按“支付对象id”与应收应付支付ID匹配，并支持按匹配状态筛选。
-- 明细关联本地商家订单：Charge 通过账单支付ID与订单 `transactionId` 关联，并展示商家名称；PaymentConfirm、Div 通过账单商户支付ID关联 Charge，再获取商家名称。
+- 明细关联本地商家订单：Charge 和 Div 分别通过支付ID、支付对象ID与订单 `transactionId` 关联；PaymentConfirm 通过商户支付ID关联同版本 Charge，再获取商家名称。
 - 支持查看和下载某天已成功归档的 ZIP 历史版本。
 
 ### Out-of-scope
