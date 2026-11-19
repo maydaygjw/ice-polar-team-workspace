@@ -1,6 +1,6 @@
-# 故障诊断手册
+# 故障诊断参考
 
-供 DevOps Agent 和值班工程师排查 dev、prod 环境故障，保留证据并移交。生产诊断只读；生产变更由人工执行，边界见[生产发布与交接](deployment.md)。
+供 DevOps Agent 和值班工程师排查 dev、prod 环境故障，保留证据并移交。生产诊断只读；生产变更由人工执行，边界见[生产发布与交接](../../../../governance/PLAYBOOKS/deployment.md)。
 
 ## 1. 确认环境和请求
 
@@ -11,8 +11,8 @@
 ```bash
 env_name=dev # 按目标改为 dev 或 prod
 set +x
-source governance/SCRIPTS/deploy-helper.sh
-load_env "$env_name"
+source .agents/skills/devops-incident-response/scripts/load-env.sh
+load_incident_env "$env_name"
 
 SSH_ARGS=()
 if [[ -n "${SSH_KEY_PATH:-}" ]]; then
@@ -64,6 +64,19 @@ REMOTE
 
 日志内容可能包含请求参数、个人信息或密钥。只查看必要上下文；记录证据前移除 Cookie、Authorization/Bearer、密码、Token、微信密钥、手机号及不相关业务字段。不要把完整请求体或完整日志复制到报告。
 
+必要时可在 dev 对单个 logger 临时调级，无需重启；在目标实例本机执行 Actuator 请求：
+
+```bash
+logger_name='co.yixiang.yshop.module.example.ExampleService'
+curl -X POST "http://127.0.0.1:8888/actuator/loggers/${logger_name}" \
+  -H 'Content-Type: application/json' -d '{"configuredLevel":"DEBUG"}'
+# 排查结束后恢复继承配置的级别
+curl -X POST "http://127.0.0.1:8888/actuator/loggers/${logger_name}" \
+  -H 'Content-Type: application/json' -d '{"configuredLevel":null}'
+```
+
+仅对确认过的 dev 实例操作，逐实例生效且重启后失效；当前 Actuator 可能匿名开放，勿经公网调用。prod 诊断保持只读，不临时改级。
+
 ### AdaPay 外部请求与响应报文
 
 AdaPay 外部调用的请求、响应报文从应用标准输出检索。先按第 1 节确认实际运行实例和请求时间，再在日志标准输出中查找ADAPAY的请求和相应报文
@@ -85,38 +98,24 @@ AdaPay 外部调用的请求、响应报文从应用标准输出检索。先按�
 
 确认目标实例实际使用的数据源后，优先从目标环境配置加载连接参数；dev 的 `dev.env` 提供数据库连接参数。prod 的 `prod.env` 中 `DB_HOST` 是供受控本地运维使用的外网 RDS 地址；生产容器可能使用不同的内网地址，必须先从生产运行实例核对实际目标。不要拿 dev 配置代替 prod 配置。连接前再次核对主机、库名和环境。若使用 `dev.env`，先按第 1 节的方式 `load_env dev`；环境变量会导出给 Python 子进程，但不要打印其值。
 
-只查询复现问题所需字段，并把接口相同的租户、逻辑删除、状态和权限条件写入 SQL。Python 环境已有 PyMySQL 时，可按以下模式执行只读事务；查询字段和条件替换成实际表结构：
+只查询复现问题所需字段，并把接口相同的租户、逻辑删除、状态和权限条件写入 SQL。首次使用时为 skill 创建独立虚拟环境并安装锁定依赖：
 
 ```bash
-python3 - <<'PY'
-import os
-import pymysql
-
-conn = pymysql.connect(
-    host=os.environ["DB_HOST"],
-    port=int(os.environ["DB_PORT"]),
-    user=os.environ["DB_USER"],
-    password=os.environ["DB_PASSWORD"],
-    database=os.environ["DB_NAME"],
-    connect_timeout=10,
-    autocommit=False,
-    charset="utf8mb4",
-)
-try:
-    with conn.cursor() as cursor:
-        cursor.execute("START TRANSACTION READ ONLY")
-        cursor.execute(
-            "SELECT id, tenant_id, status FROM example_table "
-            "WHERE tenant_id=%s AND id=%s AND deleted=0",
-            (158, 123),
-        )
-        for row in cursor.fetchall():
-            print(row)
-    conn.rollback()
-finally:
-    conn.close()
-PY
+python3 -m venv .agents/skills/devops-incident-response/.venv
+.agents/skills/devops-incident-response/.venv/bin/pip install \
+  -r .agents/skills/devops-incident-response/requirements.txt
 ```
+
+先按第 1 节加载并核实目标环境，再将参数化 `SELECT` 及参数通过 JSON 标准输入交给脚本。示例只选择必要字段，并限定租户和主键：
+
+```bash
+.agents/skills/devops-incident-response/.venv/bin/python \
+  .agents/skills/devops-incident-response/scripts/query-readonly-db.py <<'JSON'
+{"sql":"SELECT id, tenant_id, status FROM example_table WHERE tenant_id=%s AND id=%s AND deleted=0 LIMIT 50","params":[158,123]}
+JSON
+```
+
+脚本仅接受单条 `SELECT`，在只读事务中执行，最多输出 200 行；超出时会标记截断。查询仍需包含适当的过滤条件和 `LIMIT`。数据库账号应具有只读授权，不能只依赖事务限制保护数据。
 
 不要在 SQL 客户端参数、命令行、临时脚本、报告或聊天消息中写入密码。不要开启 shell trace（`set -x`），不要打印连接对象、完整环境变量或数据库连接异常中的敏感配置。若查询失败，先只记录异常类型和 SQLState，再检查目标网络和授权。不得使用 `UPDATE`、`DELETE`、DDL、`repair` 或其他写操作；需要修复时按人工审批流程处理。
 
@@ -160,7 +159,7 @@ stack com.example.TargetService targetMethod -n 5
 
 ## 6. 移交与复验
 
-业务代码问题交对应开发角色；环境问题由 DevOps 准备修复方案。生产数据修复须提供限定租户和主键的 SQL、影响行预查及回滚方案，由人工审批并执行；生产发布和回滚按[发布手册](deployment.md)处理。
+业务代码问题交对应开发角色；环境问题由 DevOps 准备修复方案。生产数据修复须提供限定租户和主键的 SQL、影响行预查及回滚方案，由人工审批并执行；生产发布和回滚按[发布手册](../../../../governance/PLAYBOOKS/deployment.md)处理。
 
-需要修复或改配置时，先提交证据和建议。排查中不得直接修改数据库、重启服务、切换配置或替换制品；dev 环境变更也必须遵守对应发布流程。处置后按原始请求复验，并检查关联数据、日志和业务副作用。诊断期间不得把未执行的修复记为已恢复。
+需要修复或改配置时，先提交证据和建议。排查中不得直接修改数据库、重启服务、切换配置或替换制品；日志临时调级仅限第 2 节所述的 dev 单 logger 操作。dev 环境其他变更也必须遵守对应发布流程。处置后按原始请求复验，并检查关联数据、日志和业务副作用。诊断期间不得把未执行的修复记为已恢复。
 

@@ -1,6 +1,6 @@
 # 部署与交接
 
-服务器首次安装由 Ansible 管理。dev 部署和数据库迁移使用云效流水线；故障诊断见[故障诊断手册](incident-response.md)。
+服务器首次安装由 Ansible 管理。dev 部署和数据库迁移使用云效流水线；故障诊断流程见项目技能 [devops-incident-response](../../.agents/skills/devops-incident-response/SKILL.md)。
 
 ## dev 环境（backend profile：dev2）
 
@@ -46,4 +46,4 @@ bash governance/SCRIPTS/deploy-yunxiao.sh --target db-validate --branch feat/exa
 
 ## 生产发布
 
-生产发布、迁移和回滚由有权限的人员在云效审核执行。Agent 只准备交接材料或进行只读诊断，不触发生产部署、替换制品或重启服务。交接需注明变更范围、审批、测试结果、commit、制品标识及回滚版本。生产发布后按[故障诊断手册](incident-response.md)验收。
+生产发布、迁移和回滚由有权限的人员在云效审核执行。Agent 只准备交接材料或进行只读诊断，不触发生产部署、替换制品或重启服务。交接需注明变更范围、审批、测试结果、commit、制品标识及回滚版本。生产发布后按 devops-incident-response 技能的只读流程验收。
