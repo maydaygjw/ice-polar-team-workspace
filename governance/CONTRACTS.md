@@ -18,10 +18,10 @@
 
 ## 分账收款人结算中的平台商户
 
-- OpenAPI 分账收款人同步要求 OAuth2 client token 具有 `payment` scope，且当前租户 AdaPay 支付配置已启用 OpenAPI。传入 `shopIds` 时不校验用户门店数据权限，但每个店铺仍必须属于 token 所属租户；后台用户同步继续校验其门店数据权限。请求包含 `memberId`、`memberType`，以及本地新建收款人所需的 `recipientType`、`role`、可选 `shopIds`；平台商户 `memberId=0` 使用 `memberType=0`。服务端按 token 租户查询 AdaPay Member/结算账户并复用现有收款人同步规则，响应返回本地收款人 ID，新建收款人直接启用。不得接受调用方传入租户 ID 或 AdaPay 凭据。详见[分账收款人 OpenAPI 同步契约](feature-docs/2026-11-15-openapi-profit-recipient-sync/contract-changes.md)。
-- `POST /open-api/v1/profit-recipients/sync-if-necessary` 按当前租户和 `memberId` 检查本地收款人；已存在时不调用 AdaPay 或覆盖收款人资料，返回现有 ID，但仍将传入 `shopIds` 绑定至该店铺级收款人；不存在时复用普通同步行为并绑定传入店铺。要求 `payment` scope 和租户 AdaPay OpenAPI 配置。详见[分账收款人 OpenAPI 同步契约](feature-docs/2026-11-15-openapi-profit-recipient-sync/contract-changes.md)。
+- OpenAPI 分账收款人接口只要求 OAuth2 client token 具有 `payment` scope，不以 AdaPay 支付配置的 OpenAPI 开关作为接口访问门槛。`sync` 和 `sync-if-necessary` 在确需查询 AdaPay 时仍使用当前 token 租户的 AdaPay 商户配置；`sync-if-necessary` 命中已有本地收款人时不调用 AdaPay。传入 `shopIds` 时不校验用户门店数据权限，但每个店铺仍必须属于 token 所属租户；后台用户同步继续校验其门店数据权限。请求包含 `memberId`、`memberType`，以及本地新建收款人所需的 `recipientType`、`role`、可选 `shopIds`；平台商户 `memberId=0` 使用 `memberType=0`。响应返回本地收款人 ID，新建收款人直接启用。不得接受调用方传入租户 ID 或 AdaPay 凭据。详见[分账收款人 OpenAPI 同步契约](feature-docs/2026-11-15-openapi-profit-recipient-sync/contract-changes.md)。
+- `POST /open-api/v1/profit-recipients/sync-if-necessary` 按当前租户和 `memberId` 检查本地收款人；已存在时不调用 AdaPay 或覆盖收款人资料，返回现有 ID，但仍将传入 `shopIds` 绑定至该店铺级收款人；不存在时复用普通同步行为并绑定传入店铺。接口要求 `payment` scope。详见[分账收款人 OpenAPI 同步契约](feature-docs/2026-11-15-openapi-profit-recipient-sync/contract-changes.md)。
+- 第三方可通过 `GET /open-api/v1/profit-recipients/by-member/{memberId}` 按 AdaPay Member ID 查询当前租户本地收款人，要求 `payment` scope。只返回本地收款人 ID、Member ID/类型、收款人级别/角色/名称、启用状态、结算账户绑定状态、企业审核状态及当前店铺 ID，不返回身份证、银行卡等敏感资料；本地记录不存在时按收款人不存在错误返回。详见[分账收款人 OpenAPI 同步契约](feature-docs/2026-11-15-openapi-profit-recipient-sync/contract-changes.md)。
 - `sync` 与 `sync-if-necessary` 请求中传入 `shopIds` 时，新收款人设为对应店铺主收款人。若店铺原有不同的主收款人，则在同一原子操作中将原收款人转入该店铺“其他店铺收款人”（标记默认保留，原关系不存在时标记为 `VALID`），再更新主收款人；若新收款人已在其他收款人列表中则移除该重复项。此操作不改变店铺分账启用状态，适用于已启用店铺；当前主收款人未变化时不重复转移。
-- 第三方可通过 `GET /open-api/v1/profit-recipients/by-member/{memberId}` 按 AdaPay Member ID 查询当前租户本地收款人，使用相同的 `payment` scope 和 AdaPay OpenAPI 配置门槛。只返回本地收款人 ID、Member ID/类型、收款人级别/角色/名称、启用状态、结算账户绑定状态、企业审核状态及当前店铺 ID，不返回身份证、银行卡等敏感资料；本地记录不存在时按收款人不存在错误返回。详见[分账收款人 OpenAPI 同步契约](feature-docs/2026-11-15-openapi-profit-recipient-sync/contract-changes.md)。
 
 - 收款人结算任务目标按收款人、Member ID 和结算账户区分；同一目标绑定多个店铺时只向 AdaPay 查询一次。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#任务收款人结果表)。
 - 汇总响应为店铺级收款人增加 `shopNames`，返回其当前绑定的全部可访问店铺名称；`shopName` 仍是汇总行对应的历史店铺快照。非店铺级主体的 `shopNames` 为空。详见[分账收款人结算契约](feature-docs/2026-08-21-profit-recipient-settlement/contract-changes.md#汇总查询)。
@@ -214,6 +214,11 @@
 - 管理后台不再提供微信支付 V2 配置选项或微信付款码配置 ID；配置 API 拒绝新增或更新 `payType=wxPay`。
 - 运行时不再注册微信 V2 支付平台，也移除了微信付款码（V2 MICROPAY）分支；已有 V2 配置记录保留在数据库，但不能用于支付。
 - 不变更请求/响应结构和数据库 schema。
+
+## 支付商户配置签名方式
+
+- 商户支付配置新增、更新 API 中 `signType` 为可选字段；不再对其做必填校验，省略或传 `null` 时按空值保存。已有配置值继续保留，管理后台允许未选择签名方式时提交。
+- `merchant_details.sign_type` 允许为 `NULL`，以兼容未填写该字段的配置。
 
 ## 微信支付 V3 应答验签模式
 
