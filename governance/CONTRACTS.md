@@ -66,6 +66,7 @@
 - 明细按最新成功版本分页展示解析字段，并在 `extraFields` 返回未知尾部列；Div 明细支持 `memberId` 对“分账用户”字段精确筛选。
 - Div 明细分页响应之外提供同筛选条件的分账金额汇总，按当前日期、店铺、商户支付 ID 和 MemberId 查询所有匹配行（不受分页影响）；管理后台在右上角展示该总额，筛选项合并为一行。
 - PaymentConfirm 增加应收应付批量匹配：按账单日期、最多 100 家店铺范围，以 Confirm `paymentId` 关联当前租户应收应付的 `payment_id`；应收应付 `payment_id` 来自商城订单 `transaction_id`，生成时保存并回填历史值。结果持久化为 `MATCHED`（成功）或 `MISSING`（缺失），空值表示未匹配。分页支持按此状态筛选；重新拉取账单后新明细均为未匹配。
+- Div 增加应收应付批量匹配：按账单日期、最多 100 家店铺范围，以 Div `paymentId`（CSV“支付对象id”）关联当前租户应收应付的 `payment_id`。结果持久化为 `MATCHED`（成功）或 `MISSING`（缺失），空值表示未匹配；分页支持按此状态筛选。重新拉取账单后新明细均为未匹配。该匹配仅核对支付 ID 是否存在，不改写账单或应收应付数据。
 - 新增权限 `pay:adapay-bill:query` 和 `pay:adapay-bill:download`；所有接口按当前租户隔离。详见 [AdaPay 对账单管理契约](feature-docs/2026-11-11-adapay-bill-management/contract-changes.md)。
 
 ## 后台订单详情费用字段
@@ -349,6 +350,6 @@
 
 ### AdaPay 对账单管理：门店快照与筛选
 
-- Charge 明细支持支付ID、商户订单号精确筛选；PaymentConfirm 支持商户支付ID筛选；Div 支持商户支付ID、MemberId 筛选。
-- 三类明细表冗余 `shop_id`、`shop_name`（迁移 V2026111103）：导入时 Charge 以账单支付ID匹配订单 `transactionId` 取得门店快照，PaymentConfirm、Div 经商户支付ID关联同版本 Charge 继承；分页查询直接读冗余字段，不实时联表。
+- Charge 明细支持支付ID、商户订单号精确筛选；PaymentConfirm 支持商户支付ID筛选；Div 支持支付对象ID、MemberId 和匹配状态筛选。Div 的支付对象ID可按当前租户应收应付 `payment_id` 批量匹配，状态为 `MATCHED`、`MISSING` 或 NULL（未匹配）。
+- 三类明细表冗余 `shop_id`、`shop_name`（迁移 V2026111103）：导入时 Charge 以账单支付ID匹配订单 `transactionId` 取得门店快照，PaymentConfirm 经商户支付ID关联同版本 Charge 继承；Div 以自身支付对象ID直接匹配订单 `transactionId`；分页查询直接读冗余字段，不实时联表。
 - 关联只补充展示字段，不改变原始账单、不执行对账判断；未匹配时仍返回原始明细，门店字段为空。查询必须保持租户隔离。

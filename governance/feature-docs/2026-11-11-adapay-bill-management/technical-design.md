@@ -12,7 +12,7 @@
 
 ## 关键决策
 
-1. **独立原始账单能力**：新能力放在 `pay-biz` 的 `adapaybill` 包内，不复用日终对账明细表。对账表保存业务匹配结果，本功能保存原始账单字段；两者生命周期和语义不同。
+1. **独立原始账单能力**：新能力放在 `pay-biz` 的 `adapaybill` 包内，不复用日终对账明细表。本功能保存原始账单字段及与应收应付的支付 ID 存在性匹配结果；不核对金额或交易状态。
 2. **只归档 ZIP**：AdaPay 下载内容在内存中解压并解析，三类 CSV 不单独上传 OSS。每次成功下载生成一个不可变 ZIP 版本；解析明细只保留最新成功版本。
 3. **异步下载任务**：创建接口只持久化任务并立即返回任务 ID，由现有 `@Async + TenantUtils` 模式执行。这样远端下载和解压不会长期占用管理端 HTTP 请求，也便于页面展示“下载中”。
 4. **任务与版本共用一张下载记录表**：每次发起下载产生一条记录和 `attempt_no`；成功记录即一个 ZIP 版本，失败记录保留状态和错误信息。公开展示的历史版本只筛选成功记录。
@@ -59,14 +59,15 @@ ZIP 保存先于数据库替换。OSS 上传后立即用短事务记录 ZIP 元�
 
 ## 本地商家关联与查询筛选
 
-- Charge 查询支持按账单支付ID、商户订单号精确筛选；PaymentConfirm 支持按商户支付ID筛选；Div 支持按商户支付ID、MemberId筛选。筛选条件由服务端执行并参与总数统计和分页。
-- 门店信息（`shop_id`、`shop_name`）作为冗余快照落在三类明细表，由迁移 `V2026111103__adapay_bill_detail_shop_snapshot.sql` 追加：导入解析后，Charge 以账单支付ID批量匹配订单 `transactionId` 取得门店快照；PaymentConfirm、Div 以商户支付ID关联同版本 Charge 继承门店信息；未匹配则留空。
+- Charge 查询支持按账单支付ID、商户订单号精确筛选；PaymentConfirm 支持按商户支付ID筛选；Div 支持按支付对象ID、MemberId、匹配状态筛选。筛选条件由服务端执行并参与总数统计和分页。
+- 门店信息（`shop_id`、`shop_name`）作为冗余快照落在三类明细表，由迁移 `V2026111103__adapay_bill_detail_shop_snapshot.sql` 追加：导入解析后，Charge 以账单支付ID批量匹配订单 `transactionId` 取得门店快照；PaymentConfirm 以商户支付ID关联同版本 Charge 继承；Div 以自身支付对象ID直接匹配订单 `transactionId`；未匹配则留空。
 - 填充只发生在导入落库时，分页查询直接读取冗余字段，不实时关联订单表；关联不过滤或改写账单原始行。订单查询保持租户隔离，异步任务在 `TenantUtils` 租户上下文内执行。
 
 ## 查询与替换规则
 
 - 页面按 `billDate` 查询时，服务端先查该日期最新成功任务，再按 `tenant_id + bill_date` 查询对应三类明细；不依赖前端传下载 ID。
 - Div 明细的 MemberId 条件直接映射到 `member_id` 字符串字段，使用等值条件；其余筛选字段见“本地商家关联与查询筛选”。
+- PaymentConfirm 和 Div 的应收应付匹配均限定到当前租户与日期最新成功 ZIP，按账单支付 ID 与应收应付 `payment_id` 精确匹配，并可选按最多 100 家店铺过滤。两类明细分别持久化 `MATCHED`、`MISSING` 状态，NULL 表示未匹配；匹配不生成或重算应收应付，重新导入的明细状态为 NULL。
 - 明细表无逻辑删除，成功重拉时按租户和日期物理删除旧行。删除只发生在同日期 ZIP 已完整解析并上传之后。
 - 日历状态优先级为 `RUNNING` > `SUCCEEDED` > `FAILED` > `NONE`。同一日期曾成功、当前又正在重拉时展示 `RUNNING`。
 

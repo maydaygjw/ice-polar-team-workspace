@@ -14,7 +14,8 @@ Base path：`/admin-api/pay/adapay-bill`。
 | `GET /charge-details/page` | `pay:adapay-bill:query` | 分页查询 Charge 明细，支持支付ID、商户订单号、店铺筛选并返回商家名称 |
 | `GET /confirm-details/page` | `pay:adapay-bill:query` | 分页查询 PaymentConfirm 明细，支持商户支付ID、店铺筛选并返回商家名称 |
 | `POST /confirm-details/match` | `pay:adapay-bill:query` | 按账单日期及可选店铺集合批量匹配 PaymentConfirm 的应收应付 |
-| `GET /div-details/page` | `pay:adapay-bill:query` | 分页查询 Div 明细，支持 `merchantPaymentId`、`memberId`、店铺筛选并返回商家名称 |
+| `GET /div-details/page` | `pay:adapay-bill:query` | 分页查询 Div 明细，支持 `paymentId`、`memberId`、匹配状态、店铺筛选并返回商家名称 |
+| `POST /div-details/match` | `pay:adapay-bill:query` | 按账单日期及可选店铺集合批量匹配 Div 的应收应付 |
 | `GET /downloads/{id}/zip` | `pay:adapay-bill:query` | 下载成功任务的 ZIP 附件 |
 
 三类分页接口均可选传入 `shopIds: Long[]`。未传或空数组表示不限制店铺；非空时仅返回 `shop_id` 在所选集合中的明细。该参数与现有租户、账单日期和最新成功版本条件同时生效。
@@ -101,11 +102,13 @@ Base path：`/admin-api/pay/adapay-bill`。
 
 - `billDate`：必填，`YYYY-MM-DD`。
 - `pageNo`、`pageSize`：标准分页参数，服务端按数据库分页。
-- 仅查询该日期最新成功版本对应的明细；无成功版本时返回空分页。查询结果增加可空 `shopId`、`shopName`，为导入时按 Charge 支付ID匹配订单 `transactionId` 冗余的门快照；Confirm、Div 经商户支付ID关联同版本 Charge 继承。关联仅补充展示信息，分页查询不实时联表。
+- 仅查询该日期最新成功版本对应的明细；无成功版本时返回空分页。查询结果增加可空 `shopId`、`shopName`：Charge 按账单支付ID匹配订单 `transactionId` 冗余门店快照，Confirm 经商户支付ID关联同版本 Charge 继承，Div 按自身支付对象ID匹配订单 `transactionId`。关联仅补充展示信息，分页查询不实时联表。
 
 Confirm 分页的 `matchStatus` 可传 `MATCHED`、`MISSING`、`UNMATCHED` 筛选；响应 `matchStatus` 为 `MATCHED`、`MISSING` 或 `null`（界面分别显示成功、缺失、未匹配）。批量匹配请求体为 `{ "billDate": "2026-11-10", "shopIds": [1, 2] }`。店铺集合可省略或为空表示全部店铺，最多 100 家。服务端限定当前租户、日期最新成功 ZIP 和所选店铺集合，按 Confirm `paymentId` 与应收应付 `payment_id` 精确匹配；找到记录保存 `MATCHED`，找不到保存 `MISSING`，并覆盖本次范围内旧状态。响应 `totalCount`、`successCount`、`missingCount`。不生成或重算应收应付。新导入明细为 `null`，即未匹配。
 
-筛选参数：Charge 接受 `paymentId`、`merchantOrderNo`；Confirm 接受 `merchantPaymentId`；Div 接受 `merchantPaymentId`、`memberId`。均为可选精确匹配。
+Div 分页同样支持 `matchStatus` 精确筛选：`MATCHED`、`MISSING`、`UNMATCHED`。批量匹配请求体与 Confirm 相同 `{ "billDate": "2026-11-10", "shopIds": [1, 2] }`，店铺集合可省略或为空表示全部店铺，最多 100 家。服务端限定当前租户、日期最新成功 ZIP 和所选店铺集合，按 Div `paymentId`（CSV“支付对象id”）与应收应付 `payment_id` 精确匹配；找到记录保存 `MATCHED`，找不到保存 `MISSING`，覆盖本次范围内旧状态。响应 `totalCount`、`successCount`、`missingCount`。不生成或重算应收应付。新导入 Div 明细的匹配状态为 `null`。
+
+筛选参数：Charge 接受 `paymentId`、`merchantOrderNo`；Confirm 接受 `paymentId`（商户支付 ID）；Div 接受 `paymentId`（支付对象 ID）、`memberId` 和 `matchStatus`。账单字段筛选均为可选精确匹配，匹配状态支持 `MATCHED`、`MISSING`、`UNMATCHED`。
 
 Charge 响应行：
 
@@ -162,6 +165,7 @@ Div 响应行：
 | `feeBearer` | 手续费承担方 |
 | `feeAmount` | 手续费金额 |
 | `originOrderNo` | 原订单号 |
+| `matchStatus` | 应收应付匹配状态：`MATCHED` 成功、`MISSING` 缺失、响应空值表示未匹配 |
 
 三类响应都包含 `downloadId` 和 `extraFields`：
 
@@ -171,7 +175,7 @@ Div 响应行：
 | `rawLine` | `string` | CSV 原始数据行，保留原始字段顺序和文本 |
 | `extraFields` | `array<{name,value}>` | 已知表头之外的尾部字段，按 CSV 原顺序返回 |
 
-`memberId` 只作用于 Div 明细的“分账用户”字段，等值匹配，最大长度 128；不修改 Charge 和 Confirm。空字符串视为未传筛选条件。
+`memberId` 只作用于 Div 明细的“分账用户”字段，等值匹配，最大长度 128；不修改 Charge 和 Confirm。空字符串视为未传筛选条件。Div `matchStatus` 与 Confirm 一样支持成功、缺失、未匹配筛选。
 
 ### ZIP 下载
 
@@ -199,7 +203,7 @@ Div 响应行：
 
 ## DB
 
-新增迁移：`backend/sql/migrations/V2026111102__adapay_bill_management.sql`，后续迁移 `V2026111104__adapay_confirm_receivable_match_status.sql` 为 Confirm 明细增加匹配结果字段及筛选索引；`V2026111105__receivable_payable_payment_id.sql` 为应收应付主表增加支付流水号并回填历史商城订单。
+新增迁移：`backend/sql/migrations/V2026111102__adapay_bill_management.sql`，后续迁移 `V2026111104__adapay_confirm_receivable_match_status.sql` 为 Confirm 明细增加匹配结果字段及筛选索引；`V2026111105__receivable_payable_payment_id.sql` 为应收应付主表增加支付流水号并回填历史商城订单；`V2026111902__adapay_div_receivable_match_status.sql` 为 Div 明细增加匹配结果字段及筛选索引。
 
 ### `yshop_adapay_bill_download`
 
@@ -251,7 +255,7 @@ Div 响应行：
 
 - `yshop_adapay_bill_charge_detail`：保存 Charge 18 个固定字段，字段名与响应 `camelCase` 对应。
 - `yshop_adapay_bill_confirm_detail`：保存 Confirm 8 个固定字段。
-- `yshop_adapay_bill_div_detail`：保存 Div 11 个固定字段，其中 `member_id VARCHAR(128)` 对应“分账用户”。
+- `yshop_adapay_bill_div_detail`：保存 Div 11 个固定字段，其中 `member_id VARCHAR(128)` 对应“分账用户”；`match_status` 记录应收应付匹配结果，`NULL` 表示未匹配。
 
 所有固定字段使用 `VARCHAR(512)`；`goodsDescription` 和 `orderDescription` 使用 `VARCHAR(2048)`。金额、日期和状态仍保存原始字符串。Confirm 额外 `match_status VARCHAR(16) NULL`，取值 `MATCHED` / `MISSING`；`NULL` 表示未匹配。
 
