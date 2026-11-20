@@ -293,6 +293,7 @@
 - [活动即时抽奖模式](feature-docs/2026-09-22-activity-lottery-mode/contract-changes.md)：活动模板支持开奖/抽奖两种模式，抽奖模式由 app-api 按概率即时抽奖并以 requestId 幂等。
 - [活动模板兜底奖励](feature-docs/2026-09-18-activity-prize-draw-rule-management/contract-changes.md)：模板可独立选择一个不配置数量或概率的兜底奖品；开奖/即时抽奖常规规则未命中有效奖品时使用期次兜底快照生成中奖结果。
 - [活动游戏模式](feature-docs/2026-10-15-activity-game-mode/contract-changes.md)：管理员手动新增游戏展示名称，活动模板选择游戏并配置三关奖品；新配置使用现有 H5 跳跃玩法，用户端会话由后端推进和结算。
+- 活动游戏配置增加 `launchType`（`LOCAL` / `REMOTE`）；远程基础域名由系统参数 `game.remote-url`（参数分类 `url`）维护。游戏配置管理列表返回入口类型，用户端期次详情和 `game/start` 返回入口类型及远程基础 URL；远程基础 URL 必须为 HTTPS，H5 按 `/games/{gameCode}/index.html` 和关卡参数跳转。数字匹配游戏代码为 `number-match`。期次快照保留入口类型。详见[活动游戏入口配置契约](feature-docs/2026-11-20-activity-cocos-number-match/requirements-spec.md)。
 - [活动期次更换群活码](feature-docs/2026-10-18-activity-period-group-qrcode/contract-changes.md)：管理后台可为未结束活动期次更新群活码图片快照，不影响活动模板和历史业务记录。
 - 活动游戏关卡提交不再使用数字挑战：`POST /app-api/activity/period/game/submit` 改为接收客户端报告的 `passed` 布尔值；后端保留会话、关卡顺序、幂等和奖品结算校验，响应移除 `challenge`。
 - 活动 H5 与游戏页面解耦：活动页先调用 `POST /app-api/activity/period/game/start` 创建或恢复会话，再按期次快照中的 `gameCode` 跳转到独立游戏入口（`jump-game.html` / `racing-game.html`），传入 `periodId`、`sessionId`、当前 `levelNo`、`gameCode` 与关卡总数。游戏页只运行单个关卡，结束后回到活动页并携带本关结果；活动页再调用 `POST /app-api/activity/period/game/submit`，根据后端响应刷新进度/奖品并决定是否允许继续。`sessionId`、`levelNo`、`gameCode` 和关卡总数均为客户端导航参数，后端会话状态仍是业务进度依据；`passed` 仍是客户端报告值，服务端按既有契约校验会话归属、关卡顺序、幂等和奖品结算，但不验证游戏过程本身。
