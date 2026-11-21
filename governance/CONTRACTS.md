@@ -288,10 +288,11 @@
 - [活动线下兑奖码](feature-docs/2026-09-21-activity-offline-claim-code/contract-changes.md)：开奖规则支持线下兑奖，并为每条中奖记录生成唯一兑奖码。
 - [活动模板报名人数限制](feature-docs/2026-09-21-activity-registration-limit/contract-changes.md)：后台按活动模板配置每期报名人数上限，报名时由后端原子校验。
 - [活动中奖公示长图](feature-docs/2026-09-21-activity-winner-public-poster/contract-changes.md)：管理端和用户端按活动期次查询最多展示 100 条有效中奖记录，管理端生成公示长图，用户端展示脱敏中奖名单。
+- [活动排行榜与游戏兜底奖励](feature-docs/2026-11-21-activity-leaderboards-and-game-fallback/contract-changes.md)：开奖结果页展示前 10 名脱敏中奖名单，游戏结果页展示前 10 名闯关排名；游戏模板支持常规关卡奖无法发放时使用期次兜底奖。
 - [活动邀请报名增加抽奖机会](feature-docs/2026-09-21-activity-invite-chance/contract-changes.md)：后台开启后，被推荐人成功报名且推荐人已报名时，推荐人自动增加一次抽奖/游戏机会；用户端详情返回开关状态，抽奖或游戏后分享提示好友报名奖励。
 - [活动推荐阶梯奖励](feature-docs/2026-10-16-activity-referral-rewards/contract-changes.md)：保留推荐增加抽奖/游戏机会配置，另按期次统计新人和普通推荐阶梯并使用独立奖品数量；管理后台按推荐人查询统计并可兑换，推荐人也可通过用户端自助兑奖；中奖管理不包含推荐奖励。
 - [活动即时抽奖模式](feature-docs/2026-09-22-activity-lottery-mode/contract-changes.md)：活动模板支持开奖/抽奖两种模式，抽奖模式由 app-api 按概率即时抽奖并以 requestId 幂等。
-- [活动模板兜底奖励](feature-docs/2026-09-18-activity-prize-draw-rule-management/contract-changes.md)：模板可独立选择一个不配置数量或概率的兜底奖品；开奖/即时抽奖常规规则未命中有效奖品时使用期次兜底快照生成中奖结果。
+- [活动模板兜底奖励](feature-docs/2026-09-18-activity-prize-draw-rule-management/contract-changes.md)：模板可独立选择一个不配置数量或概率的兜底奖品；开奖/即时抽奖常规规则未命中有效奖品，或游戏关卡奖无法发放时，使用期次兜底快照生成中奖结果。
 - [活动游戏模式](feature-docs/2026-10-15-activity-game-mode/contract-changes.md)：管理员手动新增游戏展示名称，活动模板选择游戏并配置三关奖品；新配置使用现有 H5 跳跃玩法，用户端会话由后端推进和结算。
 - 活动游戏配置增加 `launchType`（`LOCAL` / `REMOTE`）；远程基础域名由系统参数 `game.remote-url`（参数分类 `url`）维护。游戏配置管理列表返回入口类型，用户端期次详情和 `game/start` 返回入口类型及远程基础 URL；远程基础 URL 必须为 HTTPS，H5 按 `/games/{gameCode}/index.html` 和关卡参数跳转。数字匹配游戏代码为 `number-match`。期次快照保留入口类型。详见[活动游戏入口配置契约](feature-docs/2026-11-20-activity-cocos-number-match/requirements-spec.md)。
 - 活动游戏配置支持维护 `ruleDescription` 富文本说明。管理端游戏配置分页、创建和更新接口读写该字段，数据库以 `MEDIUMTEXT` 保存 HTML；用户端活动期次详情按期次快照中的游戏配置 ID 返回当前规则说明。详见[活动游戏规则说明契约](feature-docs/2026-11-21-activity-game-rules/contract-changes.md)。
