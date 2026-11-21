@@ -287,8 +287,8 @@
 - [活动中奖批量通知](feature-docs/2026-09-25-activity-winner-batch-notification/contract-changes.md)：中奖管理支持按勾选记录批量创建企业微信中奖通知任务。
 - [活动线下兑奖码](feature-docs/2026-09-21-activity-offline-claim-code/contract-changes.md)：开奖规则支持线下兑奖，并为每条中奖记录生成唯一兑奖码。
 - [活动模板报名人数限制](feature-docs/2026-09-21-activity-registration-limit/contract-changes.md)：后台按活动模板配置每期报名人数上限，报名时由后端原子校验。
-- [活动中奖公示长图](feature-docs/2026-09-21-activity-winner-public-poster/contract-changes.md)：管理端和用户端按活动期次查询最多展示 100 条有效中奖记录，管理端生成公示长图，用户端展示脱敏中奖名单。
-- [活动排行榜与游戏兜底奖励](feature-docs/2026-11-21-activity-leaderboards-and-game-fallback/contract-changes.md)：开奖结果页展示前 10 名脱敏中奖名单，游戏结果页展示前 10 名闯关排名；游戏模板支持常规关卡奖无法发放时使用期次兜底奖。
+- [活动中奖公示长图](feature-docs/2026-09-21-activity-winner-public-poster/contract-changes.md)：管理端和用户端按活动期次查询最多展示 100 条有效中奖记录，管理端生成公示长图，名称按企业微信客户联系人名称、用户昵称、`吃货友友` 的顺序展示，不脱敏。
+- [活动排行榜与游戏兜底奖励](feature-docs/2026-11-21-activity-leaderboards-and-game-fallback/contract-changes.md)：开奖结果页展示前 10 名中奖名单，游戏结果页展示前 10 名闯关排名；两类榜单名称优先使用企业微信客户联系人名称，其次用户昵称，均为空时显示 `吃货友友`；游戏模板支持常规关卡奖无法发放时使用期次兜底奖。
 - [活动邀请报名增加抽奖机会](feature-docs/2026-09-21-activity-invite-chance/contract-changes.md)：后台开启后，被推荐人成功报名且推荐人已报名时，推荐人自动增加一次抽奖/游戏机会；用户端详情返回开关状态，抽奖或游戏后分享提示好友报名奖励。
 - [活动推荐阶梯奖励](feature-docs/2026-10-16-activity-referral-rewards/contract-changes.md)：保留推荐增加抽奖/游戏机会配置，另按期次统计新人和普通推荐阶梯并使用独立奖品数量；管理后台按推荐人查询统计并可兑换，推荐人也可通过用户端自助兑奖；中奖管理不包含推荐奖励。
 - [活动即时抽奖模式](feature-docs/2026-09-22-activity-lottery-mode/contract-changes.md)：活动模板支持开奖/抽奖两种模式，抽奖模式由 app-api 按概率即时抽奖并以 requestId 幂等。

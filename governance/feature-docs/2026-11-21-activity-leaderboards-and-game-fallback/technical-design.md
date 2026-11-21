@@ -17,9 +17,9 @@
 
 ### 榜单查询
 
-在 `ActivityRegistrationMapper.xml` 使用带租户、期次、有效报名和已完成成绩条件的排序查询，数据库仅取前 10 条。由于需要关联用户资料并脱敏，服务层通过现有 `MemberUserApi` 批量取用户资料，再复用中奖名单的昵称/手机号脱敏规则构造公开响应。接口先验证期次存在并且 `drawMode=3`。
+在 `ActivityRegistrationMapper.xml` 使用带租户、期次、有效报名和已完成成绩条件的排序查询，数据库仅取前 10 条。服务层通过现有 `MemberUserApi` 批量取用户资料，并通过 `WecomCustomerContactApi` 批量读取已匹配的客户联系人名称；展示名称依次回退到联系人名称、用户昵称和“吃货友友”，不脱敏。接口先验证期次存在并且 `drawMode=3`。
 
-开奖榜继续使用现有 `/winners` API；H5 展示其服务端结果前 10 条。该 API 已负责租户和隐私脱敏。
+开奖榜继续使用现有 `/winners` API；H5 展示其服务端结果前 10 条。该 API 按期次租户过滤，通过现有 `WecomCustomerContactApi` 取联系人名称，并按联系人名称、用户昵称、“吃货友友”的顺序构造未脱敏展示名称。
 
 ### 兜底奖结算
 

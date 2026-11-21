@@ -25,13 +25,13 @@ GET /admin-api/activity/winner/public-poster-data?periodId={periodId}
     {
       "prizeName": "一等奖",
       "prizeImage": "https://...",
-      "winners": ["张**", "李**"]
+      "winners": ["张三", "李四"]
     }
   ]
 }
 ```
 
-接口只返回当前租户、当前期次、有效中奖记录；按照奖品顺序、中奖时间、中奖记录 ID 排序后最多取 100 条。`truncated` 表示有效中奖总数超过 100。展示名由服务端脱敏，响应不得包含兑奖码、用户 ID、openid、完整手机号或企业微信 UserID。
+接口只返回当前租户、当前期次、有效中奖记录；按照奖品顺序、中奖时间、中奖记录 ID 排序后最多取 100 条。`truncated` 表示有效中奖总数超过 100。展示名按企业微信客户联系人名称、用户昵称、`吃货友友` 的顺序确定且不脱敏；响应不得包含兑奖码、用户 ID、openid、企业微信 UserID。
 
 无有效中奖记录返回成功响应但 `winnerCount=0`，前端展示“暂无可公示的中奖记录”且不下载文件。期次不存在、跨租户或无数据权限沿用现有资源/权限错误语义。
 
@@ -56,14 +56,14 @@ GET /app-api/activity/period/winners?periodId={periodId}
     {
       "prizeName": "一等奖",
       "prizeImage": "https://...",
-      "displayName": "张*",
+      "displayName": "张三",
       "winnerTime": "2026-09-21T18:00:01"
     }
   ]
 }
 ```
 
-用户端响应不得包含原始昵称、手机号、用户 ID、openid、企业微信 UserID、兑奖码或内部中奖记录 ID。展示名由服务端脱敏；接口只返回有效中奖记录，按奖品顺序、中奖时间、记录 ID 排序后最多 100 条。
+用户端响应不得包含用户 ID、openid、企业微信 UserID、兑奖码或内部中奖记录 ID。展示名按企业微信客户联系人名称、用户昵称、`吃货友友` 的顺序确定且不脱敏；接口只返回有效中奖记录，按奖品顺序、中奖时间、记录 ID 排序后最多 100 条。
 
 ## DB
 

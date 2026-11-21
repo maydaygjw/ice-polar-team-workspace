@@ -10,8 +10,8 @@ GET /app-api/activity/period/game-leaderboard?periodId={periodId}
 
 - 仅适用于 `drawMode=3` 的期次，不要求登录。
 - 按最佳已完成游戏成绩返回最多 10 条：最高通过关数降序、耗时升序、完成时间升序、报名 ID 升序。
-- 响应包含 `periodId`、`entries`；每项包含 `rank`、服务端脱敏 `displayName`、`highestPassedLevel`、`durationMillis` 和 `finishedAt`。
-- 不返回用户 ID、手机号、openid、企业微信 UserID、兑奖码或报名 ID。报名 ID 仅用于服务端稳定排序。
+- 响应包含 `periodId`、`entries`；每项包含 `rank`、`displayName`、`highestPassedLevel`、`durationMillis` 和 `finishedAt`。`displayName` 按企业微信客户联系人名称、用户昵称、`吃货友友` 的顺序确定，不脱敏。
+- 不单独返回用户 ID、手机号、openid、企业微信 UserID、兑奖码或报名 ID。报名 ID 仅用于服务端稳定排序。
 - 查询显式校验期次及租户归属；非游戏期次不得返回榜单。
 
 开奖名单继续使用现有 `GET /app-api/activity/period/winners?periodId={periodId}`。H5 在现有已排序的名单中展示前 10 条，不改变该接口契约。
