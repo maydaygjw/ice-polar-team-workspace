@@ -279,7 +279,7 @@
 - [活动推荐报名查询](feature-docs/2026-09-13-activity-management/contract-changes.md)：用户端支持按活动期次查询当前登录用户推荐的有效报名记录。
 - [活动报名条件分类与说明编辑](feature-docs/2026-09-17-activity-management-refactor/contract-changes.md)：报名条件分为内置和扩展两类，支持按租户编辑条件说明。
 - [活动报名条件实例管理](feature-docs/2026-09-18-activity-condition-instance-management/contract-changes.md)：条件类型由后端注册，租户可管理带参数的条件实例，并按模板引用阻止删除。
-- [活动模板奖品回显](feature-docs/2026-09-13-activity-management/contract-changes.md)：管理端活动模板详情和分页响应返回 `prizes`，用于编辑表单回显模板奖品配置。
+- [活动模板奖品回显](feature-docs/2026-09-13-activity-management/contract-changes.md)：管理端活动模板详情和分页响应返回 `prizes`，用于编辑表单回显模板奖品配置；实际份数允许为 `0`，表示该奖品无可发放库存。
 - [活动群活码配置](feature-docs/2026-09-13-activity-management/contract-changes.md)：活动模板支持从图片素材库选择群活码图片，并在生成期次时写入快照供用户端详情返回。
 - [活动中奖记录兑奖](feature-docs/2026-09-19-activity-winner-claim/contract-changes.md)：开奖只生成中奖记录；后台支持单条中奖记录兑奖、中奖管理批量兑奖和期次批量兑奖，兑奖状态随中奖记录返回。
 - [活动中奖企业微信通知](feature-docs/2026-09-21-activity-winner-notification/contract-changes.md)：中奖管理支持由活动管理员向中奖客户发送企业微信中奖通知。
